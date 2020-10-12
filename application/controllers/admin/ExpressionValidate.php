@@ -43,15 +43,16 @@ class ExpressionValidate extends Survey_Common_Action
      */
     public function quota($iSurveyId, $quota, $lang = null)
     {
+        $oSurvey = Survey::model()->findByPk($iSurveyId);
         if (!Permission::model()->hasSurveyPermission($iSurveyId, 'quotas', 'read')) {
-                    throw new CHttpException(401, "401 Unauthorized");
+            throw new CHttpException(401, "401 Unauthorized");
         }
         $iQuotaId = $quota;
         if (is_string($lang)) {
             $oValidator = new LSYii_Validators;
             $aLangs = array($oValidator->languageFilter($lang));
         } else {
-            $aLangs = Survey::model()->findByPk($iSurveyId)->getAllLanguages();
+            $aLangs = $oSurvey->allLanguages;
         }
         $aExpressions = array();
         $this->iSurveyId = $iSurveyId;
@@ -176,14 +177,14 @@ class ExpressionValidate extends Survey_Common_Action
         $aReplacement["SURVEYDESCRIPTION"] = gT("Description of the survey");
         // Replaced when sending email with Survey
         $aAttributes = getTokenFieldsAndNames($iSurveyId, true);
-        $aReplacement["TOKEN"] = gT("Token code for this participant");
-        $aReplacement["TOKEN:EMAIL"] = gT("Email from the token");
-        $aReplacement["TOKEN:FIRSTNAME"] = gT("First name from token");
-        $aReplacement["TOKEN:LASTNAME"] = gT("Last name from token");
-        $aReplacement["TOKEN:TOKEN"] = gT("Token code for this participant");
-        $aReplacement["TOKEN:LANGUAGE"] = gT("language of token");
+        $aReplacement["TOKEN"] = gT("Access code for this participant");
+        $aReplacement["TOKEN:EMAIL"] = gT("Email address of the participant");
+        $aReplacement["TOKEN:FIRSTNAME"] = gT("First name of the participant");
+        $aReplacement["TOKEN:LASTNAME"] = gT("Last name of the participant");
+        $aReplacement["TOKEN:TOKEN"] = gT("Access code for this participant");
+        $aReplacement["TOKEN:LANGUAGE"] = gT("language of participant");
         foreach ($aAttributes as $sAttribute=>$aAttribute) {
-            $aReplacement['TOKEN:'.strtoupper($sAttribute).''] = sprintf(gT("Token attribute: %s"), $aAttribute['description']);
+            $aReplacement['TOKEN:'.strtoupper($sAttribute).''] = sprintf(gT("Participant attribute: %s"), $aAttribute['description']);
         }
 
         switch ($sType) {
@@ -191,24 +192,24 @@ class ExpressionValidate extends Survey_Common_Action
             case 'reminder' :
             case 'registration' :
                 // Replaced when sending email (registration too ?)
-                $aReplacement["EMAIL"] = gT("Email from the token");
-                $aReplacement["FIRSTNAME"] = gT("First name from token");
-                $aReplacement["LASTNAME"] = gT("Last name from token");
-                $aReplacement["LANGUAGE"] = gT("language of token");
+                $aReplacement["EMAIL"] = gT("Email address of the participant");
+                $aReplacement["FIRSTNAME"] = gT("First name of the participant");
+                $aReplacement["LASTNAME"] = gT("Last name of the participant");
+                $aReplacement["LANGUAGE"] = gT("language of participant");
                 $aReplacement["OPTOUTURL"] = gT("URL for a respondent to opt-out of this survey");
                 $aReplacement["OPTINURL"] = gT("URL for a respondent to opt-in to this survey");
                 $aReplacement["SURVEYURL"] = gT("URL of the survey");
                 foreach ($aAttributes as $sAttribute=>$aAttribute) {
-                    $aReplacement[''.strtoupper($sAttribute).''] = sprintf(gT("Token attribute: %s"), $aAttribute['description']);
+                    $aReplacement[''.strtoupper($sAttribute).''] = sprintf(gT("Participant attribute: %s"), $aAttribute['description']);
                 }
                 break;
             case 'confirmation' :
-                $aReplacement["EMAIL"] = gT("Email from the token");
-                $aReplacement["FIRSTNAME"] = gT("First name from token");
-                $aReplacement["LASTNAME"] = gT("Last name from token");
+                $aReplacement["EMAIL"] = gT("Email address of the participant");
+                $aReplacement["FIRSTNAME"] = gT("First name of the participant");
+                $aReplacement["LASTNAME"] = gT("Last name of the participant");
                 $aReplacement["SURVEYURL"] = gT("URL of the survey");
                 foreach ($aAttributes as $sAttribute=>$aAttribute) {
-                    $aReplacement[''.strtoupper($sAttribute).''] = sprintf(gT("Token attribute: %s"), $aAttribute['description']);
+                    $aReplacement[''.strtoupper($sAttribute).''] = sprintf(gT("Participant attribute: %s"), $aAttribute['description']);
                 }
                 // $moveResult = LimeExpressionManager::NavigateForwards(); // Seems OK without, nut need $LEM::StartSurvey
                 break;
@@ -218,7 +219,7 @@ class ExpressionValidate extends Survey_Common_Action
                 $aReplacement["VIEWRESPONSEURL"] = gT("View response URL");
                 $aReplacement["EDITRESPONSEURL"] = gT("Edit response URL");
                 $aReplacement["STATISTICSURL"] = gT("Statistics URL");
-                $aReplacement["ANSWERTABLE"] = gT("Answers from this response");
+                $aReplacement["ANSWERTABLE"] = gT("Answers in this response");
                 // $moveResult = LimeExpressionManager::NavigateForwards(); // Seems OK without, nut need $LEM::StartSurvey
                 break;
             default:
@@ -269,9 +270,9 @@ class ExpressionValidate extends Survey_Common_Action
         }
         // TODO : Find error in class name, style etc ....
         // need: templatereplace without any filter and find if there are error but $bHaveError=$LEM->em->HasErrors() is Private
+        templatereplace(viewHelper::filterScript($sExpression), $aReplacement, $aReData, $sDebugSource, false, null, array(), true);
         $oFilter = new CHtmlPurifier();
-        templatereplace($oFilter->purify(viewHelper::filterScript($sExpression)), $aReplacement, $aReData, $sDebugSource, false, null, array(), true);
 
-        return $LEM::GetLastPrettyPrintExpression();
+        return $oFilter->purify($LEM::GetLastPrettyPrintExpression());
     }
 }

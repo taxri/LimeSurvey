@@ -43,7 +43,7 @@ class TemplateManifest extends TemplateConfiguration
     {
         libxml_disable_entity_loader(false);
         $config = simplexml_load_file(realpath($this->xmlFile));
-        $config->metadata->last_update = date("Y-m-d H:i:s");
+        $config->metadata->lastUpdate = date("Y-m-d H:i:s");
         $config->asXML(realpath($this->xmlFile)); // Belt
         touch($this->path); // & Suspenders ;-)
         libxml_disable_entity_loader(true);
@@ -82,6 +82,377 @@ class TemplateManifest extends TemplateConfiguration
         $aScreenFiles = array_merge($aScreenFiles, (array)$oEvent->get('add'));
         $aScreenFiles = array_unique($aScreenFiles);
         return $aScreenFiles;
+    }
+
+    /**
+     * Returns the complete list of screens, with layout and contents. Used from Twig Command line
+     * @return array the list of screens, layouts, contents
+     */
+    public function getScreensDetails()
+    {
+      $aContent = array();
+
+      $oScreensFromXML = $this->templateEditor->xpath('//screens');
+      foreach ($oScreensFromXML[0] as $sScreen => $oScreen){
+
+        // We reset LayoutName and FileName at each loop to avoid errors
+        $sLayoutName = "";
+        $sFileName = "";
+        $sTitle = "";
+
+        foreach ($oScreen as $sKey => $oField){
+
+            if ($oField->attributes()->role == "layout") {
+              $sLayoutName  = (string) $oField;
+            }
+
+            if ($oField->attributes()->role == "content") {
+              $sFile  = (string) $oField;
+
+              // From command line, we need to remove the full path for content. It's inside the layout. This could be an option
+              $aFile     = explode("/", $sFile);
+              $aFileName = explode(".", end($aFile));
+              $sContent = $aFileName[0];
+            }
+
+            if ($oField->attributes()->role == "title") {
+              $sTitle  = (string) $oField;
+
+              if ($oField->attributes()->twig == "on") {
+                $sTitle = Yii::app()->twigRenderer->convertTwigToHtml($sTitle);
+              }
+            }
+
+        }
+
+        if (!empty ($sLayoutName)){
+          $aContent[$sScreen]['title'] = $sTitle;
+          $aContent[$sScreen]['layouts'][$sLayoutName] = $sContent;
+        }
+      }
+
+      return $aContent;
+    }
+
+    /**
+     * Returns an array of screens list with their respective titles. Used by Theme Editor to build the screend selection dropdown
+     * For retro-compatibility purpose, if the array is empty it will use the old default values.
+     *
+     * @return array the list of screens with their titles
+     */
+    public function getScreensList()
+    {
+      $aScreenList = $this->getScreensDetails();
+      $aScreens = array();
+
+      foreach($aScreenList as $sScreenName => $aTitleAndLayouts){
+        $aScreens[$sScreenName] = $aTitleAndLayouts['title'];
+      }
+
+      // We check there is at least one screen title in the array. Else, the theme manifest is outdated, so we use the default values
+      $bEmptyTitles = true;
+      foreach($aScreens as $sScreenName => $sTitle){
+        if (!empty($sTitle)){
+          $bEmptyTitles = false;
+          break;
+        }
+      }
+
+      if ($bEmptyTitles){
+          if(YII_DEBUG){
+            Yii::app()->setFlashMessage("Your theme does not implement screen definition in XML. Using the default ones <br> this message will not appear when debug mode is off", 'error');
+          }
+
+          $aScreens['welcome']         = gT('Welcome', 'unescaped');
+          $aScreens['question']        = gT('Question', 'unescaped');
+          $aScreens['completed']       = gT('Completed', 'unescaped');
+          $aScreens['clearall']        = gT('Clear all', 'unescaped');
+          $aScreens['load']            = gT('Load', 'unescaped');
+          $aScreens['save']            = gT('Save', 'unescaped');
+          $aScreens['surveylist']      = gT('Survey list', 'unescaped');
+          $aScreens['error']           = gT('Error', 'unescaped');
+          $aScreens['assessments']     = gT('Assessments', 'unescaped');
+          $aScreens['register']        = gT('Registration', 'unescaped');
+          $aScreens['printanswers']    = gT('Print answers', 'unescaped');
+          $aScreens['pdf']             = gT('PDF', 'unescaped');
+          $aScreens['navigation']      = gT('Navigation', 'unescaped');
+          $aScreens['misc']            = gT('Miscellaneous files', 'unescaped');
+      }
+
+      return $aScreens;
+
+    }
+
+    /**
+     * Return the default datas for theme views.
+     * This is used when rendering the views outside of the normal survey taking.
+     * Currently used in two cases: theme editor preview, and twig cache file generation from command line.
+     */
+    public function getDefaultDataForRendering($thissurvey=array())
+    {
+
+      $thissurvey    = empty($thissurvey)?$this->getDefaultCoreDataForRendering():$thissurvey;
+
+      $thissurvey = $this->getDefaultDataForRenderingFromXml($thissurvey);
+
+      //$thissurvey['alanguageChanger'] = $this->getDefaultDataForLanguageChanger();
+
+      // Redundant values
+      $thissurvey['surveyls_title'] = $thissurvey['name'];
+      $thissurvey['surveyls_description'] = $thissurvey['description'];
+      $thissurvey['surveyls_welcometext'] = $thissurvey['welcome'];
+
+      return $thissurvey;
+    }
+
+
+    public function getDefaultDataForLanguageChanger($thissurvey=array())
+    {
+
+      $thissurvey    = empty($thissurvey)?array():$thissurvey;
+      $oDataFromXML = $this->templateEditor->default_data->xpath('//survey_data');
+
+
+      $thissurvey['alanguageChanger']['datas'] = [
+                    'sSelected' => 'en',
+                    //'withForm' => true,  // Set to true for no-js functionality.
+                    'aListLang' => [
+                        'en' => gT('English'),
+                        'de' => gT('German')
+                    ]
+                ];
+
+
+    }
+
+    public function getDefaultDataForRenderingFromXml($thissurvey=array())
+    {
+        $thissurvey    = empty($thissurvey)?array():$thissurvey;
+
+        if (empty($this->templateEditor)) {
+            return $thissurvey;
+        }
+
+        $thissurvey = $this->parseDefaultData('survey', $thissurvey);
+        $thissurvey['aGroups'][1] = $this->parseDefaultData('group', $thissurvey['aGroups'][1]);
+        $thissurvey['aGroups'][1]["aQuestions"][1] = $this->parseDefaultData('question_1', $thissurvey['aGroups'][1]["aQuestions"][1]) ;
+        $thissurvey['aGroups'][1]["aQuestions"][2] = $this->parseDefaultData('question_2', $thissurvey['aGroups'][1]["aQuestions"][2]);
+        $thissurvey['aAssessments']["datas"]["total"][0] = $this->parseDefaultData('assessments', $thissurvey['aAssessments']["datas"]["total"][0]);
+
+        /**
+         * NOTE: This will allow Theme developper to add their new screens without editing this file.
+         * It implies they respect the convention :
+         * $aSurveyData[custom screen name][custom variable] = custom variable value
+         * Where custom variable value can't be an array.
+         * TODO: for LS5, refactor all the twig views and theme editor so we use only this convetion.
+         * Eg: don't use arrays like $thissurvey['aAssessments']["datas"]["total"][0] or $thissurvey['aGroups'][1]["aQuestions"][1]
+        */
+        $thissurvey = $this->getCustomScreenData($thissurvey);
+
+        return $thissurvey;
+    }
+
+    /**
+     * If theme developer created custom screens, they will provide custom data.
+     * This function will get those custom data to pass them to the preview.
+     */
+    protected function getCustomScreenData($thissurvey = array())
+    {
+      $oDataFromXML = $this->templateEditor->xpath("//default_data"); //
+
+      foreach( $oDataFromXML[0] as $sScreenName => $oData){
+        if ($oData->attributes()->type == "custom"){
+          $sArrayName = (string) $oData->attributes()->arrayName;
+          $thissurvey[$sArrayName] = array();
+          $thissurvey[$sArrayName] = $this->parseDefaultData($sScreenName, $thissurvey[$sArrayName]);
+        }
+      }
+
+      return $thissurvey;
+    }
+
+
+    protected function parseDefaultData($sXpath, $aArrayToFeed)
+    {
+
+      $oDataFromXML = $this->templateEditor->default_data->xpath('//'.$sXpath);
+      $oDataFromXML = end($oDataFromXML);
+
+      foreach( $oDataFromXML as $sKey => $oData){
+
+        if (!empty($sKey)){
+
+          $sData = (string) $oData;
+
+          if ($oData->attributes()->twig == "on") {
+            $sData = Yii::app()->twigRenderer->convertTwigToHtml($sData);
+          }
+
+          $aArrayToFeed[$sKey] = $sData;
+        }
+      }
+
+      return $aArrayToFeed;
+    }
+
+    /**
+     * Returns all the twig strings inside the current XML. Used from TwigCommand
+     * NOTE: this not recursive. So it will show only the string of the current XML, not of parent XML. (not needed to generate twig cache from command line since all XML files are parsed)
+     *
+     * @param array $items if you already have a list of items and want to use it.
+     * @return array the list of strings using twig
+     */
+    public function getTwigStrings($items = array())
+    {
+      $oDataFromXML = $this->config;
+      $oElements = $oDataFromXML->xpath('//*[@twig="on"]');
+
+      foreach($oElements as $key => $oELement){
+        $items[] = (string) $oELement;
+      }
+
+      return $items;
+    }
+
+    /**
+     * Hard coded data for theme rendering outside of the normal survey taking.
+     *
+     * Currently used in two cases: theme editor preview, and twig cache file generation from command line.
+     */
+    public function getDefaultCoreDataForRendering()
+    {
+
+        $thissurvey = array();
+
+        // Values that never change.
+        $thissurvey['active'] = 'N';
+        $thissurvey['allowsave'] = "Y";
+        $thissurvey['active'] = "Y";
+        $thissurvey['tokenanswerspersistence'] = "Y";
+        $thissurvey['format'] = "G";
+
+        $thissurvey['usecaptcha'] = "A";
+        $thissurvey['showprogress'] = true;
+        $thissurvey['aNavigator']['show'] = true;
+        $thissurvey['aNavigator']['aMoveNext']['show'] = true;
+        $thissurvey['aNavigator']['aMovePrev']['show'] = true;
+
+        $thissurvey['alanguageChanger']['show'] = true;
+        $thissurvey['alanguageChanger']['datas'] = [
+            'sSelected' => 'en',
+            //'withForm' => true,  // Set to true for no-js functionality.
+            'aListLang' => [
+                'en' => gT('English'),
+                'de' => gT('German')
+            ]
+        ];
+
+
+        $thissurvey['aQuestionIndex']['bShow'] = true;
+        $thissurvey['aQuestionIndex']['items'] = [
+            [
+                'text' => gT('A group without step status styling')
+            ],
+            [
+                'text' => gT('This group is unanswered'),
+                'stepStatus' => [
+                    'index-item-unanswered' => true
+                ]
+            ],
+            [
+                'text' => gT('This group has an error'),
+                'stepStatus' => [
+                    'index-item-error' => true
+                ]
+            ],
+            [
+                'text' => gT('Current group is disabled'),
+                'stepStatus' => [
+                    'index-item-current' => true
+                ]
+            ]
+        ];
+
+        // Show "Clear all".
+        $thissurvey['bShowClearAll'] = true;
+
+        // Show language changer.
+        $thissurvey['alanguageChanger']['show'] = true;
+        $thissurvey['alanguageChanger']['datas'] = [
+            'sSelected' => 'en',
+            'aListLang' => [
+                'en' => gT('English'),
+                'de' => gT('German')
+            ]
+        ];
+
+        $thissurvey['aNavigator']['load'] = [
+            'show' => "Y"
+        ];
+
+
+        $thissurvey['aGroups'][1]["showdescription"] = true;
+        $thissurvey['aGroups'][1]["aQuestions"][1]["qid"]           = "1";
+        $thissurvey['aGroups'][1]["aQuestions"][1]["mandatory"]     = true;
+
+        // If called from command line to generate Twig temp, renderPartial doesn't exist in ConsoleApplication
+        if (method_exists ( Yii::app()->getController() , 'renderPartial' ) ){
+          $thissurvey['aGroups'][1]["aQuestions"][1]["answer"]        = Yii::app()->getController()->renderPartial('/admin/themes/templateeditor_question_answer_view', array(), true);
+        }
+        $thissurvey['aGroups'][1]["aQuestions"][1]["help"]["show"]  = true;
+        $thissurvey['aGroups'][1]["aQuestions"][1]["help"]["text"]  = gT("This is some helpful text.");
+        $thissurvey['aGroups'][1]["aQuestions"][1]["class"]         = "list-radio mandatory";
+        $thissurvey['aGroups'][1]["aQuestions"][1]["attributes"]    = 'id="question42"';
+
+        $thissurvey['aGroups'][1]["aQuestions"][2]["qid"]           = "1";
+        $thissurvey['aGroups'][1]["aQuestions"][2]["mandatory"]     = false;
+        if (method_exists ( Yii::app()->getController() , 'renderPartial' ) ){
+          $thissurvey['aGroups'][1]["aQuestions"][2]["answer"]        = Yii::app()->getController()->renderPartial('/admin/themes/templateeditor_question_answer_view', array('alt' => true), true);
+        }
+        $thissurvey['aGroups'][1]["aQuestions"][2]["help"]["show"]  = true;
+        $thissurvey['aGroups'][1]["aQuestions"][2]["help"]["text"]  = gT("This is some helpful text.");
+        $thissurvey['aGroups'][1]["aQuestions"][2]["class"]         = "text-long";
+        $thissurvey['aGroups'][1]["aQuestions"][2]["attributes"]    = 'id="question43"';
+
+        $thissurvey['aGroups'][1]["aQuestions"][1]['templateeditor'] = true;
+        $thissurvey['aGroups'][1]["aQuestions"][2]['templateeditor'] = true;
+
+        $thissurvey['registration_view'] = 'register_form';
+
+        $thissurvey['aCompleted']['showDefault'] = true;
+        $thissurvey['aCompleted']['aPrintAnswers']['show'] = true;
+        $thissurvey['aCompleted']['aPublicStatistics']['show'] = true;
+
+        $thissurvey['aAssessments']['show'] = true;
+
+
+        $thissurvey['aError']['title'] = gT("Error");
+        $thissurvey['aError']['message'] = gT("This is an error message example");
+
+        // Datas for assessments
+        $thissurvey['aAssessments']["datas"]["total"][0]["name"]       = gT("Welcome to the Assessment");
+        $thissurvey['aAssessments']["datas"]["total"][0]["min"]        = "0";
+        $thissurvey['aAssessments']["datas"]["total"][0]["max"]        = "3";
+        $thissurvey['aAssessments']["datas"]["total"][0]["message"]    = gT("You got {TOTAL} points out of 3 possible points.");
+        $thissurvey['aAssessments']["datas"]["total"]["show"]          = true;
+        $thissurvey['aAssessments']["datas"]["subtotal"]["show"]       = true;
+        $thissurvey['aAssessments']["datas"]["subtotal"]["datas"][2]   = 3;
+        $thissurvey['aAssessments']["datas"]["subtotal_score"][1]      = 3;
+        $thissurvey['aAssessments']["datas"]["total_score"]            = 3;
+
+        // Those values can be overwritten by XML
+        $thissurvey['name'] = gT("Template Sample");
+        $thissurvey['description'] =
+        "<p>".gT('This is a sample survey description. It could be quite long.')."</p>".
+        "<p>".gT("But this one isn't.")."<p>";
+        $thissurvey['welcome'] =
+        "<p>".gT('Welcome to this sample survey')."<p>".
+        "<p>".gT('You should have a great time doing this')."<p>";
+        $thissurvey['therearexquestions'] = gT('There is 1 question in this survey');
+        $thissurvey['surveyls_url'] = "https://www.limesurvey.org/";
+        $thissurvey['surveyls_urldescription'] = gT("Some URL description");
+
+        return $thissurvey;
     }
 
     /**
@@ -266,7 +637,15 @@ class TemplateManifest extends TemplateConfiguration
      */
     public function getTemplateURL()
     {
-        return Template::getTemplateURL($this->sTemplateName);
+
+      // By default, theme folder is always the folder name. @See:TemplateConfig::importManifest().
+      if (Template::isStandardTemplate($this->sTemplateName)) {
+          return Yii::app()->getConfig("standardthemerooturl").'/'.$this->sTemplateName.'/';
+      } else {
+          return  Yii::app()->getConfig("userthemerooturl").'/'.$this->sTemplateName.'/';
+      }
+
+    //    return Template::getTemplateURL($this->sTemplateName);
     }
 
 
@@ -465,20 +844,33 @@ class TemplateManifest extends TemplateConfiguration
 
     /**
      * Change the date inside the DOMDocument
+     * Used only when copying/extend a survey
      * @param DOMDocument   $oNewManifest  The DOMDOcument of the manifest
      * @param string        $sDate         The wanted date, if empty the current date with config time adjustment will be used
      */
     public static function changeDateInDOM($oNewManifest, $sDate = '')
     {
-        $date           = (empty($date)) ?dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust")) : $date;
-        $oConfig        = $oNewManifest->getElementsByTagName('config')->item(0);
+        $sDate = (empty($sDate)) ? dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust")) : $sDate;
+        $oConfig = $oNewManifest->getElementsByTagName('config')->item(0);
         $ometadata = $oConfig->getElementsByTagName('metadata')->item(0);
-        $oOldDateNode   = $ometadata->getElementsByTagName('creationDate')->item(0);
+        if($ometadata->getElementsByTagName('creationDate')) {
+            $oOldDateNode   = $ometadata->getElementsByTagName('creationDate')->item(0);
+        }
         $oNvDateNode    = $oNewManifest->createElement('creationDate', $sDate);
-        $ometadata->replaceChild($oNvDateNode, $oOldDateNode);
-        $oOldUpdateNode = $ometadata->getElementsByTagName('last_update')->item(0);
-        $oNvDateNode    = $oNewManifest->createElement('last_update', $sDate);
-        $ometadata->replaceChild($oNvDateNode, $oOldUpdateNode);
+        if(empty($oOldDateNode)) {
+            $ometadata->appendChild($oNvDateNode);
+        } else {
+            $ometadata->replaceChild($oNvDateNode, $oOldDateNode);
+        }
+        if($ometadata->getElementsByTagName('lastUpdate')) {
+            $oOldUpdateNode   = $ometadata->getElementsByTagName('lastUpdate')->item(0);
+        }
+        $oNvDateNode    = $oNewManifest->createElement('lastUpdate', $sDate);
+        if(empty($oOldUpdateNode)) {
+            $ometadata->appendChild($oNvDateNode);
+        } else {
+            $ometadata->replaceChild($oNvDateNode, $oOldUpdateNode);
+        }
     }
 
     /**
@@ -569,6 +961,7 @@ class TemplateManifest extends TemplateConfiguration
         }
     }
 
+
     /**
      * Update the config file of a given template so that it extends another one
      *
@@ -616,7 +1009,13 @@ class TemplateManifest extends TemplateConfiguration
         if (file_exists(realpath($this->xmlFile))) {
             $bOldEntityLoaderState = libxml_disable_entity_loader(true); // @see: http://phpsecurity.readthedocs.io/en/latest/Injection-Attacks.html#xml-external-entity-injection
             $sXMLConfigFile        = file_get_contents(realpath($this->xmlFile)); // @see: Now that entity loader is disabled, we can't use simplexml_load_file; so we must read the file with file_get_contents and convert it as a string
-            $oXMLConfig = simplexml_load_string($sXMLConfigFile);
+            $oDOMConfig = new DOMDocument;
+            $oDOMConfig->loadXML($sXMLConfigFile);
+            $oXPath = new DOMXpath($oDOMConfig);
+            foreach ($oXPath->query('//comment()') as $oComment) {
+                $oComment->parentNode->removeChild($oComment);
+            }
+            $oXMLConfig = simplexml_import_dom($oDOMConfig);
             foreach ($oXMLConfig->config->xpath("//file") as $oFileName) {
                         $oFileName[0] = get_absolute_path($oFileName[0]);
             }
@@ -970,5 +1369,130 @@ class TemplateManifest extends TemplateConfiguration
         }
 
         return $sTemplateNames;
+    }
+
+    /**
+     * Get options_page value from template configuration
+     */
+    public static function getOptionAttributes($path){
+        libxml_disable_entity_loader(false);
+        $file = realpath($path."config.xml");
+        if (file_exists($file)) {
+            $sXMLConfigFile        = file_get_contents($file);
+            $oXMLConfig = simplexml_load_string($sXMLConfigFile);
+            $aOptions['categories'] = array();
+            
+            foreach($oXMLConfig->options->children() as $key  => $option){
+                $aOptions['optionAttributes'][$key]['type'] = !empty($option['type']) ? (string)$option['type'] : '';
+                $aOptions['optionAttributes'][$key]['title'] = !empty($option['title']) ? (string)$option['title'] : '';
+                $aOptions['optionAttributes'][$key]['category'] = !empty($option['category']) ? (string)$option['category'] : gT('Simple options');
+                $aOptions['optionAttributes'][$key]['width'] = !empty($option['width']) ? (string)$option['width'] : '2';
+                $aOptions['optionAttributes'][$key]['options'] = !empty($option['options']) ? (string)$option['options'] : '';
+                $aOptions['optionAttributes'][$key]['optionlabels'] = !empty($option['optionlabels']) ? (string)$option['optionlabels'] : '';
+                $aOptions['optionAttributes'][$key]['parent'] = !empty($option['parent']) ? (string)$option['parent'] : '';
+
+                if (!empty($option->dropdownoptions)){
+                    $dropdownOptions = '';
+                    if ($key == 'font'){
+                        $dropdownOptions .= TemplateManifest::getFontDropdownOptions();
+                    }
+                    foreach($option->xpath('//options/' . $key . '/dropdownoptions') as $option){
+                        $dropdownOptions .= $option->asXml();
+                    }
+
+                    $aOptions['optionAttributes'][$key]['dropdownoptions'] = $dropdownOptions;
+                } else {
+                    $aOptions['optionAttributes'][$key]['dropdownoptions'] = '';
+                }
+
+                if (!in_array($aOptions['optionAttributes'][$key]['category'], $aOptions['categories'])){
+                    $aOptions['categories'][] = $aOptions['optionAttributes'][$key]['category'];
+                }
+            }
+
+            $aOptions['optionsPage'] = !empty((array)$oXMLConfig->engine->optionspage) ? ((array)$oXMLConfig->engine->optionspage)[0] : false;
+
+            return $aOptions;
+        }
+        return false;
+    }
+
+    public static function getFontDropdownOptions(){
+        $fontOptions = '';
+        $fontPackages = App()->getClientScript()->fontPackages;
+        $coreFontPackages = $fontPackages['core'];
+        $userFontPackages = $fontPackages['user'];
+
+        // generate CORE fonts package list
+        $i = 0;
+        foreach($coreFontPackages as $coreKey => $corePackage){
+            $i+=1;
+            if ($i === 1){
+                $fontOptions .='<optgroup  label="' . gT("Local Server") . ' - ' . gT("Core") . '">';
+            }
+            $fontOptions .='<option class="font-' . $coreKey . '"     value="' . $coreKey . '"     data-font-package="' . $coreKey . '"      >' . $corePackage['title'] . '</option>';
+        }
+        if ($i > 0){
+            $fontOptions .='</optgroup>';
+        }
+
+        // generate USER fonts package list
+        $i = 0;
+        foreach($userFontPackages as $userKey => $userPackage){
+            $i+=1;
+            if ($i === 1){
+                $fontOptions .='<optgroup  label="' . gT("Local Server") . ' - ' . gT("User") . '">';
+            }
+            $fontOptions .='<option class="font-' . $userKey . '"     value="' . $userKey . '"     data-font-package="' . $userKey . '"      >' . $userPackage['title'] . '</option>';
+        }
+        if ($i > 0){
+            $fontOptions .='</optgroup>';
+        }
+
+        $fontOptions .='';
+        return $fontOptions;
+    }
+
+    /**
+     * Twig statements can be used in Theme description
+     * Override method from TemplateConfiguration to use the description from the XML
+     * @return string description from the xml
+     */
+    public function getDescription()
+    {
+        $sDescription = $this->config->metadata->description;
+
+          // If wrong Twig in manifest, we don't want to block the whole list rendering
+          // Note: if no twig statement in the description, twig will just render it as usual
+        try {
+            $sDescription = App()->twigRenderer->convertTwigToHtml($this->config->metadata->description);
+        } catch (\Exception $e) {
+          // It should never happen, but let's avoid to anoy final user in production mode :)
+            if (YII_DEBUG) {
+                App()->setFlashMessage(
+                    "Twig error in template " .
+                    $this->sTemplateName .
+                    " description <br> Please fix it and reset the theme <br>" . $e->getMessage(),
+                    'error'
+                );
+            }
+        }
+
+        return $sDescription;
+    }
+
+    /**
+     * PHP getter magic method.
+     * This method is overridden so that AR attributes can be accessed like properties.
+     * @param string $name property name
+     * @return mixed property value
+     * @see getAttribute
+     */
+    public function __get($name)
+    {
+      if ($name=="options"){
+        return json_encode( $this->config->options);
+      }
+      return parent::__get($name);
     }
 }

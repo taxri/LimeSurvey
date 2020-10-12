@@ -49,7 +49,7 @@ class LS_Twig_Extension extends Twig_Extension
      */
     public static function registerPublicCssFile($sPublicCssFileName)
     {
-        Yii::app()->getClientScript()->registerCssFile(
+        Yii::app()->clientScript->registerCssFile(
             Yii::app()->getConfig('publicstyleurl').
             $sPublicCssFileName
         );
@@ -72,7 +72,7 @@ class LS_Twig_Extension extends Twig_Extension
         */
 
         $oTemplate = self::getTemplateForRessource($sTemplateCssFileName);
-        Yii::app()->getClientScript()->packages[$oTemplate->sPackageName]['css'][] = $sTemplateCssFileName;
+        Yii::app()->clientScript->packages[$oTemplate->sPackageName]['css'][] = $sTemplateCssFileName;
     }
 
     /**
@@ -85,7 +85,7 @@ class LS_Twig_Extension extends Twig_Extension
     public static function registerGeneralScript($sGeneralScriptFileName, $position = null, array $htmlOptions = array())
     {
         $position = self::getPosition($position);
-        Yii::app()->getClientScript()->registerScriptFile(
+        Yii::app()->clientScript->registerScriptFile(
             App()->getConfig('generalscripts').
             $sGeneralScriptFileName,
             $position,
@@ -103,7 +103,7 @@ class LS_Twig_Extension extends Twig_Extension
     public static function registerTemplateScript($sTemplateScriptFileName, $position = null, array $htmlOptions = array())
     {
         $oTemplate = self::getTemplateForRessource($sTemplateScriptFileName);
-        Yii::app()->getClientScript()->packages[$oTemplate->sPackageName]['js'][] = $sTemplateScriptFileName;
+        Yii::app()->clientScript->packages[$oTemplate->sPackageName]['js'][] = $sTemplateScriptFileName;
     }
 
     /**
@@ -117,7 +117,7 @@ class LS_Twig_Extension extends Twig_Extension
     public static function registerScript($id, $script, $position = null, array $htmlOptions = array())
     {
         $position = self::getPosition($position);
-        Yii::app()->getClientScript()->registerScript(
+        Yii::app()->clientScript->registerScript(
             $id,
             $script,
             $position,
@@ -224,7 +224,7 @@ class LS_Twig_Extension extends Twig_Extension
             }
         }
 
-        if ($lemQuestionInfo['info']['mandatory'] == 'Y') {
+        if ($lemQuestionInfo['info']['mandatory'] == 'Y' || $lemQuestionInfo['info']['mandatory'] == 'S') {
             $aQuestionClass .= ' mandatory';
         }
 
@@ -251,12 +251,17 @@ class LS_Twig_Extension extends Twig_Extension
         return App()->getController()->createUrl($url, $params);
     }
 
+    public static function createAbsoluteUrl($url, $params = array())
+    {
+        return App()->getController()->createAbsoluteUrl($url, $params);
+    }
+
     /**
      * @param string $sRessource
      */
     public static function assetPublish($sRessource)
     {
-        return App()->getAssetManager()->publish($sRessource);
+        return App()->assetManager->publish($sRessource);
     }
 
     /**
@@ -309,14 +314,90 @@ class LS_Twig_Extension extends Twig_Extension
     }
 
     /**
+     * @var $resourcePath string : the needed resource
+     * @var $default string : the default resource if needed resssource didn't exist
+     * @return string|false
+     */
+    public static function templateResourceUrl($resourcePath, $default = false)
+    {
+        /* get extension of file in allowedthemeuploads */
+        $aAllowExtensions = explode(',', Yii::app()->getConfig('allowedthemeuploads'));
+        $info = pathinfo($resourcePath);
+        if(!isset($info['extension']) || !in_array(strtolower($info['extension']),$aAllowExtensions) ) {
+            if($default) {
+                return self::templateResourceUrl($default);
+            }
+            return false;
+        }
+        // Reccurence on templates to find the file
+        $oTemplate = self::getTemplateForRessource($resourcePath);
+        if(empty($oTemplate)) {
+            /* Didn't allow file out of template (diff with image) */
+            return false;
+        }
+        $sFullPath = $oTemplate->path.$resourcePath;
+        $resourceAsset = self::assetPublish($sFullPath);
+        return $resourceAsset;
+    }
+
+
+    /**
+     * Get the parsed output of the expression manger for a specific string
+     *
+     * @param String $sInString
+     * @return String
+     */
+    public static function getExpressionManagerOutput($sInString) {
+        templatereplace(flattenText($sInString));
+        return LimeExpressionManager::GetLastPrettyPrintExpression();
+    }
+
+    /**
+     * Get the textcontrol widget output for a specific string
+     *
+     * @param String $sInString
+     * @return String
+     */
+    public static function getTextDisplayWidget($sInString, $name) {
+        templatereplace(flattenText($sInString));
+        $fullInString = LimeExpressionManager::GetLastPrettyPrintExpression();
+
+        $widget = App()->getController()->widget('ext.admin.TextDisplaySwitch.TextDisplaySwitch', array(
+            'widgetsJsName' =>  $name,
+            'textToDisplay' => $fullInString,
+            'returnHtml' => true
+        ));
+        return $widget->run();
+    }
+
+
+
+    /**
+     * Checks for a permission on render
+     *
+     * @param String $permission
+     * @param String $permissionGrade
+     * @param Integer|NULL $iSurveyId (default null)
+     *
+     * @return Boolean
+     */
+    public static function checkPermission($permission, $permissionGrade, $iSurveyId = null) {
+
+        if ($iSurveyId === null) {
+            return Permission::model()->hasGlobalPermission($permission, $permissionGrade);
+        }
+        return Permission::model()->hasSurveyPermission($iSurveyId, $permission, $permissionGrade);
+
+    }
+
+    /**
      * @param string $sRessource
      */
     public static function getTemplateForRessource($sRessource)
     {
-        $oRTemplate = Template::model()->getInstance();
+        $oRTemplate =  Template::getLastInstance();
 
         while (!file_exists($oRTemplate->path.$sRessource)) {
-
             $oMotherTemplate = $oRTemplate->oMotherTemplate;
             if (!($oMotherTemplate instanceof TemplateConfiguration)) {
                 return false;
@@ -324,7 +405,11 @@ class LS_Twig_Extension extends Twig_Extension
             }
             $oRTemplate = $oMotherTemplate;
         }
-
+        $sRessourcePath = realpath($oRTemplate->path.$sRessource);
+        $sTemplatePath = realpath($oRTemplate->path);
+        if(substr($sTemplatePath, 0, strlen($sTemplatePath)) !== $sTemplatePath) {
+            return false;
+        }
         return $oRTemplate;
     }
 
@@ -348,7 +433,7 @@ class LS_Twig_Extension extends Twig_Extension
      */
     public static function unregisterPackage($name)
     {
-        return Yii::app()->getClientScript()->unregisterPackage($name);
+        return Yii::app()->clientScript->unregisterPackage($name);
     }
 
     /**
@@ -356,23 +441,23 @@ class LS_Twig_Extension extends Twig_Extension
      */
     public static function unregisterScriptFile($name)
     {
-        return Yii::app()->getClientScript()->unregisterScriptFile($name);
+        return Yii::app()->clientScript->unregisterScriptFile($name);
     }
 
     public static function registerScriptFile($path, $position = null)
     {
 
-        Yii::app()->getClientScript()->registerScriptFile($path, ($position === null ? LSYii_ClientScript::POS_BEGIN : self::getPosition($position)));
+        Yii::app()->clientScript->registerScriptFile($path, ($position === null ? LSYii_ClientScript::POS_BEGIN : self::getPosition($position)));
     }
 
     public static function registerCssFile($path)
     {
-        Yii::app()->getClientScript()->registerCssFile($path);
+        Yii::app()->clientScript->registerCssFile($path);
     }
 
     public static function registerPackage($name)
     {
-        Yii::app()->getClientScript()->registerPackage($name, LSYii_ClientScript::POS_BEGIN);
+        Yii::app()->clientScript->registerPackage($name, LSYii_ClientScript::POS_BEGIN);
     }
 
     /**
@@ -380,7 +465,7 @@ class LS_Twig_Extension extends Twig_Extension
      */
     public static function unregisterScriptForAjax()
     {
-        $oTemplate            = Template::model()->getInstance();
+        $oTemplate            = Template::getLastInstance();
         $sTemplatePackageName = 'limesurvey-'.$oTemplate->sTemplateName;
         self::unregisterPackage($sTemplatePackageName);
         self::unregisterPackage('template-core');
@@ -390,15 +475,15 @@ class LS_Twig_Extension extends Twig_Extension
         self::unregisterPackage('fontawesome');
         self::unregisterPackage('template-default-ltr');
         self::unregisterPackage('decimal');
+        self::unregisterPackage('expressions');        
+        self::unregisterPackage('expressionscript');
         self::unregisterScriptFile('/assets/scripts/survey_runtime.js');
-        self::unregisterScriptFile('/assets/scripts/admin/expression.js');
         self::unregisterScriptFile('/assets/scripts/nojs.js');
-        self::unregisterScriptFile('/assets/scripts/expressions/em_javascript.js');
     }
 
     public static function listCoreScripts()
     {
-        foreach (Yii::app()->getClientScript()->coreScripts as $key => $package) {
+        foreach (Yii::app()->clientScript->coreScripts as $key => $package) {
 
             echo "<hr>";
             echo "$key: <br>";
@@ -409,7 +494,7 @@ class LS_Twig_Extension extends Twig_Extension
 
     public static function listScriptFiles()
     {
-        foreach (Yii::app()->getClientScript()->getScriptFiles() as $key => $file) {
+        foreach (Yii::app()->clientScript->getScriptFiles() as $key => $file) {
 
             echo "<hr>";
             echo "$key: <br>";
@@ -568,40 +653,16 @@ class LS_Twig_Extension extends Twig_Extension
      */
     public static function getAllTokenAnswers( $iSurveyID )
     {
+
+        $oResponses = SurveyDynamic::model($iSurveyID)->findAll(
+                            array(
+                                'condition' => 'token = :token',
+                                'params'    => array( ':token'=>$_SESSION['survey_'.$iSurveyID]['token']),
+                            )
+
+                        );
+
         $aResponses = array();
-        $sToken     = (empty($_SESSION['survey_'.$iSurveyID]['token']))?'':$_SESSION['survey_'.$iSurveyID]['token'] ;
-
-        if (!empty($sToken)) {
-            $oResponses = SurveyDynamic::model($iSurveyID)->findAll(
-                                array(
-                                    'condition' => 'token = :token',
-                                    'params'    => array( ':token'=> $sToken ),
-                                )
-
-                            );
-
-            if( count($oResponses) > 0 ){
-                foreach($oResponses as $oResponse)
-                    array_push($aResponses,$oResponse->attributes);
-            }
-        }
-
-        return $aResponses;
-    }
-
-
-    /**
-     * Retreive all the previous answers from a given survey (can be a different survey)
-     * To use it:
-     *  {% set aResponses = getAllAnswers(aSurveyInfo.sid) %}
-     *  {{ dump(aResponses) }}
-     *
-     *  If you want to show it after completion, the you must turn on public statistics
-     */
-    public static function getAllAnswers( $iSurveyID )
-    {
-        $aResponses = array();
-        $oResponses = SurveyDynamic::model($iSurveyID)->findAll();
 
         if( count($oResponses) > 0 ){
             foreach($oResponses as $oResponse)
@@ -609,7 +670,5 @@ class LS_Twig_Extension extends Twig_Extension
         }
 
         return $aResponses;
-
     }
-
 }

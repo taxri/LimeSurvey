@@ -141,14 +141,16 @@ foreach ($tokendata as $Key => $Value) {
 
             </div>
 
-            <!-- First name, Last name -->
-            
+            <!-- First name, Last name -->            
             <div class="form-group">
                 <label class=" control-label" for='firstname'>
                 <?php eT("First name:"); ?>
                 </label>
                 <div class="">
-                <input class='form-control' type='text' size='30' id='firstname' name='firstname' value="<?php if (isset($firstname)) {echo $firstname; } ?>" />
+                    <?=TbHtml::textField('firstname', $firstname, [
+                        'class' => 'form-control',
+                        'size' => '30',
+                    ]);?>
                 </div>
             </div>
             <div class="form-group">
@@ -156,26 +158,31 @@ foreach ($tokendata as $Key => $Value) {
                 <?php eT("Last name:"); ?>
                 </label>
                 <div class="">
-                <input class='form-control' type='text' size='30' id='lastname' name='lastname' value="<?php if (isset($lastname)) {echo $lastname; } ?>" />
+                    <?=TbHtml::textField('lastname', $lastname, [
+                        'class' => 'form-control',
+                        'size' => '30',
+                    ]);?>
                 </div>
-
             </div>
 
 
             <!-- Token, language -->
             <div class="form-group">
                 <label class=" control-label" for='token'>
-                <?php eT("Token:"); ?>
+                <?php eT("Access code:"); ?>
                 </label>
                 <div class="">
-                <input class='form-control' type='text' maxlength="<?php echo $iTokenLength; ?>" size='20' name='token' id='token' value="<?php if (isset($token)) {echo $token; } ?>" />
+                <?=TbHtml::textField('token',(isset($token) ? $token : ""), [
+                    'class' => 'form-control',
+                    'size' => '20',
+                    'maxlength' => $iTokenLength
+                ]);?>
                 <?php if ($token_subaction == "addnew"): ?>
-                    <span id="helpBlock" class="help-block"><?php eT("You can leave this blank, and automatically generate tokens using 'Generate Tokens'"); ?></span>
+                    <span id="helpBlock" class="help-block"><?php eT("You can leave this blank, and automatically generate access codes using 'Generate access codes'"); ?></span>
                 <?php endif; ?>
                 </div>
-            <div class="form-group">
-
             </div>
+            <div class="form-group">
                 <label class=" control-label" for='language'>
                 <?php eT("Language:"); ?>
                 </label>
@@ -192,7 +199,11 @@ foreach ($tokendata as $Key => $Value) {
                 <?php eT("Email:"); ?>
             </label>
             <div class="">
-                <input class='form-control' type='text' maxlength='320' size='50' id='email' name='email' value="<?php if (isset($email)) {echo $email; } ?>" />
+                <?=TbHtml::textField('email', $email, [
+                        'class' => 'form-control',
+                        'size' => '50',
+                        'maxlength' => '320',
+                ]);?>
             </div>
             </div>
 
@@ -202,7 +213,12 @@ foreach ($tokendata as $Key => $Value) {
                 <?php eT("Email status:"); ?>
             </label>
             <div class="">
-                <input class='form-control' type='text' maxlength='320' size='50' id='emailstatus' name='emailstatus' placeholder='OK' value="<?php if (isset($emailstatus)) {echo $emailstatus; } else {echo " OK "; }?>" />
+                <?=TbHtml::textField('emailstatus', $emailstatus, [
+                        'class' => 'form-control',
+                        'size' => '50',
+                        'maxlength' => '320',
+                        'placeholder' => 'OK'
+                ]);?>
             </div>
             </div>
 
@@ -271,13 +287,13 @@ foreach ($tokendata as $Key => $Value) {
                     <div id="sent-date-container" data-parent="#sent-switch" class="selector__date-container_hidden date-container" <?php if (!$bSwitchValue){ echo "style='display:none;'"; }?> >
                         <!-- Sent Date -->
                         <div id="sent-date_datetimepicker" class="input-group date">
-                        <input class="YesNoDatePicker form-control" id="sent-date" type="text" value="<?php echo isset($sent) ? $sent : ''?>" name="sent-date" data-date-format="<?php echo $dateformatdetails['jsdate']; ?> HH:mm">
+                        <input class="YesNoDatePicker form-control" id="sent-date" type="text" value="<?php echo isset($sent) && $sent!='N' ? convertToGlobalSettingFormat($sent,true) : ''?>" name="sent-date" data-date-format="<?php echo $dateformatdetails['jsdate']; ?> HH:mm">
                         <span class="input-group-addon"><span class="fa fa-calendar"></span></span>
                         </div>
                     </div>
                 </div>
                 </div>
-                <input class='form-control hidden YesNoDateHidden' type='text' size='20' id='sent' name='sent' value="<?php if (isset($sent)) {echo $sent; } else {echo " N "; }?>" />
+                <input class='form-control hidden YesNoDateHidden' type='text' size='20' id='sent' name='sent' value="<?php if (isset($sent) && $sent!='N') {echo convertToGlobalSettingFormat($sent,true); } else {echo " N "; }?>" />
             </div>
             </div>
             <div class="form-group">
@@ -317,13 +333,13 @@ foreach ($tokendata as $Key => $Value) {
                     <div id="remind-date-container" data-parent="#remind-switch" class="selector__date-container_hidden date-container" <?php if (!$bRemindSwitchValue){ echo "style='display:none;'"; }?> >
 
                         <div id="remind-date_datetimepicker" class="input-group date">
-                        <input class="YesNoDatePicker form-control" id="remind-date" type="text" value="<?php echo isset($remindersent) ? $remindersent : ''?>" name="remind-date" data-date-format="<?php echo $dateformatdetails['jsdate']; ?> HH:mm">
+                        <input class="YesNoDatePicker form-control" id="remind-date" type="text" value="<?php echo isset($remindersent) && $sent!='N' ? convertToGlobalSettingFormat($remindersent,true) : ''?>" name="remind-date" data-date-format="<?php echo $dateformatdetails['jsdate']; ?> HH:mm">
                         <span class="input-group-addon"><span class="fa fa-calendar"></span></span>
                         </div>
                     </div>
                 </div>
                 </div>
-                <input class='form-control hidden YesNoDateHidden' type='text' size='20' id='remindersent' name='remindersent' value="<?php if (isset($remindersent)) {echo $remindersent; } else {echo " N "; }?>" />
+                <input class='form-control hidden YesNoDateHidden' type='text' size='20' id='remindersent' name='remindersent' value="<?php if (isset($remindersent) && $sent!='N') {echo convertToGlobalSettingFormat($remindersent,true); } else {echo " N "; }?>" />
             </div>
                 
             <!-- Reminder count, Uses left -->
@@ -414,12 +430,12 @@ foreach ($tokendata as $Key => $Value) {
     switch ($token_subaction)
     {
         case "edit":?>
-          <input type='submit' class="hidden" value='<?php eT("Update token entry"); ?>' />
+          <input type='submit' class="hidden" value='<?php eT("Update participant entry"); ?>' />
           <input type='hidden' name='subaction' value='updatetoken' />
           <input type='hidden' name='tid' value='<?php echo $tokenid; ?>' />
         <?php break;
         case "addnew": ?>
-          <input type='submit' class='hidden' value='<?php eT("Add token entry"); ?>' />
+          <input type='submit' class='hidden' value='<?php eT("Add participant entry"); ?>' />
           <input type='hidden' name='subaction' value='inserttoken' />
         <?php break;
     } ?>

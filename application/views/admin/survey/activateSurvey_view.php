@@ -1,3 +1,7 @@
+<?php
+/** @var Survey $oSurvey */
+
+?>
 <?php if ((isset($failedcheck) && $failedcheck) || (isset($failedgroupcheck) && $failedgroupcheck)): ?>
 <div class='side-body <?php echo getSideBodyClass(false); ?>'>
     <div class="row welcome survey-action">
@@ -32,11 +36,46 @@
                 </p>
 
                 <p>
+                    <button class="btn btn-default" id="ajaxAllConsistency"><?=gT("Resolve all issues")?></button>
                     <a class="btn btn-default" href="<?php echo $this->createUrl("admin/survey/sa/view/surveyid/$surveyid"); ?>" role="button">
                         <?php eT("Return to survey"); ?>
                     </a>
                 </p>
             </div>
+
+        <?php 
+        App()->getClientScript()->registerScript('FixSolvableErrors', "
+        $('#ajaxAllConsistency').on('click', function(e){
+            e.preventDefault();
+            var items = $('.selector__fixConsistencyProblem').map(function(i,item){
+                return function(){
+                    return $.ajax({
+                        url: $(item).attr('href'),
+                        beforeSend: function(){
+                            $(item).prop('disabled',true).append('<i class=\"fa fa-spinner fa-pulse\"></i>');
+                        },
+                        complete: function(jqXHR, status){
+                            if(status == 'success')
+                                $(item).remove();
+                            else 
+                                console.log(jqXHR);
+                        }
+                    });
+                };
+            });
+            var runIteration = function (arrayOfLinks, iterator){
+                iterator = iterator || 0;
+                if(iterator < arrayOfLinks.length){
+                    arrayOfLinks[iterator]().then(function(){
+                        iterator++;
+                        runIteration(arrayOfLinks, iterator);
+                    });
+                }
+            };
+            runIteration(items);
+        });
+        ", LSYii_ClientScript::POS_POSTSCRIPT);
+        ?>
 </div>
 <?php else:?>
 
@@ -146,15 +185,18 @@
                 </div>
             </div>
 
-            <div class="col-sm-4">
+            <div class="col-sm-4 ">
                 <div class='form-group'>
-                    <label class='control-label col-sm-7' for='refurl'><?php eT("Save referrer URL?"); ?></label>
+                    <label for='ipaddr' class='control-label col-sm-7'>
+                        <?php eT("Anonymize IP address?"); ?>
+                    </label>
+
                     <div class='col-sm-5'>
-                        <select class='form-control' name='refurl' id='refurl'>
-                            <option value='Y' <?php if ($aSurveysettings['refurl'] == "Y"){echo "selected='selected'";} ?>>
+                        <select name='ipanonymize' id='ipanonymize' class='form-control'>
+                            <option value='Y' <?php if ($aSurveysettings['ipanonymize'] == "Y") {echo "selected='selected'";} ?>>
                                 <?php eT("Yes"); ?>
                             </option>
-                            <option value='N' <?php if ($aSurveysettings['refurl'] != "Y") {echo "selected='selected'";} ?>>
+                            <option value='N' <?php if ($aSurveysettings['ipanonymize'] != "Y") { echo "selected='selected'";} ?>>
                                 <?php eT("No"); ?>
                             </option>
                         </select>
@@ -180,9 +222,34 @@
             </div>
         </div>
 
+    <div class="col-sm-4">
+        <div class='form-group'>
+            <label class='control-label col-sm-7' for='refurl'><?php eT("Save referrer URL?"); ?></label>
+            <div class='col-sm-5'>
+                <select class='form-control' name='refurl' id='refurl'>
+                    <option value='Y' <?php if ($aSurveysettings['refurl'] == "Y"){echo "selected='selected'";} ?>>
+                        <?php eT("Yes"); ?>
+                    </option>
+                    <option value='N' <?php if ($aSurveysettings['refurl'] != "Y") {echo "selected='selected'";} ?>>
+                        <?php eT("No"); ?>
+                    </option>
+                </select>
+            </div>
+        </div>
+    </div>
+
         <p class='col-sm-7 col-sm-offset-2'>
             <?php eT("Please note that once responses have collected with this survey and you want to add or remove groups/questions or change one of the settings above, you will need to deactivate this survey, which will move all data that has already been entered into a separate archived table."); ?><br /><br />
         </p>
+        <?php if($oSurvey->getIsDateExpired()):?>
+        <div class="row">
+            <div class='col-sm-7 col-sm-offset-2'>
+
+                <div class="alert alert-warning"><?php eT('Note: This survey has a past expiration date configured and is currently not available to participants. Please remember to update/remove the expiration date in the survey settings after activation.')?><div>
+            </div>
+
+        </div>
+        <?php endif;?>
 
         <div class='col-sm-6 col-sm-offset-4'>
             <input type='hidden' name='ok' value='Y' />

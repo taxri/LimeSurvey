@@ -91,8 +91,9 @@ class TutorialsController extends Survey_Common_Action
             }
         }
 
-        $this->render(
-            'create',
+        $this->_renderWrappedTemplate(
+            null,
+            array('tutorials/create'),
             array(
                 'model'=>$model,
             )
@@ -118,8 +119,9 @@ class TutorialsController extends Survey_Common_Action
             }
         }
 
-        $this->render(
-            'update',
+        $this->_renderWrappedTemplate(
+            null,
+            array('tutorials/update'),
             array(
                 'model'=>$model,
             )
@@ -143,7 +145,7 @@ class TutorialsController extends Survey_Common_Action
 
     public function triggerfinished($tid)
     {
-        $oTutorial = Tutorial::model()->find($tid);
+        $oTutorial = Tutorial::model()->find('name=:name',array(':name'=>$tid));
         $oTutorial->setFinished(App()->user->id);
         echo '{"success": true}';
     }

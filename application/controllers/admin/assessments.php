@@ -35,7 +35,7 @@ class Assessments extends Survey_Common_Action
     public function index($iSurveyID)
     {
         $iSurveyID = sanitize_int($iSurveyID);
-        $sAction = Yii::app()->request->getParam('action');
+        $sAction = CHtml::encode(Yii::app()->request->getParam('action'));
         if (Permission::model()->hasSurveyPermission($iSurveyID, 'assessments', 'read')) {
             $languages = Survey::model()->findByPk($iSurveyID)->additionalLanguages;
             $surveyLanguage = Survey::model()->findByPk($iSurveyID)->language;
@@ -104,18 +104,19 @@ class Assessments extends Survey_Common_Action
     private function prepareDataArray(&$aData, $collectEdit = false)
     {
         $iSurveyID = $aData['surveyid'];
+        $oSurvey = $aData['survey'];
         
         $aHeadings = array(gT("Scope"), gT("Question group"), gT("Minimum"), gT("Maximum"));
         $aData['headings'] = $aHeadings;
-        $oSurvey = Survey::model()->findByPk($iSurveyID);
         $oAssessments = Assessment::model();
         $oAssessments->sid = $iSurveyID;
-        $this->_collectGroupData($iSurveyID, $aData);
 
+        $aData['groups'] = $this->_collectGroupData($oSurvey, $aData);
         $this->setSearchParams($oAssessments);
-        
         $aData['model'] = $oAssessments;
-        $aData['pageSizeAsessements'] = Yii::app()->user->getState('pageSizeAsessements', Yii::app()->params['defaultPageSize']);
+        if (isset($_POST['pageSize'])) {
+            Yii::app()->user->setState('pageSize', Yii::app()->request->getParam('pageSize'));
+        }
         $aData['actiontitle'] = gT("Add");
         $aData['actionvalue'] = "assessmentadd";
         $aData['editId'] = '';
@@ -210,6 +211,7 @@ class Assessments extends Survey_Common_Action
         $oSurvey = Survey::model()->findByPk($iSurveyID);
 
         $aData = [];
+        $aData['survey'] = $oSurvey;
         $aData['surveyid'] = $iSurveyID;
         $aData['action'] = $action;
         
@@ -246,20 +248,32 @@ class Assessments extends Survey_Common_Action
     }
 
     /**
-     * @param int $iSurveyID
+     * return the groups of the current survey
+     * @param Survey $oSurvey
      * @param array $aData
-     * @return array
+     * @return array $aGroups groupnames in array
      */
-    private function _collectGroupData($iSurveyID, &$aData = array())
+    private function _collectGroupData($oSurvey, &$aData = array())
     {
-        $aData['groups'] = [];
-        $groups = QuestionGroup::model()->findAllByAttributes(array('sid' => $iSurveyID));
+        $aGroups = [];
+        $db = Yii::app()->db;
+        $quotedQGL10ns = $db->quoteTableName('questiongroupl10ns');
+        $quotedLanguage = $db->quoteColumnName('language');
+
+        $groups = QuestionGroup::model()->with(
+            [
+                'questiongroupl10ns' => [
+                    'condition' => $quotedQGL10ns . '.' . $quotedLanguage . ' = :language',
+                    'params' => array(':language' => $oSurvey->language)
+                ]
+            ]
+        )->findAllByAttributes(array('sid' => $oSurvey->sid));
         foreach ($groups as $group) {
             $groupId = $group->attributes['gid'];
-            $groupName = $group->attributes['group_name'];
-            $aData['groups'][$groupId] = $groupName;
+            $groupName = $group->getGroupNameI10N($oSurvey->language);
+            $aGroups[$groupId] = $groupName;
         }
-        return $aData;
+        return $aGroups;
     }
 
     /**

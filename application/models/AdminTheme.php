@@ -141,9 +141,8 @@ class AdminTheme extends CFormModel
             Yii::app()->getClientScript()->registerMetaTag('width=device-width, initial-scale=1.0', 'viewport'); // See: https://github.com/LimeSurvey/LimeSurvey/blob/master/application/extensions/bootstrap/components/TbApi.php#l108-l115
             App()->bootstrap->registerTooltipAndPopover(); // See : https://github.com/LimeSurvey/LimeSurvey/blob/master/application/extensions/bootstrap/components/TbApi.php#l153-l160
             App()->getClientScript()->registerScript('coreuser', '
-           LS.globalUserId = "'.Yii::app()->user->id.'";', CClientScript::POS_HEAD);
+           window.LS = window.LS || {}; window.LS.globalUserId = "'.Yii::app()->user->id.'";', CClientScript::POS_HEAD);
             App()->getClientScript()->registerPackage('jquery'); // jquery
-            App()->getClientScript()->registerPackage('jqueryui'); // jqueryui
             App()->getClientScript()->registerPackage('js-cookie'); // js-cookie
             App()->getClientScript()->registerPackage('fontawesome'); // fontawesome
             App()->getClientScript()->registerPackage('bootstrap-switch');
@@ -151,12 +150,9 @@ class AdminTheme extends CFormModel
             App()->getClientScript()->registerPackage('bootstrap-datetimepicker');
             App()->getClientScript()->registerPackage('font-roboto');
             App()->getClientScript()->registerPackage('font-icomoon');
-            App()->getClientScript()->registerPackage('adminbasicjs');
             App()->getClientScript()->registerPackage('adminbasics'); // Combined scripts and style
-            App()->getClientScript()->registerPackage('adminpanel'); // The new admin panel
+            App()->getClientScript()->registerPackage('adminsidepanel'); // The new admin panel
             App()->getClientScript()->registerPackage('lstutorial'); // Tutorial scripts
-            App()->getClientScript()->registerPackage('ckeditor'); //
-            App()->getClientScript()->registerPackage('ckeditoradditions'); // CKEDITOR in a global sope
         }
 
         $aCssFiles = array();
@@ -186,11 +182,13 @@ class AdminTheme extends CFormModel
             }
 
             App()->getClientScript()->registerPackage('font-roboto');
-            App()->getClientScript()->registerPackage('adminbasicjs');
-            App()->getClientScript()->unregisterPackage('adminbasics');
             App()->getClientScript()->registerPackage('adminbasicsrtl');
+            App()->getClientScript()->registerPackage('adminsidepanelrtl');
 
         } else {
+            
+            App()->getClientScript()->registerPackage('adminbasicsltr');
+            App()->getClientScript()->registerPackage('adminsidepanelltr');
             // Non-RTL style
             if (is_array($files->css->filename)) {
                 foreach ($files->css->filename as $cssfile) {
@@ -358,8 +356,7 @@ class AdminTheme extends CFormModel
     /**
      * Use to check if admin theme is standard
      *
-     * @var string $sAdminThemeName     the name of the template
-     * @param string $sAdminThemeName
+     * @param string $sAdminThemeName the name of the template
      * @return boolean                  return true if it's a standard template, else false
      */
     private function isStandardAdminTheme($sAdminThemeName)

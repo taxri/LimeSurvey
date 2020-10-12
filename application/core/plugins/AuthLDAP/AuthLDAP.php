@@ -290,7 +290,7 @@ class AuthLDAP extends LimeSurvey\PluginManager\AuthPluginBase
         } else {
             $parentID = 1;
         }
-        $iNewUID = User::model()->insertUser($new_user, $new_pass, $new_full_name, $parentID, $new_email);
+        $iNewUID = User::insertUser($new_user, $new_pass, $new_full_name, $parentID, $new_email);
         if (!$iNewUID) {
             $oEvent->set('errorCode', self::ERROR_ALREADY_EXISTING_USER);
             $oEvent->set('errorMessageTitle', '');
@@ -448,7 +448,7 @@ class AuthLDAP extends LimeSurvey\PluginManager\AuthPluginBase
             if (($user->uid == 1 && !$this->get('allowInitialUser'))
                 || !Permission::model()->hasGlobalPermission('auth_ldap', 'read', $user->uid)
             ) {
-                $this->setAuthFailure(self::ERROR_AUTH_METHOD_INVALID, gT('LDAP authentication method is not allowed for this user'));
+                $this->setAuthFailure(self::ERROR_AUTH_METHOD_INVALID);  // Error shown : user or password invalid - swe how a generic message to prevent disclosure if user exists or not
                 return;
             }
         }
@@ -504,6 +504,7 @@ class AuthLDAP extends LimeSurvey\PluginManager\AuthPluginBase
                 $usersearchfilter = "($searchuserattribute=$username)";
             }
             // Search for the user
+            $userentry = false;
             foreach (explode(";", $usersearchbase) as $usb) {
                 $dnsearchres = ldap_search($ldapconn, $usb, $usersearchfilter, array($searchuserattribute));
                 $rescount = ldap_count_entries($ldapconn, $dnsearchres);

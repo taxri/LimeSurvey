@@ -214,7 +214,7 @@ class surveypermission extends Survey_Common_Action
                 <select id='ugidselect' name='ugid'  class='form-control'>\n"
             . getSurveyUserGroupList('htmloptions', $iSurveyID)
             . "</select></div>\n"
-            . "<input style='width: 15em;' class='btn btn-default'  type='submit' value='".gT("Add user group")."' onclick=\"if (document.getElementById('ugidselect').value == -1) { alert('".gT("Please select a user group first", "js")."'); return false;}\" />"
+            . "<input style='width: 15em;' class='btn btn-default'  type='submit' value='".gT("Add group users")."' onclick=\"if (document.getElementById('ugidselect').value == -1) { alert('".gT("Please select a user group first", "js")."'); return false;}\" />"
             . "<input type='hidden' name='action' value='addusergroupsurveysecurity' />\n"
             . "</li></ul></form>";
         }
@@ -362,7 +362,14 @@ class surveypermission extends Survey_Common_Action
 
                 if ($postuserid > 0) {
 
-                    $isrresult = Permission::model()->insertSomeRecords(array('entity_id' => $surveyid, 'entity'=>'survey', 'uid' => $postuserid, 'permission' => 'survey', 'read_p' => 1));
+                    try {
+                        $isrresult = Permission::model()->insertSomeRecords(array('entity_id' => $surveyid, 'entity'=>'survey', 'uid' => $postuserid, 'permission' => 'survey', 'read_p' => 1));
+                    } catch(CDbException $e) {
+                        // This database error happens usually if user already exists
+                        $isrresult=false;                            
+                    }
+
+
 
                     if ($isrresult) {
 
@@ -380,14 +387,14 @@ class surveypermission extends Survey_Common_Action
                         $addsummary .= "<div class=\"jumbotron message-box message-box-error\">\n";
                         $addsummary .= "<h2>".gT("Add user")."</h2>\n";
                         $addsummary .= "<p class='lead'>".gT("Failed to add user.")."</p>\n"
-                        . "<p>".gT("Username already exists.")."</p>";
+                        . "<p>".gT("User already has permissions for this survey.")."</p>";
                         $addsummary .= "<p><input class='btn btn-default'  type=\"submit\" onclick=\"window.open('".$this->getController()->createUrl('admin/surveypermission/sa/view/surveyid/'.$surveyid)."', '_top')\" value=\"".gT("Continue")."\"/></p>\n";
                     }
                 } else {
                     $addsummary .= "<div class=\"jumbotron message-box message-box-error\">\n";
                     $addsummary .= "<h2>".gT("Add user")."</h2>\n";
                     $addsummary .= "<p class='lead'>".gT("Failed to add user.")."</p>\n"
-                    . "<p>".gT("No Username selected.")."</p>\n";
+                    . "<p>".gT("No username selected.")."</p>\n";
                     $addsummary .= "<p><input class='btn btn-default'  type=\"submit\" onclick=\"window.open('".$this->getController()->createUrl('admin/surveypermission/sa/view/surveyid/'.$surveyid)."', '_top')\" value=\"".gT("Continue")."\"/></p>\n";
                 }
             } else {
@@ -461,7 +468,7 @@ class surveypermission extends Survey_Common_Action
 
             $usersummary .= ""
             . "<tr><th></th><th>".gT("Permission")."</th>\n"
-            . "<th><input type='button' id='btnToggleAdvanced' value='<<' class='btn btn-default' /></th>\n"
+            . "<th><input type=\"checkbox\"  class=\"markall\" name='markall' /><input type='button' id='btnToggleAdvanced' value='<<' class='btn btn-default' /></th>\n"
             . "<th class='extended'>".gT("Create")."</th>\n"
             . "<th class='extended'>".gT("View/read")."</th>\n"
             . "<th class='extended'>".gT("Update")."</th>\n"
@@ -518,6 +525,7 @@ class surveypermission extends Survey_Common_Action
         }
 
         $aData['sidemenu']['state'] = false;
+        $aData['topBar']['showSaveButton'] = true;
         $aData['title_bar']['title'] = $oSurvey->currentLanguageSettings->surveyls_title." (".gT("ID").":".$surveyid.")";
         $aData['surveybar']['savebutton']['form'] = 'frmeditgroup';
         $aData['surveybar']['saveandclosebutton']['form'] = 'frmeditgroup';

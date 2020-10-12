@@ -15,8 +15,10 @@ namespace ls\tests;
 
 use Facebook\WebDriver\WebDriver;
 use Facebook\WebDriver\WebDriverBy;
+use Facebook\WebDriver\WebDriverElement;
 use Facebook\WebDriver\WebDriverExpectedCondition;
 use Facebook\WebDriver\Exception\TimeOutException;
+use Facebook\WebDriver\Exception\NoSuchElementException;
 
 /**
  * Class TestBaseClassWeb
@@ -102,7 +104,12 @@ class TestBaseClassWeb extends TestBaseClass
     {
         $urlMan = \Yii::app()->urlManager;
         $urlMan->setBaseUrl('http://' . self::$domain . '/index.php');
-        $url = $urlMan->createUrl('admin/' . $view['route']);
+        //this is for testing new controllers (REFACTORING Controllers)
+        if(isset($view['noAdminInFront']) && $view['noAdminInFront']){
+            $url = $urlMan->createUrl($view['route']);
+        }else {
+            $url = $urlMan->createUrl('admin/' . $view['route']);
+        }
         return $url;
     }
 
@@ -162,8 +169,10 @@ class TestBaseClassWeb extends TestBaseClass
 
         $submit = self::$webDriver->findElement(WebDriverBy::name('login_submit'));
         $submit->click();
+        /*
         try {
-            self::$webDriver->wait(2)->until(
+            sleep(1);
+            self::$webDriver->wait(5)->until(
                 WebDriverExpectedCondition::presenceOfAllElementsLocatedBy(
                     WebDriverBy::id('welcome-jumbotron')
                 )
@@ -178,6 +187,7 @@ class TestBaseClassWeb extends TestBaseClass
                 'Found no welcome jumbotron after login.'
             );
         }
+         */
     }
 
     /**
@@ -190,5 +200,24 @@ class TestBaseClassWeb extends TestBaseClass
         $dbo
             ->createCommand('DELETE FROM {{failed_login_attempts}}')
             ->execute();
+    }
+
+    protected function waitForElementShim(&$driver, $CSSelementSelectorString, $timeout = 10) {
+        $element = false;
+        $timeoutCounter = 0;
+        do {
+            try{
+                $element = $driver->findElement(WebDriverBy::cssSelector($CSSelementSelectorString));
+            } catch(NoSuchElementException $exception) {
+                $timeoutCounter++;
+                sleep(1);
+            }
+        } while($element === false && $timeoutCounter < $timeout);
+
+        if($element === false) {
+            throw new NoSuchElementException("Element not in scope after ".$timeout." seconds");
+        }
+
+        return $element;
     }
 }

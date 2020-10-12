@@ -1,7 +1,6 @@
 <?php
 /**
  * This file render the list of label sets
- * It use the Label Sets model getAllRecords method to build the data provider.
  *
  * @var $this AdminController
  * @var LabelSet $model the LabelSets model
@@ -66,8 +65,8 @@ echo viewHelper::getViewTestTag('viewLabelSets');
                     ),
 
                     'htmlOptions'=>array('style'=>'cursor: pointer;', 'class'=>'hoverAction'),
-                    'selectionChanged'=>"function(id){window.location='" . Yii::app()->urlManager->createUrl('admin/labels/sa/view/lid' ) . '/' . "' + $.fn.yiiGridView.getSelection(id.split(',', 1));}",
-                    'ajaxUpdate' => true,
+                    'selectionChanged'=>"function(id){window.location='" . Yii::app()->urlManager->createUrl('admin/labels/sa/multieditor/lid' ) . '/' . "' + $.fn.yiiGridView.getSelection(id.split(',', 1));}",
+                    'ajaxUpdate' => 'labelsets-grid',
                    ));
             ?>
         </div>

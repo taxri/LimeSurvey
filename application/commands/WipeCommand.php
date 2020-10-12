@@ -24,17 +24,26 @@ class WipeCommand extends CConsoleCommand
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{answers}}";
             Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{answer_l10ns}}";
+            Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{conditions}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{defaultvalues}}";
             Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{defaultvalue_l10ns}}";
+            Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{labels}}";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{label_l10ns}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{labelsets}}";
             Yii::app()->db->createCommand($actquery)->execute();
-            $actquery = "truncate table {{groups}}";
+            $quotedGroups = Yii::app()->db->quoteTableName('{{groups}}');
+            $actquery = "truncate table $quotedGroups";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{questions}}";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{question_l10ns}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{surveys}}";
             Yii::app()->db->createCommand($actquery)->execute();
@@ -43,6 +52,8 @@ class WipeCommand extends CConsoleCommand
             $actquery = "truncate table {{surveys_languagesettings}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "delete from {{permissions}} where uid<>1";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{permissiontemplates}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{quota}}";
             Yii::app()->db->createCommand($actquery)->execute();
@@ -97,10 +108,10 @@ class WipeCommand extends CConsoleCommand
             $actquery = "update {{settings_global}} set stg_value='Sea_Green' where stg_name='admintheme'";
             Yii::app()->db->createCommand($actquery)->execute();
 
-            foreach ($templateData = LsDefaultDataSets::getTemplatesData() as $template) {
+            foreach (LsDefaultDataSets::getTemplatesData() as $template) {
                 Yii::app()->db->createCommand()->insert("{{templates}}", $template);
             }
-            foreach ($templateConfigurationData = LsDefaultDataSets::getTemplateConfigurationData() as $templateConfiguration) {
+            foreach (LsDefaultDataSets::getTemplateConfigurationData() as $templateConfiguration) {
                 Yii::app()->db->createCommand()->insert("{{template_configuration}}", $templateConfiguration);
             }
 

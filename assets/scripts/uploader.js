@@ -90,7 +90,6 @@ function doFileUpload()
 
     // The upload button
     var button = $('#button1'), interval;
-
     new AjaxUpload(button, {
         action: uploadurl + '/sid/' + surveyid + '/preview/' + questgrppreview + '/fieldname/' + fieldname + '/',
         name: 'uploadfile',
@@ -103,7 +102,6 @@ function doFileUpload()
             }, csrfData
         ),
         onSubmit: function (file, ext) {
-
             var maxfiles = parseInt($('#' + fieldname + '_maxfiles').val());
             var filecount = parseInt($('#' + fieldname + '_filecount').val());
             var allowed_filetypes = $('#' + fieldname + '_allowed_filetypes').val().split(",");
@@ -164,8 +162,13 @@ function doFileUpload()
 
             // Once the file has been uploaded via AJAX,
             // the preview is appended to the list of files
-            var metadata = eval('(' + response + ')');
-
+            try{
+                var metadata = jQuery.parseJSON(response);
+            } catch(e) {
+                /* Suppose we get an HTML error ? Replace whole HTML (without head) */
+                $('body').html(response);
+                return;
+            }
             var count = parseInt($('#' + fieldname + '_licount').val());
             count++;
             $('#' + fieldname + '_licount').val(count);
@@ -220,18 +223,19 @@ function doFileUpload()
                 var maxfiles = parseInt($('#' + fieldname + '_maxfiles').val());
                 $('#' + fieldname + '_filecount').val(filecount);
 
-                if (filecount < minfiles)
-                    $('#uploadstatus').html(uploadLang.errorNeedMore.replace('%s', (minfiles - filecount)));
-                else if (filecount < maxfiles)
-                    $('#uploadstatus').html(uploadLang.errorMoreAllowed.replace('%s', (maxfiles - filecount)));
-                else
-                    $('#uploadstatus').html(uploadLang.errorMaxReached);
+                if (filecount < minfiles) {
+                    $('#uploadstatus').html(uploadLang.errorNeedMore.replace('%s', (minfiles - filecount))).removeClass('hidden');
+                } else if (filecount < maxfiles) {
+                    $('#uploadstatus').html(uploadLang.errorMoreAllowed.replace('%s', (maxfiles - filecount))).removeClass('hidden');
+                } else {
+                    $('#uploadstatus').html(uploadLang.errorMaxReached).removeClass('hidden');
+                }
                 fixParentHeigth(fieldname);
-                if (filecount >= maxfiles)
-                    $('#notice').html('<p class="alert alert-success"><span class="fa fa-check"></span>&nbsp;' + uploadLang.errorTooMuch + '</p>');
+                if (filecount >= maxfiles) {
+                    //$('#notice').html('<p class="alert alert-success"><span class="fa fa-check"></span>&nbsp;' + uploadLang.errorTooMuch + '</p>');
+                }
                 fixParentHeigth(fieldname);
-            } else
-            {
+            } else {
                 $('#notice').html('<p class="alert alert-danger"><span class="fa fa-exclamation-circle"></span>&nbsp;' + metadata.msg + '</p>');
                 fixParentHeigth(fieldname);
             }

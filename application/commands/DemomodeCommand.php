@@ -31,14 +31,18 @@ class DemomodeCommand extends CConsoleCommand
 
     }
 
-    private function _resetDatabase() {
+    private function _resetDatabase()
+    {
         Yii::import('application.helpers.common_helper', true);
         Yii::import('application.helpers.database_helper', true);
 
         //Truncate most of the tables 
-        $truncatableTables = ['{{assessments}}', '{{answers}}','{{boxes}}', '{{conditions}}', '{{defaultvalues}}', '{{labels}}', '{{labelsets}}', '{{groups}}', '{{questions}}', '{{surveys}}', '{{surveys_languagesettings}}', '{{quota}}', '{{quota_members}}', '{{quota_languagesettings}}', '{{question_attributes}}', '{{quota}}', '{{quota_members}}', '{{quota_languagesettings}}', '{{question_attributes}}', '{{user_groups}}', '{{user_in_groups}}', '{{templates}}', '{{template_configuration}}', '{{participants}}', '{{participant_attribute_names}}', '{{participant_attribute_names_lang}}', '{{participant_attribute_values}}', '{{participant_shares}}', '{{settings_user}}', '{{failed_login_attempts}}', '{{saved_control}}', '{{survey_links}}'];
+        $truncatableTables = [
+            '{{assessments}}', '{{answers}}', '{{answer_l10ns}}', '{{boxes}}', '{{conditions}}', '{{defaultvalues}}', '{{defaultvalue_l10ns}}', '{{labels}}', '{{label_l10ns}}', '{{labelsets}}', '{{groups}}', '{{questions}}', '{{question_l10ns}}', '{{surveys}}', '{{surveys_languagesettings}}', '{{quota}}', '{{quota_members}}', '{{quota_languagesettings}}', '{{question_attributes}}', '{{quota}}', '{{quota_members}}', '{{quota_languagesettings}}', '{{question_attributes}}', '{{user_groups}}', '{{user_in_groups}}', '{{templates}}', '{{template_configuration}}', '{{participants}}', '{{participant_attribute_names}}', '{{participant_attribute_names_lang}}', '{{participant_attribute_values}}', '{{participant_shares}}', '{{settings_user}}', '{{failed_login_attempts}}', '{{saved_control}}', '{{survey_links}}'
+        ];
         foreach ($truncatableTables as $table) {
-            $actquery = "truncate table ".$table;
+            $quotedTable = Yii::app()->db->quoteTableName($table);
+            $actquery = "truncate table ".$quotedTable;
             Yii::app()->db->createCommand($actquery)->execute();
         }
         //Now delete the basics in all other tables 
@@ -95,34 +99,43 @@ class DemomodeCommand extends CConsoleCommand
         }
     }
 
-    private function _resetFiles() {
+    private function _resetFiles()
+    {
         
         $sBaseUploadDir = dirname(dirname(dirname(__FILE__))).DIRECTORY_SEPARATOR.'upload';
 
         SureRemoveDir($sBaseUploadDir.DIRECTORY_SEPARATOR.'surveys', false, ['index.html']);
+        SureRemoveDir($sBaseUploadDir.DIRECTORY_SEPARATOR.'global', false, ['index.html']);
         SureRemoveDir($sBaseUploadDir.DIRECTORY_SEPARATOR.'templates', false);
         SureRemoveDir($sBaseUploadDir.DIRECTORY_SEPARATOR.'themes'.DIRECTORY_SEPARATOR.'survey', false, ['index.html']);
         SureRemoveDir($sBaseUploadDir.DIRECTORY_SEPARATOR.'themes'.DIRECTORY_SEPARATOR.'question', false);
     }
 
-    private function _createDemo() {
+    private function _createDemo()
+    {
         Yii::app()->loadHelper('admin/import');
+        require_once(dirname(dirname(dirname(__FILE__))).'/application/helpers/replacements_helper.php');
         require_once(dirname(dirname(dirname(__FILE__))).'/application/helpers/expressions/em_manager_helper.php');
+        require_once(dirname(dirname(dirname(__FILE__))).'/application/helpers/expressions/em_core_helper.php');
+        require_once(dirname(dirname(dirname(__FILE__))).'/application/helpers/admin/activate_helper.php');
         
         Yii::app()->session->add('loginID', 1);
         $documentationSurveyPath = dirname(dirname(dirname(__FILE__))).DIRECTORY_SEPARATOR.'docs'.DIRECTORY_SEPARATOR.'demosurveys'.DIRECTORY_SEPARATOR;
         $aSamplesurveys = scandir($documentationSurveyPath);
         $surveysToActivate = [];
         foreach ($aSamplesurveys as $sSamplesurvey) {
-            $result = NULL;
-            $result = XMLImportSurvey($documentationSurveyPath.$sSamplesurvey); 
+            $result = null;
+            //Try catch for console application to be able to import surveys
+            
+            $result = @ XMLImportSurvey($documentationSurveyPath.$sSamplesurvey);
+
             if (in_array($sSamplesurvey, ['ls205_sample_survey_multilingual.lss', 'ls205_randomization_group_test.lss', 'ls205_cascading_array_filter_exclude.lss'])) {
                 $surveysToActivate[] = $result['newsid'];
             }
         }
         require_once(__DIR__.'/../helpers/admin/activate_helper.php');
         array_map('activateSurvey', $surveysToActivate);
-    }
+        }    
 
 }
 
