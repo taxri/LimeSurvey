@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    die('No direct script access allowed');
-}
+<?php
+
 /*
  * LimeSurvey
- * Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
+ * Copyright (C) 2007-2026 The LimeSurvey Project Team
  * All rights reserved.
  * License: GNU/GPL License v2 or later, see LICENSE.php
  * LimeSurvey is free software. This version may have been modified pursuant
@@ -18,19 +17,18 @@
  * Class UserInGroup
  * @property integer $ugid UserGroup ID
  * @property int $uid User ID
- *
- *
+ * @property User $users Group ownre user
+ * @property UserGroup $group
  */
 class UserInGroup extends LSActiveRecord
 {
-
     /**
      * @inheritdoc
      * @return CActiveRecord
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
-        return parent::model($class);
+        return parent::model($className);
     }
 
     /** @inheritdoc */
@@ -46,6 +44,15 @@ class UserInGroup extends LSActiveRecord
     }
 
     /** @inheritdoc */
+    public function rules()
+    {
+        return array(
+            array('uid, ugid', 'required'),
+            array('uid, ugid', 'numerical', 'integerOnly' => true),
+        );
+    }
+
+    /** @inheritdoc */
     public function relations()
     {
         // NOTE: you may need to adjust the relation name and the related
@@ -55,33 +62,6 @@ class UserInGroup extends LSActiveRecord
             'users' => array(self::BELONGS_TO, 'User', 'uid'),
             'group' => array(self::BELONGS_TO, 'UserGroup', 'ugid'),
         );
-    }
-
-    /**
-     * @param mixed $condition
-     * @return static[]
-     */
-    public function getAllRecords($condition = false)
-    {
-        $criteria = new CDbCriteria;
-
-        if ($condition != false) {
-            foreach ($condition as $item => $value) {
-                $criteria->addCondition($item.'='.Yii::app()->db->quoteValue($value));
-            }
-        }
-        $data = $this->findAll($criteria);
-        return $data;
-    }
-
-    /**
-     * @param array $data
-     * @return bool
-     */
-    public function insertRecords($data)
-    {
-        $changedRows = Yii::app()->db->createCommand()->insert($this->tableName(), $data);
-        return (bool) $changedRows;
     }
 
     public function join($fields, $from, $condition = false, $join = false, $order = false)
@@ -112,5 +92,4 @@ class UserInGroup extends LSActiveRecord
         $data = $user->queryRow();
         return $data;
     }
-
 }

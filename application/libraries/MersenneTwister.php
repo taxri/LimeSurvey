@@ -7,29 +7,32 @@ namespace ls\mersenne;
  * If there is no seed, create a new one
  * Also inits the twister.
  * @param int $surveyid
+ * @param null|\Survey $survey (for testing purposes))
  * @return void
  */
-function setSeed($surveyid)
+function setSeed($surveyid, $survey = null)
 {
-    //traceVar(@$_SESSION['survey_' . $surveyid]['srid']);
-    if (isset($_SESSION['survey_'.$surveyid]['srid'])) {
-        $oResponse = \Response::model($surveyid)->findByPk($_SESSION['survey_'.$surveyid]['srid']);
+    /* In started survey : get seed from response table */
+    if (isset($_SESSION['responses_' . $surveyid]['srid'])) {
+        $oResponse = \Response::model($surveyid)->findByPk($_SESSION['responses_' . $surveyid]['srid']);
         $seed = $oResponse->seed;
         /* fix empty seed, this allow broken seed (not number) */
-        if(empty($seed)) {
+        if (empty($seed)) {
             $seed = mt_rand();
             $oResponse->seed = $seed;
             $oResponse->save();
         }
     } else {
         $seed = mt_rand();
-
-        // Only set seed if corresponding database column exists.
-        // This mismatch can happen if survey is activated before update to
-        // new version that uses seed.
-        $table = \Yii::app()->db->schema->getTable('{{survey_'.$surveyid.'}}');
-        if (isset($table->columns['seed'])) {
-            $_SESSION['survey_'.$surveyid]['startingValues']['seed'] = $seed;
+        /* On activated (but not started) survey : set seed in startingValues */
+        if (!$survey) {
+            $survey = \Survey::model()->findByPk($surveyid);
+        }
+        if ($survey->getIsActive()) {
+            $table = \Yii::app()->db->schema->getTable('{{responses_' . $surveyid . '}}');
+            if (isset($table->columns['seed'])) {
+                $_SESSION['responses_' . $surveyid]['startingValues']['seed'] = $seed;
+            }
         }
     }
     MersenneTwister::init($seed);
@@ -116,6 +119,9 @@ class MersenneTwister
         $this->setSeed($seed);
     }
 
+    /**
+     * @param integer $seed
+     */
     public function setSeed($seed)
     {
         $this->state[0] = $seed & 0xffffffff;
@@ -146,7 +152,7 @@ class MersenneTwister
     public function getNext($min = null, $max = null)
     {
         if (($min === null && $max !== null) || ($min !== null && $max === null)) {
-                    throw new Exception('Invalid arguments');
+            throw new \Exception('Invalid arguments');
         }
 
         if ($this->index === 0) {

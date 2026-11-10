@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    die('No direct script access allowed');
-}
+<?php
+
 /*
  * LimeSurvey
- * Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
+ * Copyright (C) 2007-2026 The LimeSurvey Project Team
  * All rights reserved.
  * License: GNU/GPL License v2 or later, see LICENSE.php
  * LimeSurvey is free software. This version may have been modified pursuant
@@ -30,7 +29,14 @@
  */
 class SavedControl extends LSActiveRecord
 {
-
+    /**
+     * Set defaults
+     * @inheritdoc
+     */
+    public function init()
+    {
+        $this->ip = "";
+    }
     /** @inheritdoc */
     public function tableName()
     {
@@ -47,11 +53,10 @@ class SavedControl extends LSActiveRecord
      * @inheritdoc
      * @return CActiveRecord
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
-        return parent::model($class);
+        return parent::model($className);
     }
-
 
     public function getAllRecords($condition = false)
     {
@@ -85,11 +90,11 @@ class SavedControl extends LSActiveRecord
      */
     public function deleteSomeRecords($condition)
     {
-        $record = new self;
-        $criteria = new CDbCriteria;
+        $record = new self();
+        $criteria = new CDbCriteria();
 
         if ($condition != false) {
-            foreach ($condition as $column=>$value) {
+            foreach ($condition as $column => $value) {
                 $criteria->addCondition("$column='$value'");
             }
         }
@@ -97,9 +102,99 @@ class SavedControl extends LSActiveRecord
         return $record->deleteAll($criteria);
     }
 
-    public function insertRecords($data)
+    public function getButtons()
     {
-        return $this->db->insert('saved_control', $data);
+        $permission_respones_update = Permission::model()->hasSurveyPermission($this->sid, 'responses', 'update');
+
+        $dropdownItems = [];
+        $dropdownItems[] = [
+            'title'            => gT('Edit response'),
+            'url'              => App()->createUrl("admin/dataentry/sa/editdata/subaction/edit", ["surveyid" => $this->sid, "id" => $this->srid]),
+            'iconClass'        => 'ri-pencil-fill',
+            'enabledCondition' => $permission_respones_update
+        ];
+        // TODO: this is a unfinished functionality resendAccesscode
+//        $dropdownItems[] = [
+//            'title'            => gT('Resend access code'),
+//            'url'              => App()->createUrl("admin/saved/sa/resend_accesscode",array("surveyid"=>$this->sid,"id"=>$this->srid)),
+//            'iconClass'        => 'ri-refresh-line',
+//            'enabledCondition' => Permission::model()->hasSurveyPermission($this->sid, 'responses', 'update')
+//        ];
+        $dropdownItems[] = [
+            'title'            => gT('Delete this entry and related response'),
+            'url'              => App()->createUrl("admin/saved/sa/actionDelete", ["surveyid" => $this->sid, "scid" => $this->scid, "srid" => $this->srid]),
+            'iconClass'        => 'ri-delete-bin-fill text-danger',
+            'enabledCondition' => $permission_respones_update,
+            'linkAttributes'   => [
+                'onclick' => "window.LS.gridButton.confirmGridAction(event,$(this));",
+                'data-confirm-text' => gT('Delete this entry and related response'),
+                'data-gridid' => 'saved-grid',
+            ]
+        ];
+
+        return App()->getController()->widget('ext.admin.grid.GridActionsWidget.GridActionsWidget', ['dropdownItems' => $dropdownItems], true);
     }
 
+    public function getColumns()
+    {
+        return array(
+
+            array(
+                'header' => gT("ID"),
+                'name' => 'scid',
+                'filter' => false,
+            ),
+            array(
+                'header' => gT("Identifier"),
+                'name' => 'identifier',
+            ),
+            array(
+                'header' => gT("IP address"),
+                'name' => 'ip',
+            ),
+            array(
+                'header' => gT("Date saved"),
+                'name' => 'saved_date',
+            ),
+            array(
+                'header' => gT("Email address"),
+                'name' => 'email',
+            ),
+            array(
+                'name' => 'buttons',
+                'type' => 'raw',
+                'header' => gT('Action'),
+                'filter' => false,
+                'headerHtmlOptions' => ['class' => 'ls-sticky-column'],
+                'filterHtmlOptions' => ['class' => 'ls-sticky-column'],
+                'htmlOptions'       => ['class' => 'ls-sticky-column']
+            ),
+        );
+    }
+
+    public function search()
+    {
+        // @todo Please modify the following code to remove attributes that should not be searched.
+        $criteria = new CDbCriteria();
+        $criteria->compare('sid', $this->sid, false); //will not be searchable
+        $criteria->compare('srid', $this->srid, true);
+        $criteria->compare('access_code', $this->access_code, true);
+
+        $criteria->compare('scid', $this->scid);
+        $criteria->compare('identifier', $this->identifier, true);
+        $criteria->compare('email', $this->email, true);
+        $criteria->compare('ip', $this->ip, true);
+        $criteria->compare('saved_thisstep', $this->saved_thisstep, true);
+        $criteria->compare('status', $this->status, true);
+        $criteria->compare('saved_date', $this->saved_date, true);
+        $criteria->compare('refurl', $this->refurl, true);
+        $pageSize = Yii::app()->user->getState('savedResponsesPageSize', Yii::app()->params['defaultPageSize']);
+
+        return new CActiveDataProvider($this, array(
+            'criteria' => $criteria,
+            'pagination' => array(
+                'pageSize' => $pageSize,
+            ),
+        ));
+    }
 }

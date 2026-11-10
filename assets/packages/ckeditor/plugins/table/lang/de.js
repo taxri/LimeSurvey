@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'de', {
 	border: 'Rahmengröße',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'de', {
 		borderColor: 'Rahmenfarbe',
 		data: 'Daten',
 		header: 'Überschrift',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Ja',
 		no: 'Nein',
 		invalidWidth: 'Zellenbreite muss eine Zahl sein.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'de', {
 	headersColumn: 'Erste Spalte',
 	headersNone: 'Keine',
 	headersRow: 'Erste Zeile',
+	heightUnit: 'Höheneinheit',
 	invalidBorder: 'Die Rahmenbreite muß eine Zahl sein.',
 	invalidCellPadding: 'Der Zellenabstand innen muß eine positive Zahl sein.',
 	invalidCellSpacing: 'Der Zellenabstand außen muß eine positive Zahl sein.',

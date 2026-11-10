@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'link', 'zh', {
 	acccessKey: '便捷鍵',
@@ -13,6 +13,7 @@ CKEDITOR.plugins.setLang( 'link', 'zh', {
 		title: '錨點內容',
 		name: '錨點名稱',
 		errorName: '請輸入錨點名稱',
+		errorWhitespace: '錨定名稱不能包含空格字元',
 		remove: '移除錨點'
 	},
 	anchorId: '依元件編號',
@@ -35,7 +36,9 @@ CKEDITOR.plugins.setLang( 'link', 'zh', {
 	noAnchors: '(本文件中無可用之錨點)',
 	noEmail: '請輸入電子郵件',
 	noUrl: '請輸入連結 URL',
+	noTel: '請輸入電話號碼',
 	other: '<其他>',
+	phoneNumber: '電話號碼',
 	popupDependent: '獨立 (Netscape)',
 	popupFeatures: '快顯視窗功能',
 	popupFullScreen: '全螢幕 (IE)',
@@ -60,6 +63,7 @@ CKEDITOR.plugins.setLang( 'link', 'zh', {
 	toAnchor: '文字中的錨點連結',
 	toEmail: '電子郵件',
 	toUrl: '網址',
+	toPhone: '電話',
 	toolbar: '連結',
 	type: '連結類型',
 	unlink: '取消連結',

@@ -1,36 +1,50 @@
 <?php
+
 /**
-* General options
+ * General options
  * @var AdminController $this
  * @var Survey $oSurvey
-*/
-    $scriptVarsNeccessary = "
+ * @var TemplateConfiguration $themeConf
+ * @var string $inheritedThemeName
+ * @var array $aTemplateList
+ */
+$scriptVarsNecessary = "
         var jsonUrl = '';
         var sAction = '';
         var sParameter = '';
         var sTargetQuestion = '';
         var sNoParametersDefined = '';
-        var sAdminEmailAddressNeeded = '".gT("If you are using token functions or notifications emails you need to set an administrator email address.",'js')."'
+        var sAdminEmailAddressNeeded = '" . gT("If you are using surveys with a closed participant group or notifications emails you need to set an administrator email address.", 'js') . "'
         var sURLParameters = '';
         var sAddParam = '';
     ";
-    Yii::app()->getClientScript()->registerScript(
-        "GeneralOption-variables",
-        $scriptVarsNeccessary,
-        LSYii_ClientScript::POS_BEGIN
-    );
+Yii::app()->getClientScript()->registerScript(
+    "GeneralOption-variables",
+    $scriptVarsNecessary,
+    LSYii_ClientScript::POS_BEGIN
+);
 ?>
 <!-- General options -->
-    <?php
-    $yii = Yii::app();
-    $controller = $yii->getController();
-    $action = 'editsurveysettings';
+<?php
+$yii = Yii::app();
+$controller = $yii->getController();
+$action = 'editsurveysettings';
+
+$formatSelectOptions = array(
+    'S' => gT('Question by question', 'unescaped'),
+    'G' => gT('Group by group', 'unescaped'),
+    'A' => gT('All in one', 'unescaped')
+);
+$bGlobalSettings = !empty($this->currentModuleAction) && $this->currentModuleAction == 'globalsettings';
+if ($bShowInherited) {
+    $formatSelectOptions['I'] = $oSurveyOptions->format . " ᴵ";
+}
 ?>
-<?php if($action=='editsurveysettings'):?>
-    <?php
-    $sConfirmLanguageScript="
+<?php if ($action == 'editsurveysettings'): ?>
+<?php
+$sConfirmLanguageScript = "
         $(document).on('submit','#globalsetting',function(){
-        if(!ConfirmLanguageChange('".gT("All questions, answers, etc for removed languages will be lost. Are you sure?", "js")."')){
+        if(!ConfirmLanguageChange('" . gT("All questions, answers, etc for removed languages will be lost. Are you sure?", "js") . "')){
             return false;
         }
         });
@@ -60,243 +74,292 @@
             return true;
         }
     ";
-    Yii::app()->getClientScript()->registerScript( "GeneralOption-confirm-language", $sConfirmLanguageScript, LSYii_ClientScript::POS_POSTSCRIPT) ;
-    // var_dump($owner);
-    ?>
+Yii::app()->getClientScript()->registerScript("GeneralOption-confirm-language", $sConfirmLanguageScript, LSYii_ClientScript::POS_POSTSCRIPT);
+// var_dump($owner);
+?>
 
 <!-- Container -->
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-6 col-sm-12">
-            <?php if(!$oSurvey->isNewRecord):?>
-            <!-- Base language -->
-            <div class="form-group">
-                <label class=" control-label" ><?php  eT("Base language:") ; ?></label>
-                <div class="" style="padding-top: 7px;">
-                    <?php if($oSurvey->isNewRecord):?>
-                    <?php $this->widget('yiiwheels.widgets.select2.WhSelect2', array(
-                        'asDropDownList' => true,
-                        'data' => getLanguageDataRestricted (false,'short'),
-                        'value' => $oSurvey->language,
-                        'name' => 'language',
-                        'pluginOptions' => array()
-                    ));?>
-                    <?php else:?>
-                    <?php echo getLanguageNameFromCode($oSurvey->language,false); ?>
-                    <?php endif;?>
-                </div>
-            </div>
-            <!-- Additional Languages -->
-            <div class="form-group">
-                <label class=" control-label"  for='additional_languages'><?php  eT("Additional Languages"); ?>:</label>
-                <div class="">
-                    <?php
-                    $aAllLanguages=getLanguageDataRestricted (false,'short');
-                    unset($aAllLanguages[$oSurvey->language]);
+<div class="row">
+    <div class="col-lg-6 col-12">
+        <?php if ($bShowAllOptions === true) { ?>
+            <?php if (!$oSurvey->isNewRecord): ?>
+                <!-- Survey Languages -->
+                <div class="mb-3">
+                    <label id="additional_languages_label" class=" form-label" for='additional_languages'><?php eT("Survey languages:"); ?></label>
+                    <div class="">
+                        <?php
+                        $aAllLanguages = getLanguageDataRestricted(false, 'short');
 
-                    Yii::app()->getController()->widget('yiiwheels.widgets.select2.WhSelect2', array(
-                        'asDropDownList' => true,
-                        'htmlOptions'=>array('multiple'=>'multiple','style'=>"width: 100%"),
-                        'data' => $aAllLanguages,
-                        'value' =>  $oSurvey->additionalLanguages,
-                        'name' => 'additional_languages',
-                        'pluginOptions' => array(
-                            'placeholder' => gt('Select additional languages','unescaped'),
-                    )));
-                    ?>
-                    <input type='hidden' name='oldlanguages' id='oldlanguages' value='<?php echo implode(' ', $oSurvey->additionalLanguages); ?>'>
-                </div>
-            </div>
-            <?php endif;?>
-            <!-- Survey owner -->
-            <?php
-            if (Yii::app()->session['loginID']==$oSurvey->owner_id || Permission::model()->hasGlobalPermission('superadmin','read')):?>
-                <div class="form-group">
-                    <label class=" control-label"  for='owner_id'><?php  eT("Survey owner:"); ?></label>
-                    <div class=""><?php
-                        Yii::app()->getController()->widget('yiiwheels.widgets.select2.WhSelect2', array(
-                            'asDropDownList' => true,
-                            'htmlOptions'=>array(
-                                'style'=>'width:100%;'
-                            ),
-                            'data' => isset($users) ?  $users : [],
-                            'value' => $oSurvey->owner_id,
-                            'name' => 'owner_id',
-                            'pluginOptions' => array(
+                        Yii::app()->getController()->widget('ext.admin.survey.LanguagesWidget.LanguagesWidget',
+                            array(
+                                'asDropDownList' => true,
+                                'htmlOptions' => array('multiple' => 'multiple', 'style' => "width: 100%", 'class' => 'form-select', 'aria-labelledby' => 'additional_languages_label'),
+                                'data' => $aAllLanguages,
+                                'value' => $oSurvey->allLanguages,
+                                'name' => 'additional_languages',
+                                'pluginOptions' => array(
+                                    'placeholder' => gT('Select additional languages', 'unescaped'),
+                                    'baselanguage' => $oSurvey->language,
+                                    'baselanguage_selector' => '#language',
+                                )
                             )
-                        ));
+                        );
                         ?>
+                        <input type='hidden' name='oldlanguages' id='oldlanguages' value='<?php echo implode(' ', $oSurvey->additionalLanguages); ?>'>
                     </div>
                 </div>
-                <?php endif;?>
-
-            <!-- Administrator -->
-            <div class="form-group">
-                <?php //Switch for creation/editing ?>
-                <?php $admin = empty($oSurvey->admin) && !empty($oSurvey->owner) ? $oSurvey->owner->full_name : $oSurvey->admin; ?>
-                <label class=" control-label"  for='admin'><?php  eT("Administrator:"); ?></label>
-                <div class="">
-                    <input class="form-control" type='text' size='50' id='admin' name='admin' value="<?php echo htmlspecialchars($admin); ?>" />
+                <!-- Base language -->
+                <div class="mb-3">
+                    <label id="language_label" class=" form-label" for="language"><?php eT("Base language:"); ?></label>
+                    <div class="">
+                        <?php $this->widget('yiiwheels.widgets.select2.WhSelect2',
+                            array(
+                                'asDropDownList' => true,
+                                'htmlOptions' => array('id' => 'language', 'style' => "width: 100%", 'aria-labelledby' => 'language_label'),
+                                'data' => array_intersect_key($aAllLanguages, array_flip($oSurvey->allLanguages)),
+                                'value' => $oSurvey->language,
+                                'name' => 'language',
+                                'pluginOptions' => array()
+                            )
+                        ); ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+        <?php } ?>
+        <!-- Survey owner -->
+        <?php
+        if (isset($oSurvey->owner_id) && Yii::app()->session['loginID'] == $oSurvey->owner_id || Permission::model()->hasGlobalPermission('superadmin', 'read')):?>
+            <div class="mb-3">
+                <label id="owner_id_label" class="form-label" for="owner_id"><?php eT("Survey owner:"); ?></label>
+                <div class=""><?php
+                    Yii::app()->getController()->widget('yiiwheels.widgets.select2.WhSelect2',
+                        array(
+                            'asDropDownList' => true,
+                            'htmlOptions' => array(
+                                'id' => 'owner_id',
+                                'style' => 'width:100%;',
+                                'aria-labelledby' => 'owner_id_label'
+                            ),
+                            'data' => isset($users) ? $users : [],
+                            'value' => $oSurvey->owner_id,
+                            'name' => 'owner_id',
+                            'pluginOptions' => array()
+                        )
+                    );
+                    ?>
                 </div>
             </div>
+        <?php endif; ?>
 
-            <!-- Admin email -->
-            <div class="form-group">
-                <?php //Switch for creation/editing ?>
-                <?php $admin_email = empty($oSurvey->adminemail) && !empty($oSurvey->owner) ? $oSurvey->owner->email : $oSurvey->adminemail; ?>
-                <label class=" control-label"  for='adminemail'><?php  eT("Admin email:"); ?></label>
-                <div class="">
-                    <input class="form-control" type='email' size='50' id='adminemail' name='adminemail' value="<?php echo htmlspecialchars($admin_email); ?>" />
+        <!-- Administrator -->
+        <div class="mb-3">
+            <?php //Switch for creation/editing ?>
+            <?php $admin = $oSurvey->admin; ?>
+            <div class="row">
+                <div class="col-12 col-lg-8 content-right">
+                    <label id="admin-label" class=" form-label" for='admin'><?php eT("Administrator:"); ?></label>
+                    <input class="form-control inherit-edit <?php echo($bShowInherited && $admin === 'inherit' ? 'd-none' : 'd-block'); ?>" type='text' size='50' id='admin' name='admin'
+                           value="<?php echo htmlspecialchars((string) $admin); ?>" data-inherit-value="inherit" data-saved-value="<?php echo htmlspecialchars((string) $admin); ?>"/>
+                    <input class="form-control inherit-readonly <?php echo($bShowInherited && $admin === 'inherit' ? 'd-block' : 'd-none'); ?>" type='text' size='50'
+                           value="<?php echo htmlspecialchars((string) $oSurveyOptions->admin); ?>" readonly/>
+                </div>
+                <div class="col-12 col-lg-4 content-right <?php echo($bShowInherited ? 'd-block' : 'd-none'); ?>">
+                    <label id="adminbutton-label" class="form-label content-center col-12"><?php eT("Inherit:"); ?></label>
+                    <?php $this->widget('ext.ButtonGroupWidget.ButtonGroupWidget', [
+                        'name'          => 'adminbutton',
+                        'ariaLabelledBy' => 'admin-label adminbutton-label',
+                        'checkedOption' => ($bShowInherited && $admin === 'inherit' ? 'Y' : 'N'),
+                        'selectOptions' => $optionsOnOff,
+                        'htmlOptions'   => [
+                            'class' => 'text-option-inherit'
+                        ]
+                    ]); ?>
                 </div>
             </div>
+        </div>
 
-            <!-- Bounce email -->
-            <div class="form-group">
-                <?php //Switch for creation/editing ?>
-                <?php $bounce_email = ($oSurvey->bounce_email ? $oSurvey->bounce_email : $oSurvey->adminemail); ?>
-                <label class=" control-label"  for='bounce_email'><?php  eT("Bounce email:"); ?></label>
-                <div class="">
-                    <input class="form-control" type='email' size='50' id='bounce_email' name='bounce_email' value="<?php echo htmlspecialchars($bounce_email); ?>" />
+        <!-- Admin email -->
+        <div class="mb-3">
+            <?php //Switch for creation/editing ?>
+            <?php $adminemail = $oSurvey->adminemail; ?>
+            <div class="row">
+                <div class="col-12 col-lg-8 content-right">
+                    <label id="adminemail-label" class=" form-label" for='adminemail'><?php eT("Administrator email address:"); ?></label>
+                    <input class="form-control inherit-edit <?php echo($bShowInherited && $adminemail === 'inherit' ? 'd-none' : 'd-block'); ?>" type='<?php echo ($bShowInherited) ? 'text' : 'email'; ?>'
+                           size='50' id='adminemail' name='adminemail' value="<?php echo htmlspecialchars((string) $adminemail); ?>" data-inherit-value="inherit" data-saved-value="<?php echo htmlspecialchars((string) $adminemail); ?>"/>
+                    <input class="form-control inherit-readonly <?php echo($bShowInherited && $adminemail === 'inherit' ? 'd-block' : 'd-none'); ?>" type='text' size='50'
+                           value="<?php echo htmlspecialchars((string) $oSurveyOptions->adminemail); ?>" readonly/>
+                </div>
+                <div class="col-12 col-lg-4 content-right <?php echo($bShowInherited ? 'd-block' : 'd-none'); ?>">
+                    <label id="adminemailbutton-label" class="form-label content-center col-12"><?php eT("Inherit:"); ?></label>
+                    <?php $this->widget('ext.ButtonGroupWidget.ButtonGroupWidget', [
+                        'name'          => 'adminemailbutton',
+                        'ariaLabelledBy' => 'adminemail-label adminemailbutton-label',
+                        'checkedOption' => ($bShowInherited && $adminemail === 'inherit' ? 'Y' : 'N'),
+                        'selectOptions' => $optionsOnOff,
+                        'htmlOptions'   => [
+                            'class' => 'text-option-inherit'
+                        ]
+                    ]); ?>
                 </div>
             </div>
+        </div>
 
-            <!-- Fax to -->
-            <div class="form-group">
-                <label class=" control-label"  for='faxto'><?php  eT("Fax to:"); ?></label>
-                <div class="">
-                    <input class="form-control" type='text' size='50' id='faxto' name='faxto' value="<?php echo htmlspecialchars($oSurvey->faxto); ?>" />
+        <!-- Bounce email -->
+        <div class="mb-3">
+            <?php //Switch for creation/editing ?>
+            <?php $bounce_email = $oSurvey->bounce_email; ?>
+            <div class="row">
+                <div class="col-12 col-lg-8 content-right">
+                    <label id="bounce_email-label" class=" form-label" for='bounce_email'><?php eT("Bounce email address:"); ?></label>
+                    <input class="form-control inherit-edit <?php echo($bShowInherited && $bounce_email === 'inherit' ? 'd-none' : 'd-block'); ?>"
+                           type='<?php echo ($bShowInherited) ? 'text' : 'email'; ?>' size='50' id='bounce_email' name='bounce_email' value="<?php echo htmlspecialchars((string) $bounce_email); ?>"
+                           data-inherit-value="inherit" data-saved-value="<?php echo htmlspecialchars((string) $bounce_email); ?>"/>
+                    <input class="form-control inherit-readonly <?php echo($bShowInherited && $bounce_email === 'inherit' ? 'd-block' : 'd-none'); ?>" type='text' size='50'
+                           value="<?php echo htmlspecialchars((string) $oSurveyOptions->bounce_email); ?>" readonly/>
+                </div>
+                <div class="col-12 col-lg-4 content-right <?php echo($bShowInherited ? 'd-block' : 'd-none'); ?>">
+                    <label id="bounce_emailbutton-label" class="form-label content-center col-12"><?php eT("Inherit:"); ?></label>
+                    <?php $this->widget('ext.ButtonGroupWidget.ButtonGroupWidget', [
+                        'name'          => 'bounce_emailbutton',
+                        'ariaLabelledBy' => 'bounce_email-label bounce_emailbutton-label',
+                        'checkedOption' => ($bShowInherited && $bounce_email === 'inherit' ? 'Y' : 'N'),
+                        'selectOptions' => $optionsOnOff,
+                        'htmlOptions'   => [
+                            'class' => 'text-option-inherit '
+                        ]
+                    ]); ?>
                 </div>
             </div>
+        </div>
 
             <?php else: ?>
             <!-- End URL -->
-            <div class="form-group">
-                <label class=" control-label" for='url'><?php  eT("End URL:"); ?></label>
+            <div class="mb-3">
+                <label class=" form-label" for='url'><?php eT("End URL:"); ?></label>
                 <div class="">
-                    <input type='text' class="form-control"  id='url' name='url' placeholder="http://example.com" />
+                    <input type='text' class="form-control" id='url' name='url' placeholder="http://example.com"/>
                 </div>
             </div>
 
             <!-- URL description -->
-            <div class="form-group">
-                <label class=" control-label" for='urldescrip'><?php  eT("URL description:") ; ?></label>
+            <div class="mb-3">
+                <label class=" form-label" for='urldescrip'><?php eT("URL description:"); ?></label>
                 <div class="">
-                    <input type='text' maxlength='255' size='50' id='urldescrip' name='urldescrip' value=''  class="form-control"  placeholder="<?php eT('Some description text');?>" />
+                    <input type='text' maxlength='255' size='50' id='urldescrip' name='urldescrip' value='' class="form-control" placeholder="<?php eT('Some description text'); ?>"/>
                 </div>
             </div>
 
             <!-- Date format -->
-            <div class="form-group">
-                <label class=" control-label" for='dateformat'><?php  eT("Date format:") ; ?></label>
+            <div class="mb-3">
+                <label class=" form-label" for='dateformat'><?php eT("Date format:"); ?></label>
                 <div class="">
-                    <?php echo CHtml::listBox('dateformat',$sDateFormatDefault, $aDateFormatData, array('id'=>'dateformat','size'=>'1', 'class'=>'form-control')); ?>
+                    <?php echo CHtml::listBox('dateformat', $sDateFormatDefault, $aDateFormatData, array('id' => 'dateformat', 'size' => '1', 'class' => 'form-control')); ?>
                 </div>
             </div>
 
             <!-- Decimal mark -->
-            <div class="form-group">
-                <label class=" control-label" for='numberformat'><?php  eT("Decimal mark:"); ?></label>
+            <div class="mb-3">
+                <label class=" form-label" for='numberformat'><?php eT("Decimal mark:"); ?></label>
                 <div class="">
-                    <?php echo CHtml::listBox('numberformat',$sRadixDefault, $aRadixPointData, array('id'=>'numberformat','size'=>'1', 'class'=>'form-control')); ?>
+                    <?php echo CHtml::listBox('numberformat', $sRadixDefault, $aRadixPointData, array('id' => 'numberformat', 'size' => '1', 'class' => 'form-control')); ?>
                 </div>
             </div>
 
             <!-- Administrator -->
-            <div class="form-group">
-                <label class=" control-label" for='admin'><?php  eT("Administrator:") ; ?></label>
+            <div class="mb-3">
+                <label class=" form-label" for='admin'><?php eT("Administrator:"); ?></label>
                 <div class="">
-                    <input type='text' size='50' id='admin' name='admin'   class="form-control"  value='<?php echo $owner['full_name'] ; ?>' />
+                    <input type='text' size='50' id='admin' name='admin' class="form-control" value='<?php echo $owner['full_name']; ?>'/>
                 </div>
             </div>
 
             <!-- Admin email -->
-            <div class="form-group">
-                <label class=" control-label" for='adminemail'><?php  eT("Admin email:") ; ?></label>
+            <div class="mb-3">
+                <label class=" form-label" for='adminemail'><?php eT("Administrator email address:"); ?></label>
                 <div class="">
-                    <input type='email' size='30'   class="form-control"   id='adminemail' name='adminemail' value='<?php echo $owner['email'] ; ?>' />
+                    <input type='email' size='30' class="form-control" id='adminemail' name='adminemail' value='<?php echo $owner['email']; ?>'/>
                 </div>
             </div>
 
             <!-- Bounce Email -->
-            <div class="form-group">
-                <label class=" control-label" for='bounce_email'><?php  eT("Bounce Email:") ; ?></label>
+            <div class="mb-3">
+                <label class=" form-label" for='bounce_email'><?php eT("Bounce email address:"); ?></label>
                 <div class="">
-                    <input type='email' size='50'  class="form-control"  id='bounce_email' name='bounce_email' value='<?php echo $owner['bounce_email'] ; ?>' />
+                    <input type='email' size='50' class="form-control" id='bounce_email' name='bounce_email' value='<?php echo $owner['bounce_email']; ?>'/>
                 </div>
             </div>
-
-            <!-- Fax to -->
-            <div class="form-group">
-                <label class=" control-label" for='faxto'><?php  eT("Fax to:") ; ?></label>
-                <div class="">
-                    <input type='text' size='50' id='faxto' name='faxto'  class="form-control" />
-                </div>
-            </div>
-
-            <?php endif;?>
+        <?php endif; ?>
     </div>
-    <div class="col-md-6 col-sm-12">
+    <div class="col-lg-6 col-12">
 
         <!-- Survey Group -->
-        <div class="form-group">
-            <label class=" control-label" for='format'><?php  eT("Group:"); ?></label>
-            <div class="">
-                <?php $this->widget('yiiwheels.widgets.select2.WhSelect2', array(
-                    'asDropDownList' => true,
-                    'htmlOptions'=>array('style'=>"width: 100%"),
-                    'data' => isset($aSurveyGroupList) ?  $aSurveyGroupList : [],
-                    'value' => $oSurvey->gsid,
-                    'name' => 'gsid',
-                    'pluginOptions' => array()
-                ));?>
+        <?php if ($bShowAllOptions === true) { ?>
+            <div class="mb-3">
+                <label id="gsid_label" class=" form-label" for='gsid'><?php eT("Group:"); ?></label>
+                <div class="">
+                    <?php $this->widget('yiiwheels.widgets.select2.WhSelect2',
+                        array(
+                            'asDropDownList' => true,
+                            'htmlOptions' => array('style' => "width: 100%", 'aria-labelledby' => 'gsid_label'),
+                            'data' => isset($aSurveyGroupList) ? $aSurveyGroupList : [],
+                            'value' => $oSurvey->gsid,
+                            'name' => 'gsid',
+                            'pluginOptions' => array()
+                        )
+                    ); ?>
+                </div>
             </div>
-        </div>
-
+        <?php } ?>
 
         <!-- Format -->
-        <div class="form-group">
-            <label class=" control-label" for='format'><?php  eT("Format:"); ?></label>
-            <div class="">
-                <?php $this->widget('yiiwheels.widgets.buttongroup.WhButtonGroup', array(
-                    'name' => 'format',
-                    'value'=> $oSurvey->format,
-                    'selectOptions'=>array(
-                        'S' => gT('Question by Question','unescaped'),
-                        'G' => gT('Group by Group','unescaped'),
-                        'A' => gT('All in one','unescaped'))
-                ));?>
+        <div class="mb-3">
+            <label id="format-label" class="form-label"><?php eT("Format:"); ?></label>
+            <div>
+                <?php $this->widget('ext.ButtonGroupWidget.ButtonGroupWidget', [
+                    'name'          => 'format',
+                    'ariaLabelledBy' => 'format-label',
+                    'checkedOption'         => $oSurvey->format,
+                    'selectOptions' => $formatSelectOptions,
+                ]); ?>
             </div>
         </div>
-        <!-- Template -->
-
-        <div class="form-group">
-            <label class=" control-label" for='template'><?php  eT("Template:"); ?></label>
+        <!-- Theme -->
+        <div class="mb-3" >
+            <label id="template_label" class="form-label" for='template'><?php eT("Theme:"); ?></label>
             <div class="">
-                <select id='template' class="form-control"  name='template' data-updateurl='<?php echo App()->createUrl('/admin/themeoptions/sa/getpreviewtag') ?>'>
+                <select id='template' style="width:100%;" class="form-select activate-search" name='template' aria-labelledby="template_label" data-updateurl='<?php echo App()->createUrl('themeOptions/getPreviewTag') ?>'
+                        data-inherit-template-name='<?= $themeConf->template_name ?>'>
+                    <?php if ($bShowInherited || $bGlobalSettings) : ?>
+                        <option value="inherit" <?= ($oSurvey->template == 'inherit') ? 'selected="selected"' : ''; ?>>
+                            <?= gT('Inherit') . ' [' . CHtml::encode($inheritedThemeName) . ']' ?>
+                        </option>
+                    <?php endif; ?>
                     <?php
-                    $aTemplateList = Template::getTemplateListWithPreviews();
-                    foreach ($aTemplateList as $templateName => $preview) {
-                        if (Permission::model()->hasGlobalPermission('templates','read') || Permission::model()->hasTemplatePermission($templateName) || $oSurvey->template==htmlspecialchars($templateName) ) { ?>
-                            <option value='<?php echo $templateName; ?>'
-                                <?php if ($oSurvey->template && htmlspecialchars($templateName) == $oSurvey->template) { ?>
+                    foreach ($aTemplateList as $templateEntry) {
+                        $templateName = $templateEntry['name'];
+                    ?>
+                            <option value='<?php echo CHtml::encode($templateName); ?>'
+                                <?php if ($oSurvey->template && htmlspecialchars((string) $templateName) === $themeConf->template_name && $oSurvey->template !== 'inherit') { ?>
                                     selected='selected'
-                                    <?php   } elseif (!$oSurvey->template && $templateName == getGlobalSetting('defaulttheme')) { ?>
+                                <?php } elseif (!$oSurvey->template && $templateName === App()->getConfig('defaulttheme') && $oSurvey->template !== 'inherit') { ?>
                                     selected='selected'
-                                    <?php } ?>
-                                ><?php echo $templateName; ?></option>
-                            <?php }
-                    } ?>
+                                <?php } ?>
+                            ><?php echo CHtml::encode($templateName); ?></option>
+
+                    <?php } ?>
                 </select>
             </div>
-            <div class="col-sm-6 col-md-offset-3 template-img" style="margin-top: 13px;" id="preview-image-container">
-                <?php echo TemplateConfiguration::getInstanceFromTemplateName($oSurvey->template)->getPreview() ?>
+            <div class="col-md-6 mt-4 w-100" id="preview-image-container">
+                <?php echo $themeConf->getPreview() ?>
             </div>
         </div>
-<?php
-    /* @todo : add a js var with standard template list name */
-    //$aStandardTemplateLis=Template::getStandardTemplateList();
-?>
+        <?php
+        /* @todo : add a js var with standard template list name */
 
-        </div>
+        //$aStandardTemplateLis=Template::getStandardTemplateList();
+        ?>
+
     </div>
 </div>
+<?php $this->renderPartial('/surveyAdministration/_inherit_sub_footer'); ?>

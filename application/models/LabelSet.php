@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    die('No direct script access allowed');
-}
+<?php
+
 /*
  * LimeSurvey (tm)
- * Copyright (C) 2011 The LimeSurvey Project Team / Carsten Schmitz
+ * Copyright (C) 2011-2026 The LimeSurvey Project Team
  * All rights reserved.
  * License: GNU/GPL License v2 or later, see LICENSE.php
  * LimeSurvey is free software. This version may have been modified pursuant
@@ -22,8 +21,10 @@
  * @property string $label_name Label Name (max 100 chars)
  * @property string $languages
  */
-class LabelSet extends LSActiveRecord
+class LabelSet extends LSActiveRecord implements PermissionInterface
 {
+    use PermissionTrait;
+
     /** @inheritdoc */
     public function tableName()
     {
@@ -40,10 +41,10 @@ class LabelSet extends LSActiveRecord
      * @inheritdoc
      * @return LabelSet
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
         /** @var self $model */
-        $model = parent::model($class);
+        $model = parent::model($className);
         return $model;
     }
 
@@ -51,11 +52,13 @@ class LabelSet extends LSActiveRecord
     public function rules()
     {
         return array(
+            array('owner_id', 'numerical', 'integerOnly' => true),
             array('label_name', 'required'),
-            array('label_name', 'length', 'min' => 1, 'max'=>100),
+            array('label_name', 'filter', 'filter' => array(self::class, 'sanitizeAttribute')),
+            array('label_name', 'length', 'min' => 1, 'max' => 100),
             array('label_name', 'LSYii_Validators'),
             array('languages', 'required'),
-            array('languages', 'LSYii_Validators', 'isLanguageMulti'=>true),
+            array('languages', 'LSYii_Validators', 'isLanguageMulti' => true),
         );
     }
 
@@ -65,122 +68,226 @@ class LabelSet extends LSActiveRecord
         // NOTE: you may need to adjust the relation name and the related
         // class name for the relations automatically generated below.
         return array(
-            'labels' => array(self::HAS_MANY, 'Label', 'lid', 'order'=>'language ASC, sortorder ASC')
+            'labels' => array(self::HAS_MANY, 'Label', 'lid', 'order' => 'sortorder ASC'),
+            'owner' => array(self::BELONGS_TO, 'User', 'owner_id', 'together' => true),
         );
     }
 
     /**
-     * @param mixed|bool $condition
-     * @return static[]
+     * Recursively deletes a label set including labels and localizations
+     *
+     * @param integer $id The label set ID
+     *
+     * @return bool
+     * @throws CException
      */
-    public function getAllRecords($condition = false)
+    public function deleteLabelSet($id)
     {
-        $criteria = new CDbCriteria;
-        if ($condition != false) {
-            foreach ($condition as $item => $value) {
-                $criteria->addCondition($item.'="'.$value.'"');
-            }
+        $arLabelSet = $this->findByPk($id);
+        if (empty($arLabelSet)) {
+            return false;
         }
+        $oDB = App()->db;
+        $oTransaction = $oDB->beginTransaction();
+        try {
+            $this->deleteLabelsForLabelSet();
 
-        return $this->findAll($criteria);
+            $bLabelSetDeleted = $arLabelSet->delete();
+            $oTransaction->commit();
+            return $bLabelSetDeleted;
+        } catch (Exception $e) {
+            $oTransaction->rollback();
+            return false;
+        }
+    }
+
+    public function getLanguageArray()
+    {
+        return explode(' ', $this->languages);
     }
 
     /**
-     * @return array
-     */
-    public function getLID()
-    {
-        return Yii::app()->db->createCommand()->select('lid')->order('lid asc')->from('{{labelsets}}')->query()->readAll();
-    }
-
-    public function insertRecords($data)
-    {
-        $lblset = new self;
-        foreach ($data as $k => $v) {
-                    $lblset->$k = $v;
-        }
-        if ($lblset->save()) {
-            return $lblset->lid;
-        }
-        return false;
-    }
-
-    /**
+     * Returns all defined buttons for the gridview.
      * @return string
      */
     public function getbuttons()
     {
+        $permissions = [
+            'read' => $this->hasPermission('labelset', 'read'),
+            'edit' => $this->hasPermission('labelset', 'update'),
+            'export' => $this->hasPermission('labelset', 'export'),
+            'delete' => $this->hasPermission('labelset', 'delete'),
+        ];
 
-            // View labelset
-            $url = Yii::app()->createUrl("admin/labels/sa/view/lid/$this->lid");
-            $button = '<a class="btn btn-default list-btn" data-toggle="tooltip" data-placement="left" title="'.gT('View labels').'" href="'.$url.'" role="button"><span class="fa fa-list-alt" ></span></a>';
+        $dropdownItems = [];
+        $dropdownItems[] = [
+            'title'            => gT('Edit label set'),
+            'iconClass'        => 'ri-pencil-fill',
+            'url'              => App()->createUrl("admin/labels/sa/editlabelset/lid/$this->lid"),
+            'enabledCondition' => $permissions['edit']
+        ];
+        $dropdownItems[] = [
+            'title'     => gT('View labels'),
+            'iconClass' => 'ri-list-unordered',
+            'url'       => App()->createUrl("admin/labels/sa/view/lid/$this->lid"),
+            'enabledCondition' => $permissions['read'] // Must not appear, filtered by search criteria
+        ];
+        $dropdownItems[] = [
+            'title'            => gT('Export label set'),
+            'iconClass'        => 'ri-download-fill',
+            'url'              => App()->createUrl("admin/export/sa/dumplabel/lid/$this->lid"),
+            'enabledCondition' => $permissions['export']
+        ];
+        $dropdownItems[] = [
+            'title'            => gT('Delete'),
+            'tooltip'          => gT('Delete label sets'),
+            'iconClass'        => 'ri-delete-bin-fill text-danger',
+            'enabledCondition' => $permissions['delete'],
+            'linkAttributes'   => [
+                'data-bs-toggle' => "modal",
+                'data-post-url'  => App()->createUrl("admin/labels/sa/delete", ["lid" => $this->lid]),
+                'data-message'   => gT("Are you sure you want to delete this label set?"),
+                'data-bs-target' => "#confirmation-modal"
+            ]
+        ];
 
-            // Edit labelset
-            if (Permission::model()->hasGlobalPermission('labelsets', 'update')) {
-                $url = Yii::app()->createUrl("admin/labels/sa/editlabelset/lid/$this->lid");
-                $button .= ' <a class="btn btn-default list-btn" data-toggle="tooltip" data-placement="left" title="'.gT('Edit label set').'" href="'.$url.'" role="button"><span class="fa fa-pencil" ></span></a>';
-            }
-
-            // Export labelset
-            if (Permission::model()->hasGlobalPermission('labelsets', 'export')) {
-                $url = Yii::app()->createUrl("admin/export/sa/dumplabel/lid/$this->lid");
-                $button .= ' <a class="btn btn-default list-btn" data-toggle="tooltip" data-placement="left" title="'.gT('Export label set').'" href="'.$url.'" role="button"><span class="icon-export" ></span></a>';
-            }
-
-            // Delete labelset
-            if (Permission::model()->hasGlobalPermission('labelsets', 'delete')) {
-                $button .= '<a class="btn btn-default"  data-toggle="tooltip" title="'.gT("Delete label set").'" href="#" role="button"'
-                    ." onclick='$.bsconfirm(\"".CHtml::encode(gT("Are you sure you want to delete this label set?"))
-                                ."\", {\"confirm_ok\": \"".gT("Yes")."\", \"confirm_cancel\": \"".gT("No")."\"}, function() {"
-                                . convertGETtoPOST(Yii::app()->createUrl("admin/labels/sa/delete", ["lid" => $this->lid]))
-                            ."});'>"
-                        .' <i class="text-danger fa fa-trash"></i>
-                    </a>';
-            }
-            return $button;
-        }
+        return App()->getController()->widget(
+            'ext.admin.grid.GridActionsWidget.GridActionsWidget',
+            ['dropdownItems' => $dropdownItems],
+            true
+        );
+    }
 
     public function search()
     {
         $pageSize = Yii::app()->user->getState('pageSize', Yii::app()->params['defaultPageSize']);
 
+        $criteria = new LSDbCriteria();
+        // Permission : do not use for list : All labelSets can be used by anyone currently.
+        $criteriaPerm = self::getPermissionCriteria();
+        $criteria->mergeWith($criteriaPerm, 'AND');
+
         $sort = new CSort();
         $sort->attributes = array(
-            'labelset_id'=>array(
-            'asc'=>'lid',
-            'desc'=>'lid desc',
+            'labelset_id' => array(
+            'asc' => 'lid',
+            'desc' => 'lid desc',
             ),
-            'name'=>array(
-            'asc'=>'label_name',
-            'desc'=>'label_name desc',
+            'name' => array(
+            'asc' => 'label_name',
+            'desc' => 'label_name desc',
             ),
-            'languages'=>array(
-            'asc'=>'languages',
-            'desc'=>'languages desc',
+            'languages' => array(
+            'asc' => 'languages',
+            'desc' => 'languages desc',
             ),
         );
+        $sort->defaultOrder = 'label_name';
+
+        // Persist the chosen sort order in session, the same way pageSize is persisted above,
+        // since CSort itself only reads from the current request's GET params.
+        if (isset($_GET[$sort->sortVar]) && is_string($_GET[$sort->sortVar])) {
+            Yii::app()->user->setState('labelSetsSort', $_GET[$sort->sortVar]);
+        } elseif (($sLabelSetsSort = Yii::app()->user->getState('labelSetsSort')) !== null) {
+            $_GET[$sort->sortVar] = $sLabelSetsSort;
+        }
 
         $dataProvider = new CActiveDataProvider('LabelSet', array(
-            'sort'=>$sort,
-            'pagination'=>array(
-                'pageSize'=>$pageSize,
+            'criteria' => $criteria,
+            'sort' => $sort,
+            'pagination' => array(
+                'pageSize' => $pageSize,
             ),
         ));
 
         return $dataProvider;
     }
 
-    /** @inheritdoc
-     * But delete related label sets and directory
-     * @return boolean
+
+    /**
+     * Delete all children (Label and LabelL10n) for a LabelSet
      */
-    public function delete()
+    public function deleteLabelsForLabelSet()
     {
-        if(parent::delete()) {
-            Label::model()->findAll("lid = :lid",array(":lid"=>$this->getPrimaryKey()));
-            rmdirr(Yii::app()->getConfig('uploaddir').'/labels/'.$this->getPrimaryKey());
+        // delete old labels and translations before inserting the new values
+        foreach ($this->labels as $oLabel) {
+            LabelL10n::model()->deleteAllByAttributes([], 'label_id = :id', [':id' => $oLabel->id]);
+            $oLabel->delete();
+        }
+        rmdirr(App()->getConfig('uploaddir') . '/labels/' . $this->lid);
+    }
+
+    /**
+     * Get criteria from Permission
+     * If current user didn't have global permission (read) : add Permission criteria, currently only owner_id check
+     * @param int|null $userid for this user id , if not set : get current one
+     * @return CDbCriteria
+     */
+    protected static function getPermissionCriteria($userid = null)
+    {
+        if (!$userid) {
+            $userid = Yii::app()->user->id;
+        }
+        $criteriaPerm = new CDbCriteria();
+        if (!Permission::model()->hasGlobalPermission("labelsets", 'read')) {
+            /* owner of labelsets */
+            $criteriaPerm->compare('t.owner_id', intval($userid), false);
+        }
+        return $criteriaPerm;
+    }
+
+    /**
+     * permission scope for this model
+     * Actually only test if user have access to LabelSets (read)
+     * Usage don't need read permission
+     * @param int|null $userid
+     * @return self
+     */
+    public function permission($userid = null)
+    {
+        if (!$userid) {
+            $userid = Yii::app()->user->id;
+        }
+        $criteria = $this->getDBCriteria();
+        $criteriaPerm = self::getPermissionCriteria($userid);
+        $criteria->mergeWith($criteriaPerm, 'AND');
+        return $this;
+    }
+
+    /**
+     * Get the owner id of this Survey group Used for Permission
+     * @return integer
+     */
+    public function getOwnerId()
+    {
+        return $this->owner_id;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasPermission($sPermission, $sCRUD = 'read', $iUserID = null)
+    {
+        /* If have global : return true */
+        if (Permission::model()->hasPermission(0, 'global', 'labelsets', $sCRUD, $iUserID)) {
             return true;
         }
-        return false;
+        /* Specific need primaryKey */
+        if (!$this->primaryKey) {
+            return false;
+        }
+        /* Finally : return specific one : always false if not  */
+        return Permission::model()->hasPermission($this->lid, 'labelset', $sPermission, $sCRUD, $iUserID);
+    }
+
+    /**
+     * Sanitize string for any attribute, XSS and XSS in javascript function too.
+     * @todo create a Validator to be used for all such element : no need HTML, informative input used only for admin purpose.
+     * @param string $attribute to sanitize
+     * @return string sanitized attribute
+     */
+    public static function sanitizeAttribute($attribute)
+    {
+        return str_replace(['<','>','&','\'','"'], "", $attribute);
     }
 }

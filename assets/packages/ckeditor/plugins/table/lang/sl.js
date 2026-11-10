@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'sl', {
 	border: 'Velikost obrobe',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'sl', {
 		borderColor: 'Barva obrobe',
 		data: 'Podatki',
 		header: 'Glava',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Da',
 		no: 'Ne',
 		invalidWidth: 'Širina celice mora biti število.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'sl', {
 	headersColumn: 'Prvi stolpec',
 	headersNone: 'Brez',
 	headersRow: 'Prva vrstica',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'Širina obrobe mora biti število.',
 	invalidCellPadding: 'Odmik znotraj celic mora biti pozitivno število.',
 	invalidCellSpacing: 'Razmik med celicami mora biti pozitivno število.',

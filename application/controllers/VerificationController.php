@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    exit('No direct script access allowed');
-}
+<?php
+
 /*
  * LimeSurvey
- * Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
+ * Copyright (C) 2007-2026 The LimeSurvey Project Team
  * All rights reserved.
  * License: GNU/GPL License v2 or later, see LICENSE.php
  * LimeSurvey is free software. This version may have been modified pursuant
@@ -22,7 +21,7 @@
  */
 class VerificationController extends LSYii_Controller
 {
-    function actionImage($sid)
+    public function actionImage($sid)
     {
         $iSurveyID = (int) $sid;
         Yii::app()->loadHelper('database');
@@ -40,7 +39,7 @@ class VerificationController extends LSYii_Controller
         $grey_shade = ImageColorAllocate($im, 204, 204, 204);
 
         // Create the random numberes
-        srand((double) microtime() * 1000000);
+        srand((float) microtime() * 1000000);
 
         $num1 = rand(1, 5);
         $found = false;
@@ -54,27 +53,37 @@ class VerificationController extends LSYii_Controller
         $font_c_rand = rand(1, 3);
         if ($font_c_rand == 1) {
             $font_color = $black;
-        } else if ($font_c_rand == 2) {
+        } elseif ($font_c_rand == 2) {
             $font_color = $red;
-        } else if ($font_c_rand == 3) {
+        } elseif ($font_c_rand == 3) {
             $font_color = $blue;
         }
 
-        $font_rand = rand(1,5); //Maybe add other specific hard font
+        $font_rand = rand(1, 5); //Maybe add other specific hard font
         switch ($font_rand) {
-            case 1: $font = $rootdir."/assets/fonts/font-src/FreeSans.ttf"; break;
-            case 2: $font = $rootdir."/assets/fonts/DejaVuSans.ttf"; break;
-            case 3: $font = $rootdir."/assets/fonts/font-src/lato-v11-latin-700.ttf"; break;
-            case 4: $font = $rootdir."/assets/fonts/font-src/news-cycle-v13-latin-regular.ttf"; break;
-            case 5: $font = $rootdir."/assets/fonts/font-src/ubuntu-v9-latin-regular.ttf"; break;
+            case 1:
+                $font = $rootdir . "/assets/fonts/FreeSans.ttf";
+                break;
+            case 2:
+                $font = $rootdir . "/assets/fonts/DejaVuSans.ttf";
+                break;
+            case 3:
+                $font = $rootdir . "/assets/fonts/font-src/lato-v11-latin-700.ttf";
+                break;
+            case 4:
+                $font = $rootdir . "/assets/fonts/font-src/news-cycle-v13-latin-regular.ttf";
+                break;
+            case 5:
+                $font = $rootdir . "/assets/fonts/font-src/ubuntu-v9-latin-regular.ttf";
+                break;
         }
 
         $line_rand = rand(1, 3);
         if ($line_rand == 1) {
             $line_color = $black;
-        } else if ($line_rand == 2) {
+        } elseif ($line_rand == 2) {
             $line_color = $red;
-        } else if ($line_rand == 3) {
+        } elseif ($line_rand == 3) {
             $line_color = $blue;
         }
 
@@ -86,13 +95,13 @@ class VerificationController extends LSYii_Controller
         imageline($im, 0, 0, 74, 0, $line_color);
         imageline($im, 0, 19, 74, 19, $line_color);
         // Write math question in a nice TTF Font
-        ImageTTFText($im, 10, 0, 3, 16, $font_color, $font, $num1." + ".$num2." =");
+        ImageTTFText($im, 10, 0, 3, 16, $font_color, $font, $num1 . " + " . $num2 . " =");
 
         // Display Image
         ImagePNG($im);
         ImageDestroy($im);
 
         // Add the answer to the session
-        $_SESSION['survey_'.$iSurveyID]['secanswer'] = $num1 + $num2;
+        $_SESSION['responses_' . $iSurveyID]['secanswer'] = $num1 + $num2;
     }
 }

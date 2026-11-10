@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'link', 'km', {
 	acccessKey: 'សោរ​ចូល',
@@ -13,6 +13,7 @@ CKEDITOR.plugins.setLang( 'link', 'km', {
 		title: 'លក្ខណៈ​យុថ្កា',
 		name: 'ឈ្មោះ​យុថ្កា',
 		errorName: 'សូម​បញ្ចូល​ឈ្មោះ​យុថ្កា',
+		errorWhitespace: 'Anchor name cannot contain space characters', // MISSING
 		remove: 'ដក​យុថ្កា​ចេញ'
 	},
 	anchorId: 'តាម ID ធាតុ',
@@ -35,7 +36,9 @@ CKEDITOR.plugins.setLang( 'link', 'km', {
 	noAnchors: '(មិន​មាន​យុថ្កា​នៅ​ក្នុង​ឯកសារ​អត្ថថបទ​ទេ)',
 	noEmail: 'សូម​បញ្ចូល​អាសយដ្ឋាន​អ៊ីមែល',
 	noUrl: 'សូម​បញ្ចូល​តំណ URL',
+	noTel: 'Please type the phone number', // MISSING
 	other: '<ផ្សេង​ទៀត>',
+	phoneNumber: 'Phone number', // MISSING
 	popupDependent: 'Dependent (Netscape)',
 	popupFeatures: 'មុខ​ងារ​ផុស​ផ្ទាំង​វីនដូ​ឡើង',
 	popupFullScreen: 'ពេញ​អេក្រង់ (IE)',
@@ -60,6 +63,7 @@ CKEDITOR.plugins.setLang( 'link', 'km', {
 	toAnchor: 'ត​ភ្ជាប់​ទៅ​យុថ្កា​ក្នុង​អត្ថបទ',
 	toEmail: 'អ៊ីមែល',
 	toUrl: 'URL',
+	toPhone: 'Phone', // MISSING
 	toolbar: 'តំណ',
 	type: 'ប្រភេទ​តំណ',
 	unlink: 'ផ្ដាច់​តំណ',

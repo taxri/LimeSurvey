@@ -11,7 +11,7 @@ var TemplateCoreClass = function () {
          */
         /* showStartPopups : replace core function : allow HTML and use it. Unusuable with ajax */
         showStartPopups: function () {
-            if (LSvar.showpopup  && $.isArray(LSvar.startPopups)) {
+            if (LSvar.showpopup == 1  && $.isArray(LSvar.startPopups)) {
                 startPopups = LSvar.startPopups.map( function (text) {
                     return "<p>"+text+"</p>";
                 });
@@ -24,23 +24,36 @@ var TemplateCoreClass = function () {
          */
         alertSurveyDialog: function (startPopups, title) {
             text = "";
-            if (LSvar.showpopup  && $.isArray(startPopups)) {
+            if (LSvar.showpopup == 1  && $.isArray(startPopups)) {
                 startPopups = startPopups.map(function (text) {
                     return "<p>"+text+"</p>";
                 });
                 text = startPopups.join("");
             }
             if (text) {
-                $("#bootstrap-alert-box-modal .modal-header .modal-title").text(title || "");
-                $("#bootstrap-alert-box-modal .modal-body").html(text);
-                $("#bootstrap-alert-box-modal").modal('show');
+                var $modal = $("#bootstrap-alert-box-modal");
+                var $title = $modal.find(".modal-header .modal-title");
+                var $body = $modal.find(".modal-body");
+                $title.text(title || "");
+                $body.html(text);
+                /* Without a title, the message gives the dialog its name for screen readers */
+                if ($body.attr('id')) {
+                    if (title && $title.attr('id')) {
+                        $modal.attr({'aria-labelledby': $title.attr('id'), 'aria-describedby': $body.attr('id')});
+                    } else {
+                        $modal.attr('aria-labelledby', $body.attr('id')).removeAttr('aria-describedby');
+                    }
+                }
+                const modal = new bootstrap.Modal(document.getElementById('bootstrap-alert-box-modal'), {})
+                modal.show();
             }
         },
         /* confirmSurveyDialog @see application/core/package/limesurvey */
         confirmSurveyDialog: function (text, title, submits) {
             $("#bootstrap-alert-box-modal .modal-header .modal-title").text(title);
-            $("#bootstrap-alert-box-modal .modal-body").html("<p>" + text + "</p>" + "<div class='btn-group btn-group-justified' role='group'><a class='btn btn-warning btn-confirm' data-dismiss='modal'>" + LSvar.lang.yes + "</a><a class='btn btn-default btn-cancel' data-dismiss='modal'>" + LSvar.lang.no + "</a></div>");
-            $("#bootstrap-alert-box-modal").modal('show');
+            $("#bootstrap-alert-box-modal .modal-body").html("<p>" + text + "</p>" + "<div class='btn-group btn-group-justified' role='group'><a class='btn btn-warning btn-confirm' data-bs-dismiss='modal'>" + LSvar.lang.yes + "</a><a class='btn btn-cancel' data-bs-dismiss='modal'>" + LSvar.lang.no + "</a></div>");
+            const modal = new bootstrap.Modal(document.getElementById('bootstrap-alert-box-modal'), {})
+            modal.show();
             $("#bootstrap-alert-box-modal .btn-confirm").on('click', function () {
                 $.each(submits, function (name, value) {
                     $("<input/>", {
@@ -73,6 +86,11 @@ var TemplateCoreClass = function () {
          * @see core/package/limesurvey/survey.js:triggerEmClassChange
          */
         triggerEmClassChangeTemplate: function () {
+            /* The first ExpressionScript run (checkconditions in survey_runtime.js, same ready event) happens before the participant answered anything */
+            var initialRun = true;
+            setTimeout(function () {
+                initialRun = false;
+            }, 0);
             $('.ls-em-tip').each(function () {
                 $(this).on('classChangeError', function () {
                     /* If user choose hide-tip : leave it */
@@ -81,49 +99,60 @@ var TemplateCoreClass = function () {
                         $parent.removeClass('hide-tip', 1);
                         $parent.addClass('tip-was-hidden', 1);
                     }
-                    $questionContainer = $(this).parents('div.question-container');
-                    $questionContainer.addClass('input-error'); /* No difference betwwen error after submit and error before submit : think (Shnoulle) it's better to have a difference */
+                    /* Don't flag untouched questions on page load: After a failed submit the server already sets input-error */
+                    if (!initialRun) {
+                        $questionContainer = $(this).parents('div.question-container');
+                        $questionContainer.addClass('input-error');
+                    }
                 });
 
                 $(this).on('classChangeGood', function () {
-                    /* If user choose hide-tip : leave it */
-                    $parent = $(this).parents('div.hide-tip');
+                    /* If user choose hide-tip : hide it again once no other tip in the same block is still in error */
+                    $parent = $(this).parent('div.ls-questionhelp');
                     $parent.removeClass('text-danger');
                     $parent.addClass('text-info');
-                    if ($parent.hasClass('tip-was-hidden')) {
+                    if ($parent.hasClass('tip-was-hidden') && $parent.find('.ls-em-tip.ls-em-error').not(this).length === 0) {
                         $parent.removeClass('tip-was-hidden').addClass('hide-tip');
                     }
-                    $questionContainer = $(this).parents('div.question-container');
-                    $questionContainer.removeClass('input-error'); /* Not working with mandatory question ... */
+                    /* Keep input-error set by the server after a failed submit until the participant changes something */
+                    if (!initialRun) {
+                        $questionContainer = $(this).parents('div.question-container');
+                        /* Only once no other tip of the question is still in error: This tip's own ls-em-error is removed after this handler */
+                        if ($questionContainer.find('.ls-em-tip.ls-em-error').not(this).length === 0) {
+                            $questionContainer.removeClass('input-error'); /* Not working with mandatory question ... */
+                        }
+                    }
                 });
             });
 
 
         },
         /**
-         * Hide/show question if all sub-questions is hidden
+         * Hide/show question if all subquestions is hidden
          * @see core/package/limesurvey/survey.js:triggerEmRelevanceSubQuestion
          * @see https://bugs.limesurvey.org/view.php?id=10055 (partial)
          * Must be before ready (event happen before ready)
          */
         hideQuestionWithRelevanceSubQuestion: function () {
-            $("[id^='question']:not(.ls-irrelevant)").on('relevance:on', "[id^='javatbd']", function (event, data) {
+            $(".question-container:not(.ls-irrelevant)").on('relevance:on', "[id^='javatbd']", function (event, data) {
                 if (event.target != this) return; // not needed now, but after (2016-11-07)
                 data = $.extend({
                     style: 'hidden'
                 }, data);
                 if (data.style == 'hidden') {
-                    $(this).closest("[id^='question']").removeClass("ls-hidden")
+                    $(this).closest(".question-container").removeClass("ls-hidden");
                 }
             });
-            $("[id^='question']:not(.ls-hidden)").on('relevance:off', "[id^='javatbd']", function (event, data) {
+            $(".question-container:not(.ls-hidden)").on('relevance:off', "[id^='javatbd']", function (event, data) {
                 if (event.target != this) return; // not needed now, but after (2016-11-07)
                 data = $.extend({
                     style: 'hidden'
                 }, data);
                 if (data.style == 'hidden') {
-                    if ($(this).closest("[id^='question']").find("[id^='javatbd']:visible").length == 0) {
-                        $(this).closest("[id^='question']").addClass("ls-hidden");
+                    var questionContainer = $(this).closest(".question-container");
+                    $(this).addClass("ls-hidden");
+                    if ($(questionContainer).find("[id^='javatbd']").filter(':not(.ls-hidden)').length == 0) {
+                        $(questionContainer).addClass("ls-hidden");
                     }
                 }
             });

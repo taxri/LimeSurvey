@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'pt', {
 	border: 'Tamanho do contorno',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'pt', {
 		borderColor: 'Cor da margem',
 		data: 'Dados',
 		header: 'Cabeçalho',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Sim',
 		no: 'Não',
 		invalidWidth: 'A largura da célula deve ser um número.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'pt', {
 	headersColumn: 'Primeira coluna',
 	headersNone: 'Nenhum',
 	headersRow: 'Primeira linha',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'O tamanho da margem tem de ser um número.',
 	invalidCellPadding: 'A criação do espaço na célula deve ser um número positivo.',
 	invalidCellSpacing: 'O espaçamento da célula deve ser um número positivo.',
@@ -69,6 +72,6 @@ CKEDITOR.plugins.setLang( 'table', 'pt', {
 	title: 'Propriedades da tabela',
 	toolbar: 'Tabela',
 	widthPc: 'percentagem',
-	widthPx: 'pixéis',
+	widthPx: 'píxeis',
 	widthUnit: 'unidade da largura'
 } );

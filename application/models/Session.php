@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    exit('No direct script access allowed');
-}
+<?php
+
 /*
    * LimeSurvey
-   * Copyright (C) 2013 The LimeSurvey Project Team / Carsten Schmitz
+   * Copyright (C) 2013-2026 The LimeSurvey Project Team
    * All rights reserved.
    * License: GNU/GPL License v2 or later, see LICENSE.php
    * LimeSurvey is free software. This version may have been modified pursuant
@@ -12,20 +11,19 @@
    * other free or open source software licenses.
    * See COPYRIGHT.php for copyright notices and details.
    *
-     *	Files Purpose: lots of common functions
+     *  Files Purpose: lots of common functions
 */
 
 /**
  * Class Session
  * Extend CActiveRecord and not LSActiveRecord to disable plugin event (session can be used a lot)
- * 
+ *
  * @property string $id Primary Key
  * @property integer $expire
  * @property string $data
  */
 class Session extends CActiveRecord
 {
-
     /** @var mixed $dataBackup to reset $data after save */
     private $dataBackup = null;
 
@@ -41,10 +39,10 @@ class Session extends CActiveRecord
      * @inheritdoc
      * @return Session
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
         /** @var self $model */
-        $model = parent::model($class);
+        $model = parent::model($className);
         return $model;
     }
 
@@ -81,14 +79,14 @@ class Session extends CActiveRecord
         $this->dataBackup = $this->data;
         $db = $this->getDbConnection();
         $dbType = $db->getDriverName();
-        switch($dbType) {
+        switch ($dbType) {
             case 'sqlsrv':
             case 'mssql':
             case 'dblib':
-                $this->data=new CDbExpression('CONVERT(VARBINARY(MAX), '.$db->quoteValue($this->data).')');
+                $this->data = new CDbExpression('CONVERT(VARBINARY(MAX), ' . $db->quoteValue($this->data) . ')');
                 break;
             case 'pgsql':
-                $this->data=new CDbExpression($db->quoteValueWithType($this->data, PDO::PARAM_LOB)."::bytea");
+                $this->data = new CDbExpression($db->quoteValueWithType($this->data, PDO::PARAM_LOB) . "::bytea");
                 break;
             case 'mysql':
                 // Don't seems to need something

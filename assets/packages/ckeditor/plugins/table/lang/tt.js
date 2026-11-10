@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'tt', {
 	border: 'Чик калынлыгы',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'tt', {
 		borderColor: 'Чик төсе',
 		data: 'Мәгълүмат',
 		header: 'Башлык',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Әйе',
 		no: 'Юк',
 		invalidWidth: 'Cell width must be a number.', // MISSING
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'tt', {
 	headersColumn: 'Беренче багана',
 	headersNone: 'Һичбер',
 	headersRow: 'Беренче юл',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'Чик киңлеге сан булырга тиеш.',
 	invalidCellPadding: 'Cell padding must be a positive number.', // MISSING
 	invalidCellSpacing: 'Күзәнәкләр аралары уңай сан булырга тиеш.',

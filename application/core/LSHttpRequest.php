@@ -1,7 +1,8 @@
 <?php
+
 /*
 * LimeSurvey
-* Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
+* Copyright (C) 2007-2026 The LimeSurvey Project Team
 * All rights reserved.
 * License: GNU/GPL License v2 or later, see LICENSE.php
 * LimeSurvey is free software. This version may have been modified pursuant
@@ -33,17 +34,19 @@
  */
 class LSHttpRequest extends CHttpRequest
 {
-
     private $_pathInfo;
-    
+
     public $noCsrfValidationRoutes = array();
     public $noCsrfValidationParams = array();
 
+    /** @var array<string,mixed>|null the request query parameters (name-value pairs) */
+    private $queryParams;
+
     /**
-     * Return the referal url,
+     * Return the referral url,
      * it's used for the "close" buttons, and the "save and close" buttons
      * So it checks if the referrer url is the same than the current url to avoid looping.
-     * If it the case, a paramater can be set to tell what referrer to return.
+     * If it the case, a parameter can be set to tell what referrer to return.
      * If the referrer is an external url, Yii return by default the current url.
      *
      * DEPRECATED
@@ -85,8 +88,8 @@ class LSHttpRequest extends CHttpRequest
     {
 
         $referrer = parent::getUrlReferrer();
-        $baseReferrer    = str_replace(Yii::app()->getBaseUrl(true), "", $referrer);
-        $baseRequestUri  = str_replace(Yii::app()->getBaseUrl(), "", Yii::app()->request->requestUri);
+        $baseReferrer    = str_replace(Yii::app()->getBaseUrl(true), "", (string) $referrer);
+        $baseRequestUri  = str_replace(Yii::app()->getBaseUrl(), "", (string) Yii::app()->request->requestUri);
         $referrer = ($baseReferrer != $baseRequestUri) ? $referrer : null;
         //Use alternative url if the $referrer is still available in the checkLoopInNavigationStack
         if (($this->checkLoopInNavigationStack($referrer)) || (is_null($referrer))) {
@@ -94,7 +97,7 @@ class LSHttpRequest extends CHttpRequest
             if (isset($sAlternativeUrl)) {
                 $referrer = $sAlternativeUrl;
             } else {
-                return App()->createUrl('admin/index');
+                return App()->createUrl('dashboard/view');
             }
         }
         return $referrer;
@@ -135,48 +138,51 @@ class LSHttpRequest extends CHttpRequest
         $navStack = App()->session['LSNAVSTACK'];
         foreach ($navStack as $url) {
             $refEqualsUrl = ($referrerURL == $url);
-                if ($refEqualsUrl) {
-                    return true;
-                }
+            if ($refEqualsUrl) {
+                return true;
+            }
         }
-        return false;  
+        return false;
     }
 
     protected function normalizeRequest()
     {
         parent::normalizeRequest();
 
-        if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] != 'POST') {
+        // Dont run this code in console
+        if (php_sapi_name() == 'cli') {
             return;
         }
 
         $route = Yii::app()->getUrlManager()->parseUrl($this);
 
         if ($this->enableCsrfValidation) {
-            
             $validationRoutes = $this->noCsrfValidationRoutes;
             $validationParams = $this->noCsrfValidationParams;
             // $validationRoutes[] = 'plugins/direct/plugin/AuthSAML/function/acs';
             // $validationParams['request'] = 'acs';
 
             foreach ($validationRoutes as $cr) {
-                if (preg_match('#'.$cr.'#', $route)) {
-                    Yii::app()->detachEventHandler('onBeginRequest',
-                        array($this, 'validateCsrfToken'));
-                    Yii::trace('Route "'.$route.' passed without CSRF validation');
+                if (self::routeMatchesNoCsrfValidationRule($route, $cr)) {
+                    Yii::app()->detachEventHandler(
+                        'onBeginRequest',
+                        array($this, 'validateCsrfToken')
+                    );
+                    Yii::trace('Route "' . $route . ' passed without CSRF validation');
                     break; // found first route and break
                 }
             }
 
             foreach ($validationParams as $key => $value) {
                 if ($this->getParam($key) === $value) {
-                    Yii::app()->detachEventHandler('onBeginRequest',
-                        array($this, 'validateCsrfToken'));
-                    Yii::trace('Route "'.$route.' passed without CSRF validation');
+                    Yii::app()->detachEventHandler(
+                        'onBeginRequest',
+                        array($this, 'validateCsrfToken')
+                    );
+                    Yii::trace('Route "' . $route . ' passed without CSRF validation');
                     break; // found first param and break
                 }
             }
-
         }
     }
 
@@ -186,20 +192,20 @@ class LSHttpRequest extends CHttpRequest
         if ($this->_pathInfo === null) {
             $pathInfo = $this->getRequestUri();
 
-            if (($pos = strpos($pathInfo, '?')) !== false) {
-                            $pathInfo = substr($pathInfo, 0, $pos);
+            if (($pos = strpos((string) $pathInfo, '?')) !== false) {
+                            $pathInfo = substr((string) $pathInfo, 0, $pos);
             }
 
             $pathInfo = $this->decodePathInfo($pathInfo);
 
             $scriptUrl = $this->getScriptUrl();
             $baseUrl = $this->getBaseUrl();
-            if (strpos($pathInfo, $scriptUrl) === 0) {
-                            $pathInfo = substr($pathInfo, strlen($scriptUrl));
-            } elseif ($baseUrl === '' || strpos($pathInfo, $baseUrl) === 0) {
-                            $pathInfo = substr($pathInfo, strlen($baseUrl));
-            } elseif (strpos($_SERVER['PHP_SELF'], $scriptUrl) === 0) {
-                            $pathInfo = substr($_SERVER['PHP_SELF'], strlen($scriptUrl));
+            if (strpos((string) $pathInfo, (string) $scriptUrl) === 0) {
+                            $pathInfo = substr((string) $pathInfo, strlen((string) $scriptUrl));
+            } elseif ($baseUrl === '' || strpos((string) $pathInfo, (string) $baseUrl) === 0) {
+                            $pathInfo = substr((string) $pathInfo, strlen((string) $baseUrl));
+            } elseif (strpos((string) $_SERVER['PHP_SELF'], (string) $scriptUrl) === 0) {
+                            $pathInfo = substr((string) $_SERVER['PHP_SELF'], strlen((string) $scriptUrl));
             } else {
                             throw new CException(Yii::t('yii', 'CHttpRequest is unable to determine the path info of the request.'));
             }
@@ -219,4 +225,139 @@ class LSHttpRequest extends CHttpRequest
         return $this->_pathInfo;
     }
 
+    /**
+     * Returns the request parameters given in the [[queryString]].
+     *
+     * This method will return the contents of `$_GET` if params where not explicitly set.
+     * @return array the request GET parameter values.
+     * @see setQueryParams()
+     */
+    public function getQueryParams()
+    {
+        if ($this->queryParams === null) {
+            return $_GET;
+        }
+
+        return $this->queryParams;
+    }
+
+    /**
+     * Sets the request [[queryString]] parameters.
+     * @param array $values the request query parameters (name-value pairs)
+     * @see getQueryParams()
+     */
+    public function setQueryParams($values)
+    {
+        $this->queryParams = $values;
+    }
+
+    /**
+     * Returns true if the route matches the given validation rule.
+     * @param string $route the route to be checked
+     * @param string $rule the validation rule
+     * @return bool true if the route matches the given validation rule
+     */
+    public static function routeMatchesNoCsrfValidationRule($route, $rule)
+    {
+        // The rule should either match the whole route, or the start of the route followed by a slash.
+        // For example the routes "rest" (in the case of "index.php/rest?...") or "rest/..." (in the case of
+        // "index.php/rest/...") should be matched by the rule "rest", but the route "admin/menus/sa/restore"
+        // should not.
+        $route = ltrim($route, '/');
+        return preg_match('#^' . $rule . '$|^' . $rule . '/#', (string) $route);
+    }
+
+    /**
+     * Validates the CSRF token of the request.
+     * If the token is missing because PHP dropped the POST variables beyond max_input_vars,
+     * a message pointing to that setting is shown instead of the generic CSRF error.
+     * @param CEvent $event event parameter
+     * @return void
+     * @throws CHttpException if the validation fails
+     */
+    public function validateCsrfToken($event)
+    {
+        try {
+            parent::validateCsrfToken($event);
+        } catch (CHttpException $exception) {
+            if ($this->isPostDataTruncated()) {
+                throw new CHttpException(
+                    400,
+                    gT('The data received seems incomplete. This usually happens due to server limitations (PHP setting max_input_vars). Please contact your system administrator.', 'unescaped')
+                );
+            }
+            throw $exception;
+        }
+    }
+
+    /**
+     * Returns true if the POST data reached the PHP max_input_vars limit, so PHP may have dropped variables.
+     * @return bool
+     */
+    protected function isPostDataTruncated()
+    {
+        $maxInputVars = (int) ini_get('max_input_vars');
+        if (!$this->getIsPostRequest() || $maxInputVars <= 0) {
+            return false;
+        }
+        $postVarsCount = 0;
+        array_walk_recursive($_POST, function () use (&$postVarsCount) {
+            $postVarsCount++;
+        });
+        return $postVarsCount >= $maxInputVars;
+    }
+
+    /**
+     * Is this a REST API request
+     *
+     * @return boolean
+     */
+    public function isRestRequest()
+    {
+        $restRoutePattern = '#^(/)?(index.php/)?rest(/.*)?#';
+        $restPath = preg_match(
+            $restRoutePattern,
+            $this->getRequestUri(),
+        ) === 1;
+        $restRoute = preg_match(
+            $restRoutePattern,
+            $this->getParam('r', '')
+        ) === 1;
+        return $restPath || $restRoute;
+    }
+
+    /**
+     * @inheritdoc
+     * Check host with config['allowedHost'] if it set
+     */
+    public function getHostInfo($schema = '')
+    {
+        $hostInfo = parent::getHostInfo($schema);
+        self::checkIsAllowedHost($hostInfo);
+        return $hostInfo;
+    }
+
+    /**
+     * Check if a URL's host is in the allowed hosts list.
+     * Delegates to App()->isHostAllowed() which is lenient when
+     * allowed_hosts.php does not exist yet, and strict once configured.
+     *
+     * @param string $hostInfo The URL or host info to validate.
+     * @throws CHttpException if the host is not allowed.
+     * @return void
+     */
+    public static function checkIsAllowedHost($hostInfo)
+    {
+        $host = parse_url($hostInfo, PHP_URL_HOST);
+        if ($host && !App()->isHostAllowed($host)) {
+            $message = gT("The requested hostname is invalid.", 'unescaped');
+            if (Yii::app()->getConfig('debug') > 0) {
+                $message .= ' ' . sprintf(
+                    gT("Host '%s' is not in the allowed hosts file (application/config/allowed_hosts.php). Add it there, or check the publicurl setting, then try again.", 'unescaped'),
+                    $host
+                );
+            }
+            throw new CHttpException(400, $message);
+        }
+    }
 }

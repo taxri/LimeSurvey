@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'fi', {
 	border: 'Rajan paksuus',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'fi', {
 		borderColor: 'Reunan väri',
 		data: 'Data',
 		header: 'Ylätunniste',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Kyllä',
 		no: 'Ei',
 		invalidWidth: 'Solun leveyden täytyy olla numero.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'fi', {
 	headersColumn: 'Ensimmäinen sarake',
 	headersNone: 'Ei',
 	headersRow: 'Ensimmäinen rivi',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'Reunan koon täytyy olla numero.',
 	invalidCellPadding: 'Solujen sisennyksen täytyy olla numero.',
 	invalidCellSpacing: 'Solujen välin täytyy olla numero.',

@@ -1,7 +1,8 @@
 <?php
+
 /*
 * LimeSurvey
-* Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
+* Copyright (C) 2007-2026 The LimeSurvey Project Team
 * All rights reserved.
 * License: GNU/GPL License v2 or later, see LICENSE.php
 * LimeSurvey is free software. This version may have been modified pursuant
@@ -19,7 +20,7 @@
 function doreplacement($file, $data, $oTemplate = '')
 {
     //Produce sample page from template file
-    $aReplacements = isset($data['aReplacements']) ? $data['aReplacements'] : array();
+    $aReplacements = $data['aReplacements'] ?? array();
     return (array) templatereplace(file_get_contents($file), $aReplacements, $data, 'Unspecified', false, null, array(), false, $oTemplate);
 }
 
@@ -40,7 +41,7 @@ function getListOfFiles($wh)
         }
         closedir($handle);
     }
-    $arr = explode("\n", $files);
+    $arr = explode("\n", (string) $files);
     sort($arr);
     return $arr;
 }
@@ -75,12 +76,12 @@ function mkdir_p($target)
 function themeoptions($optionarray, $selectedvalue)
 {
     $return = '';
-    foreach ($optionarray as $arkey=>$arvalue) {
-        $return .= "<option value='".HTMLEscape($arkey)."'";
+    foreach ($optionarray as $arkey => $arvalue) {
+        $return .= "<option value='" . HTMLEscape($arkey) . "'";
         if ($arkey == $selectedvalue) {
             $return .= " selected='selected'";
         }
-        $return .= '>'.HTMLEscape($arkey)."</option>\n";
+        $return .= '>' . HTMLEscape($arkey) . "</option>\n";
     }
     return $return;
 }
@@ -113,7 +114,7 @@ function recursive_in_array($needle, $haystack)
 */
 function is_template_editable($templatename)
 {
-    if (isStandardTemplate($templatename) && Yii::app()->getConfig("standard_themes_readonly") == true) {
+    if (SurveyThemeHelper::isStandardTemplate($templatename) && Yii::app()->getConfig("standard_themes_readonly") == true) {
         return false;
     } else {
         return true;
@@ -121,19 +122,24 @@ function is_template_editable($templatename)
 }
 
 /**
-* This is a PCLZip callback function that ensures only files are extracted that have a valid extension
+* This is a callback function that ensures only files are extracted that have a valid extension
+* and whose path contains no < > " or control characters
 *
-* @param mixed $p_event
-* @param mixed $p_header
+* @param array $file File info from ZipExtractor, with at least the 'name' and 'is_folder' keys
 * @return int Return 1 for yes (file can be extracted), 0 for no
 */
-function templateExtractFilter($p_event, &$p_header)
+function templateExtractFilter($file)
 {
-    $aAllowExtensions = explode(',', Yii::app()->getConfig('allowedthemeuploads'));
+    // File names are listed in the theme options, so don't allow names that could break out of HTML.
+    // Backslashes stay allowed, because some ZIP tools on Windows use them as folder separators.
+    if (preg_match('/[<>"\x00-\x1F\x7F]/', (string) $file['name'])) {
+        return 0;
+    }
+    $aAllowExtensions = explode(',', Yii::app()->getConfig('allowedthemeuploads') . ',' . Yii::app()->getConfig('allowedthemeimageformats'));
     $aAllowExtensions[] = 'twig';
-    $info = pathinfo($p_header['filename']);
+    $info = pathinfo((string) $file['name']);
 
-    if ($p_header['folder'] || !isset($info['extension']) || in_array($info['extension'], $aAllowExtensions)) {
+    if ($file['is_folder'] || !isset($info['extension']) || in_array(strtolower($info['extension']), $aAllowExtensions)) {
         return 1;
     } else {
         return 0;

@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    exit('No direct script access allowed');
-}
+<?php
+
 /*
    * LimeSurvey
-   * Copyright (C) 2013 The LimeSurvey Project Team / Carsten Schmitz
+   * Copyright (C) 2013-2026 The LimeSurvey Project Team
    * All rights reserved.
    * License: GNU/GPL License v2 or later, see LICENSE.php
    * LimeSurvey is free software. This version may have been modified pursuant
@@ -35,10 +34,10 @@ class ExpressionError extends LSActiveRecord
      * @inheritdoc
      * @return ExpressionError
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
         /** @var self $model */
-        $model = parent::model($class);
+        $model = parent::model($className);
         return $model;
     }
 
@@ -53,29 +52,4 @@ class ExpressionError extends LSActiveRecord
     {
         return 'scid';
     }
-
-    /**
-     * @param bool|mixed $condition
-     * @return mixed
-     */
-    public function getAllRecords($condition = false)
-    {
-        if ($condition != false) {
-            $this->db->where($condition);
-        }
-
-        $data = $this->db->get('expression_errors');
-
-        return $data;
-    }
-
-    /**
-     * @param array $data
-     * @return mixed
-     */
-    public function insertRecords($data)
-    {
-        return $this->db->insert('expression_errors', $data);
-    }
-
 }

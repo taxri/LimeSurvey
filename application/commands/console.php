@@ -2,7 +2,7 @@
 <?php
     /*
     * LimeSurvey (tm)
-    * Copyright (C) 2011 The LimeSurvey Project Team / Carsten Schmitz
+    * Copyright (C) 2011-2026 The LimeSurvey Project Team
     * All rights reserved.
     * License: GNU/GPL License v2 or later, see LICENSE.php
     * LimeSurvey is free software. This version may have been modified pursuant
@@ -15,51 +15,68 @@
     * File edited by Sam Mousa for Marcel Minke.
     * This loader bypasses the default Yii loader and loads a custom console class instead.
     */
-    if (!isset($argv[0])) {
-        die();
-    }
-    define('BASEPATH', '.');
-    require_once __DIR__.'/../../third_party/autoload.php';
-    require_once(dirname(dirname(dirname(__FILE__))).DIRECTORY_SEPARATOR.'framework'.DIRECTORY_SEPARATOR.'yii.php');
-    // Load configuration.
-    $sCurrentDir = dirname(__FILE__);
-    $settings = require (dirname($sCurrentDir).DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config-defaults.php');
-    $config = require (dirname($sCurrentDir).DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'internal.php');
-    $config['components']['session']['class'] = 'ConsoleHttpSession';
-    $config['components']['session']['cookieMode'] = 'none';
-    $config['components']['session']['cookieParams'] = [];
-    
-    $core = dirname($sCurrentDir).DIRECTORY_SEPARATOR.'core'.DIRECTORY_SEPARATOR;
-    if (isset($config['config'])) {
-        $settings = array_merge($settings, $config['config']);
-    }
-    unset ($config['defaultController']);
-    unset ($config['config']);
-    /* fix runtime path, unsure you can lauch function anywhere (if you use php /var/www/limesurvey/... : can be /root/ for config */
-    if (!isset($config['runtimePath'])) {
-        $runtimePath = $settings['tempdir'].'/runtime';
-        if (!is_dir($runtimePath) || !is_writable($runtimePath)) {
-            $runtimePath = str_replace($settings['rootdir'], dirname(dirname(dirname(__FILE__))), $runtimePath);
-        }
-        $config['runtimePath'] = $runtimePath;
-    }
-    // fix for fcgi
-    defined('STDIN') or define('STDIN', fopen('php://stdin', 'r'));
+if (!isset($argv[0])) {
+    die();
+}
 
-    defined('YII_DEBUG') or define('YII_DEBUG', true);
+define('BASEPATH', '.');
 
-    /* specific for web */
-    unset($config['defaultController']);
+// The PHP file extension
+define('EXT', '.php');
 
-    if (isset($config)) {
-        require_once($core.'ConsoleApplication.php');
-        $app = Yii::createApplication('ConsoleApplication', $config);
-        define('APPPATH', Yii::app()->getBasePath().DIRECTORY_SEPARATOR);
-        $app->commandRunner->addCommands(YII_PATH.'/cli/commands');
-        $env = (string) @getenv('YII_CONSOLE_COMMANDS');
-        if (!empty($env)) {
-            $app->commandRunner->addCommands($env);
-        }
+// fix for fcgi
+defined('STDIN') or define('STDIN', fopen('php://stdin', 'r'));
+// NOTE: YII_DEBUG must be defined BEFORE requiring yii.php below. YiiBase.php (loaded by
+// yii.php) does `defined('YII_DEBUG') or define('YII_DEBUG', false);` as one of its first
+// statements. If that runs first, YII_DEBUG gets permanently locked to false and the
+// `defined('YII_DEBUG') or define('YII_DEBUG', true)` further down becomes a no-op
+// (PHP constants cannot be redefined), regardless of the 'debug' setting in config.php.
+defined('YII_DEBUG') or define('YII_DEBUG', true);
+
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once(dirname(dirname(dirname(__FILE__))) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'yiisoft' . DIRECTORY_SEPARATOR . 'yii' . DIRECTORY_SEPARATOR . 'framework' . DIRECTORY_SEPARATOR . 'yii.php');
+
+// Load configuration.
+$sCurrentDir = dirname(__FILE__);
+$settings = require(dirname($sCurrentDir) . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config-defaults.php');
+$config = require(dirname($sCurrentDir) . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'internal.php');
+$config['components']['session']['class'] = 'ConsoleHttpSession';
+$config['components']['session']['cookieMode'] = 'none';
+$config['components']['session']['cookieParams'] = [];
+
+$core = dirname($sCurrentDir) . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR;
+if (isset($config['config'])) {
+    $settings = array_merge($settings, $config['config']);
+}
+unset($config['defaultController']);
+unset($config['config']);
+
+/* fix runtime path, unsure you can launch function anywhere (if you use php /var/www/limesurvey/... : can be /root/ for config */
+if (!isset($config['runtimePath'])) {
+    $runtimePath = $settings['tempdir'] . '/runtime';
+    if (!is_dir($runtimePath) || !is_writable($runtimePath)) {
+        $runtimePath = str_replace($settings['rootdir'], dirname(dirname(dirname(__FILE__))), $runtimePath);
     }
-    $app->run();
-?>
+    $config['runtimePath'] = $runtimePath;
+}
+
+/* specific for web */
+unset($config['defaultController']);
+
+if (isset($config)) {
+    require_once($core . 'ConsoleApplication.php');
+    $app = Yii::createApplication('ConsoleApplication', $config);
+    define('APPPATH', Yii::app()->getBasePath() . DIRECTORY_SEPARATOR);
+    $app->commandRunner->addCommands(YII_PATH . '/cli/commands');
+    $env = (string) @getenv('YII_CONSOLE_COMMANDS');
+    if (!empty($env)) {
+        $app->commandRunner->addCommands($env);
+    }
+
+    // @see https://bugs.limesurvey.org/view.php?id=15500
+    Yii::import('application.helpers.ClassFactory');
+    ClassFactory::registerClass('Token_', 'Token');
+    ClassFactory::registerClass('Response_', 'Response');
+}
+
+$app->run();

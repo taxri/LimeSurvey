@@ -1,7 +1,8 @@
 <?php
+
 /*
 * LimeSurvey (tm)
-* Copyright (C) 2011 The LimeSurvey Project Team / Carsten Schmitz
+* Copyright (C) 2011-2026 The LimeSurvey Project Team
 * All rights reserved.
 * License: GNU/GPL License v2 or later, see LICENSE.php
 * LimeSurvey is free software. This version may have been modified pursuant
@@ -12,29 +13,45 @@
 */
 class WipeCommand extends CConsoleCommand
 {
-
-    public function run($sArgument)
+    /**
+     * @return int
+     */
+    #[\Override]
+    public function run($args)
     {
-        if (isset($sArgument) && isset($sArgument[0]) && $sArgument[0] = 'yes') {
-
+        if (isset($args) && isset($args[0]) && $args[0] = 'yes') {
             Yii::import('application.helpers.common_helper', true);
-            Yii::import('application.helpers.database_helper', true);
-
             $actquery = "truncate table {{assessments}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{answers}}";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{answer_l10ns}}";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{asset_version}}";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{boxes}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{conditions}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{defaultvalues}}";
             Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{defaultvalue_l10ns}}";
+            Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{labels}}";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{label_l10ns}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{labelsets}}";
             Yii::app()->db->createCommand($actquery)->execute();
-            $actquery = "truncate table {{groups}}";
+            $actquery = "truncate table " . Yii::app()->db->quoteTableName('{{groups}}');
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{group_l10ns}}";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{notifications}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{questions}}";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{question_l10ns}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{surveys}}";
             Yii::app()->db->createCommand($actquery)->execute();
@@ -42,7 +59,11 @@ class WipeCommand extends CConsoleCommand
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{surveys_languagesettings}}";
             Yii::app()->db->createCommand($actquery)->execute();
-            $actquery = "delete from {{permissions}} where uid<>1";
+            $actquery = "delete from {{permissions}} where id<>1";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{plugin_settings}}";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{permissiontemplates}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{quota}}";
             Yii::app()->db->createCommand($actquery)->execute();
@@ -62,6 +83,8 @@ class WipeCommand extends CConsoleCommand
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{participants}}";
             Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{participant_attribute}}";
+            Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{participant_attribute_names}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{participant_attribute_names_lang}}";
@@ -74,17 +97,35 @@ class WipeCommand extends CConsoleCommand
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{saved_control}}";
             Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{sessions}}";
+            Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "truncate table {{survey_links}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "delete from {{users}} where uid<>1";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "delete from {{surveys_groups}} where gsid<>1";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "delete from {{surveys_groupsettings}} where gsid>1";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{survey_url_parameters}}";
+            Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "truncate table {{user_in_permissionrole}}";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "update {{users}} set lang='en'";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "update {{users}} set lang='auto'";
             Yii::app()->db->createCommand($actquery)->execute();
-            $actquery = "delete from {{settings_global}} where stg_name LIKE 'last_question%'";
+            if (tableExists('{{auditlog_log}}')) {
+                $actquery = "truncate table {{auditlog_log}}";
+                Yii::app()->db->createCommand($actquery)->execute();
+            }
+            if (tableExists('{{user_mfa_settings}}')) {
+                $actquery = "truncate table {{user_mfa_settings}}";
+                Yii::app()->db->createCommand($actquery)->execute();
+            }
+            $actquery = "delete from {{settings_user}} where stg_name LIKE 'last_question'";
             Yii::app()->db->createCommand($actquery)->execute();
-            $actquery = "delete from {{settings_global}} where stg_name LIKE 'last_survey%'";
+            $actquery = "delete from {{settings_user}} where stg_name LIKE 'last_survey'";
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "update {{users}} set email = 'test@domain.test', full_name='Administrator'";
             Yii::app()->db->createCommand($actquery)->execute();
@@ -96,44 +137,48 @@ class WipeCommand extends CConsoleCommand
             Yii::app()->db->createCommand($actquery)->execute();
             $actquery = "update {{settings_global}} set stg_value='Sea_Green' where stg_name='admintheme'";
             Yii::app()->db->createCommand($actquery)->execute();
+            $actquery = "update {{plugins}} set active=0 where name='TwoFactorAdminLogin' OR name='AuditLog'";
+            Yii::app()->db->createCommand($actquery)->execute();
 
-            foreach ($templateData = LsDefaultDataSets::getTemplatesData() as $template) {
+            foreach (LsDefaultDataSets::getTemplatesData() as $template) {
                 Yii::app()->db->createCommand()->insert("{{templates}}", $template);
             }
-            foreach ($templateConfigurationData = LsDefaultDataSets::getTemplateConfigurationData() as $templateConfiguration) {
+            foreach (LsDefaultDataSets::getTemplateConfigurationData() as $templateConfiguration) {
                 Yii::app()->db->createCommand()->insert("{{template_configuration}}", $templateConfiguration);
+            }
+
+            foreach ($boxesData = LsDefaultDataSets::getBoxesData() as $box) {
+                Yii::app()->db->createCommand()->insert("{{boxes}}", $box);
             }
 
             $surveyidresult = dbGetTablesLike("tokens%");
             foreach ($surveyidresult as $sv) {
-                Yii::app()->db->createCommand("drop table ".$sv)->execute();
+                Yii::app()->db->createCommand("drop table " . $sv)->execute();
             }
 
             $surveyidresult = dbGetTablesLike("old\_%");
             foreach ($surveyidresult as $sv) {
-                Yii::app()->db->createCommand("drop table ".$sv)->execute();
+                Yii::app()->db->createCommand("drop table " . $sv)->execute();
             }
 
             $surveyidresult = dbGetTablesLike("survey\_%");
             foreach ($surveyidresult as $sv) {
-                if (strpos($sv, 'survey_links') === false && strpos($sv, 'survey_url_parameters') === false) {
-                                    Yii::app()->db->createCommand("drop table ".$sv)->execute();
+                if (strpos((string) $sv, 'survey_links') === false && strpos((string) $sv, 'survey_url_parameters') === false) {
+                                    Yii::app()->db->createCommand("drop table " . $sv)->execute();
                 }
             }
-            $sBaseUploadDir = dirname(dirname(dirname(__FILE__))).DIRECTORY_SEPARATOR.'upload';
+            $sBaseUploadDir = dirname(dirname(dirname(__FILE__))) . DIRECTORY_SEPARATOR . 'upload';
 
-            SureRemoveDir($sBaseUploadDir.DIRECTORY_SEPARATOR.'surveys', false);
-            SureRemoveDir($sBaseUploadDir.DIRECTORY_SEPARATOR.'templates', false);
-            SureRemoveDir($sBaseUploadDir.DIRECTORY_SEPARATOR.'themes'.DIRECTORY_SEPARATOR.'survey', false);
-            SureRemoveDir($sBaseUploadDir.DIRECTORY_SEPARATOR.'themes'.DIRECTORY_SEPARATOR.'question', false);
+            SureRemoveDir($sBaseUploadDir . DIRECTORY_SEPARATOR . 'surveys', false);
+            SureRemoveDir($sBaseUploadDir . DIRECTORY_SEPARATOR . 'templates', false);
+            SureRemoveDir($sBaseUploadDir . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'survey', false);
+            SureRemoveDir($sBaseUploadDir . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'question', false);
         } else {
             // TODO: a valid error process
             echo 'This CLI command wipes a LimeSurvey installation clean (including all user except for the user ID 1 and user-uploaded content). For security reasons this command can only started if you add the parameter \'yes\' to the command line.';
         }
-
+        return 0;
     }
-
-
 }
 
 
@@ -146,15 +191,14 @@ function SureRemoveDir($dir, $DeleteMe)
         if ($obj == '.' || $obj == '..') {
             continue;
         }
-        if (!@unlink($dir.'/'.$obj)) {
-            SureRemoveDir($dir.'/'.$obj, true);
+        if (!@unlink($dir . '/' . $obj)) {
+            SureRemoveDir($dir . '/' . $obj, true);
         }
     }
     closedir($dh);
     if ($DeleteMe) {
         if (!@rmdir($dir)) {
-            echo "Error: could not delete ".$dir;
+            echo "Error: could not delete " . $dir;
         }
-
     }
 }

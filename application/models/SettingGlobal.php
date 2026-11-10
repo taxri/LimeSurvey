@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    exit('No direct script access allowed');
-}
+<?php
+
 /*
    * LimeSurvey
-   * Copyright (C) 2013 The LimeSurvey Project Team / Carsten Schmitz
+   * Copyright (C) 2013-2026 The LimeSurvey Project Team
    * All rights reserved.
    * License: GNU/GPL License v2 or later, see LICENSE.php
    * LimeSurvey is free software. This version may have been modified pursuant
@@ -12,7 +11,7 @@
    * other free or open source software licenses.
    * See COPYRIGHT.php for copyright notices and details.
    *
-     *	Files Purpose: lots of common functions
+     *  Files Purpose: lots of common functions
 */
 
 /**
@@ -24,13 +23,47 @@
  */
 class SettingGlobal extends LSActiveRecord
 {
+    const DBVERSION_NUMBER = 'DBVersion'; //this is the attribute stg_name in table for db version
+
+    /** @var string Maintenance mode: No maintenance */
+    public const MAINTENANCE_MODE_OFF = 'off';
+    /** @var string Maintenance mode: Participants can finish surveys they already started, no new participants are allowed */
+    public const MAINTENANCE_MODE_SOFT = 'soft';
+    /** @var string Maintenance mode: No participant can take a survey */
+    public const MAINTENANCE_MODE_HARD = 'hard';
+    /**
+     * @var string Maintenance mode: Like "hard", and the administration (web interface, RemoteControl and
+     * REST API) is locked as well. Can only be set and unset with "console.php setMaintenanceMode", meant
+     * for the time a hosting system makes a backup or runs the database update from the command line.
+     */
+    public const MAINTENANCE_MODE_HARD_CLI = 'hard-cli';
+
+    /**
+     * @var string[] settings that must only come from php files
+     */
+    private $disableByDb = array(
+        'versionnumber', // Come and leave it in version.php
+        'dbversionnumber', // Must keep it out of DB
+        'updatable', // If admin with ftp access disable updatable : leave it
+        'debug', // Currently not accessible, seem better
+        'debugsql', // Currently not accessible, seem better
+        'forcedsuperadmin', // This is for security
+        'defaultfixedtheme', // Because updating can broke instance
+        'demoMode', // No demoMode update via model
+        'ssl_emergency_override', // security related
+        'ssl_disable_alert', // security related
+        'filterxsshtml_forcedall',  // security related, must disable GUI
+        'filterxsshtml_allowforcedsuperadmin',  // security related
+        'filterxsshtml_enablescript',  // security related, must disable GUI
+    );
+
     /**
      * @inheritdoc
      * @return CActiveRecord
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
-        return parent::model($class);
+        return parent::model($className);
     }
 
     /** @inheritdoc */
@@ -48,25 +81,16 @@ class SettingGlobal extends LSActiveRecord
     /** @inheritdoc */
     public function rules()
     {
-        /* settings that must only comme from php files */
-        $disableByDb = array(
-            'versionnumber', // Come and leave it in version.php
-            'dbversionnumber', // Must keep it out of DB
-            'updatable', // If admin with ftp access disable updatable : leave it
-            'debug', // Currently not accessible, seem better
-            'debugsql', // Currently not accessible, seem better
-            'forcedsuperadmin', // This is for security
-            'defaultfixedtheme', // Because updating can broke instance
-        );
+        $disableByDb = $this->disableByDb;
         /* Specific disable settings for demo mode */
         if (Yii::app()->getConfig("demoMode")) {
-            $disableByDb = array_merge($disableByDb,array('sitename','defaultlang','defaulthtmleditormode','filterxsshtml'));
+            $disableByDb = array_merge($disableByDb, array('sitename','defaultlang','defaulthtmleditormode','filterxsshtml'));
         }
         $aRules = array(
             array('stg_name', 'required'),
             array('stg_name', 'unique'),
             array('stg_value', 'default', 'value' => ''),
-            array('stg_name', 'in', 'not'=>true,'range' => $disableByDb),
+            array('stg_name', 'in', 'not' => true,'range' => $disableByDb),
         );
 
         return $aRules;
@@ -74,32 +98,77 @@ class SettingGlobal extends LSActiveRecord
 
     /**
      * Update or set a setting in DB and update current app config if no error happen
-     * Return self : then other script can use if(!$oSetting) { $oSetting->getErrors; }
+     * Return self : then other script can use if($oSetting->hasErrors()) { Do action with $oSetting->getErrors; }
      * @param string $settingname
-     * @param string $settingvalue
+     * @param mixed $settingvalue
      * @return self
      */
     public static function setSetting($settingname, $settingvalue)
     {
         $setting = self::model()->findByPk($settingname);
-        if(empty($setting)) {
-            $setting = new self;
+        if (empty($setting)) {
+            $setting = new self();
             $setting->stg_name = $settingname;
         }
         $setting->stg_value = $settingvalue;
-        if($setting->save()) {
-            Yii::app()->setConfig($settingname,$settingvalue);
-        }
+        $setting->save();
         return $setting;
+    }
+
+    /**
+     * Returns the current maintenance mode, one of the MAINTENANCE_MODE_* constants.
+     * An empty or unknown value counts as "off".
+     *
+     * @return string
+     */
+    public static function getMaintenanceMode()
+    {
+        $mode = (string) App()->getConfig('maintenancemode', self::MAINTENANCE_MODE_OFF);
+        $modes = [self::MAINTENANCE_MODE_OFF, self::MAINTENANCE_MODE_SOFT, self::MAINTENANCE_MODE_HARD, self::MAINTENANCE_MODE_HARD_CLI];
+        return in_array($mode, $modes, true) ? $mode : self::MAINTENANCE_MODE_OFF;
+    }
+
+    /**
+     * Whether participants are locked out completely: no participant may take a survey, not even
+     * one they already started. True for both maintenance modes "hard" and "hard-cli".
+     *
+     * @param string|null $mode The mode to check, null for the current one
+     * @return bool
+     */
+    public static function areParticipantsLocked($mode = null)
+    {
+        $mode = $mode ?? self::getMaintenanceMode();
+        return in_array($mode, [self::MAINTENANCE_MODE_HARD, self::MAINTENANCE_MODE_HARD_CLI], true);
+    }
+
+    /**
+     * Whether the administration (web interface, RemoteControl and REST API) is locked
+     * (maintenance mode "hard-cli", set from the command line while the hosting system
+     * makes a backup or runs the database update).
+     *
+     * @return bool
+     */
+    public static function isAdministrationLocked()
+    {
+        return self::getMaintenanceMode() === self::MAINTENANCE_MODE_HARD_CLI;
+    }
+
+    /** @inheritdoc
+     * Always update of current application config after successful save
+     **/
+    protected function afterSave()
+    {
+        parent::afterSave();
+        Yii::app()->setConfig($this->stg_name, $this->stg_value);
     }
 
     /**
      * Increase the custom asset version number in DB
      * This will force the refresh of the assets folders content
      */
-    static public function increaseCustomAssetsversionnumber()
+    public static function increaseCustomAssetsversionnumber()
     {
-        $iCustomassetversionnumber = getGlobalSetting('customassetversionnumber');
+        $iCustomassetversionnumber = Yii::app()->getConfig('customassetversionnumber');
         $iCustomassetversionnumber++;
         self::setSetting('customassetversionnumber', $iCustomassetversionnumber);
         return;
@@ -110,17 +179,17 @@ class SettingGlobal extends LSActiveRecord
      * Increase the asset version number in version.php
      * This will force the refresh of the assets folders content
      */
-    static public function increaseAssetsversionnumber()
+    public static function increaseAssetsversionnumber()
     {
         @ini_set('auto_detect_line_endings', '1');
         $sRootdir      = Yii::app()->getConfig("rootdir");
-        $versionlines = file($sRootdir.DIRECTORY_SEPARATOR.'application'.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'version.php');
-        $handle       = fopen($sRootdir.DIRECTORY_SEPARATOR.'application'.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'version.php', "w");
+        $versionlines = file($sRootdir . DIRECTORY_SEPARATOR . 'application' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'version.php');
+        $handle       = fopen($sRootdir . DIRECTORY_SEPARATOR . 'application' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'version.php', "w");
         $iAssetNumber = self::generateAssetVersionNumber(Yii::app()->getConfig("assetsversionnumber"));
 
         foreach ($versionlines as $line) {
             if (strpos($line, 'assetsversionnumber') !== false) {
-                $line = '$config[\'assetsversionnumber\'] = \''.$iAssetNumber.'\';'."\r\n";
+                $line = '$config[\'assetsversionnumber\'] = \'' . $iAssetNumber . '\';' . "\r\n";
             }
             fwrite($handle, $line);
         }
@@ -136,15 +205,28 @@ class SettingGlobal extends LSActiveRecord
      * @param int $iAssetNumber the current asset number
      * @return int the new asset number
      */
-    static public function generateAssetVersionNumber($iAssetNumber)
+    public static function generateAssetVersionNumber($iAssetNumber)
     {
-        while ( $iAssetNumber == Yii::app()->getConfig("assetsversionnumber")) {
-            if ($iAssetNumber > 100000){
+        while ($iAssetNumber == Yii::app()->getConfig("assetsversionnumber")) {
+            if ($iAssetNumber > 100000) {
                 $iAssetNumber++;
-            }else{
+            } else {
                 $iAssetNumber = Yii::app()->getConfig("assetsversionnumber") + 100000;
             }
         }
         return $iAssetNumber;
+    }
+
+    /**
+     * Returns db version number from table settings_global or null if dbversion does not exist.
+     *
+     * @return int | null
+     */
+    public static function getDBVersionNumber()
+    {
+        /**@var SettingGlobal $dbVersion */
+        $dbVersion = self::model()->findByAttributes(['stg_name' => self::DBVERSION_NUMBER]);
+
+        return ($dbVersion === null) ? null : (int)$dbVersion->stg_value;
     }
 }

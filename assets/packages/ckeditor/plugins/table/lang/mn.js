@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'mn', {
 	border: 'Хүрээний хэмжээ',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'mn', {
 		borderColor: 'Хүрээний өнгө',
 		data: 'Data',
 		header: 'Header',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Тийм',
 		no: 'Үгүй',
 		invalidWidth: 'Нүдний өргөн нь тоо байх ёстой.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'mn', {
 	headersColumn: 'First column', // MISSING
 	headersNone: 'None',
 	headersRow: 'First Row', // MISSING
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'Border size must be a number.', // MISSING
 	invalidCellPadding: 'Cell padding must be a positive number.', // MISSING
 	invalidCellSpacing: 'Cell spacing must be a positive number.', // MISSING

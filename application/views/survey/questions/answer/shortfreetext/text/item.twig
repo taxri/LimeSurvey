@@ -6,9 +6,9 @@
  * $name        $ia[1]
  * $prefix
  * $suffix
- * $kpclass
  * $tiwidth
  * $dispVal
+ * $placeholder
  * $maxlength
  * $checkconditionFunction
  */
@@ -26,24 +26,26 @@
     {% endif %}
         <!-- Prefix -->
         {% if prefix != '' %}
-            <div class='ls-input-group-extra prefix-text prefix'>{{ prefix }}</div>
+            <div class='ls-input-group-extra prefix-text prefix'>{{ processString(prefix) }}</div>
         {% endif %}
 
         <!-- Input -->
         <input
-            class="form-control {{ kpclass }}"
+            class="form-control"
             type="text"
             name="{{ name }}"
             id="answer{{ name }}"
             value="{{ dispVal }}"
+            placeholder="{{ flatString(processString(placeholder,1),1) }}"
             {% if inputsize %}size="{{ inputsize }}" {% endif %}
             {% if maxlength %}maxlength="{{ maxlength }}" {% endif %}
+            {% if numberonly %}data-number="1" {% endif %}
             aria-labelledby="ls-question-text-{{ basename }}"
         />
 
         <!-- Suffix -->
-        {% if suffix != '' %}
-            <div class='ls-input-group-extra suffix-text suffix'>{{ suffix }}</div>
+        {% if suffix %}
+            <div class='ls-input-group-extra suffix-text suffix'>{{ processString(suffix) }}</div>
         {% endif %}
     {% if prefix != '' or suffix != '' %}
         </div>

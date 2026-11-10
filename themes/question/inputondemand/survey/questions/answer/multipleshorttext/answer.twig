@@ -1,26 +1,46 @@
 {#
 /**
- * Multiple Short Text question Html
+ * Multiple short text question Html
  *
- * @var $sRows      : the rows, generated with the views rows/answer_row*.php
+ * @var $aRows      : the rows, generated with the views rows/answer_row*.php
  *
  */
 #}
-<!-- Multiple Short Text -->
+<!-- Multiple short text -->
 
 <!-- answer -->
 <div class="container-center" id="selector--inputondemand-{{ basename }}">
     <div class="row">
-        <div class="col-xs-12">
-            <ul class="{{ coreClass }} list-unstyled form-horizontal selector--inputondemand-list" role="group" aria-labelledby="ls-question-text-{{ basename }}">
-                {{ sRows }}
+        <div class="col-12">
+            <ul id="inputondemand-list-{{ basename }}" class="{{ coreClass }} list-unstyled form-horizontal selector--inputondemand-list" role="group" aria-labelledby="ls-question-text-{{ basename }}">
+                {% if aRows is empty %}
+                    {% include 'survey/questions/answer/multipleshorttext/empty.twig' %}
+                {% else %}
+                    {% for aRow in aRows %}
+                        {% set rowTemplate = (aRow.textarea ? 'survey/questions/answer/multipleshorttext/rows/answer_row_textarea.twig' : 'survey/questions/answer/multipleshorttext/rows/answer_row_inputtext.twig') %}
+                        {% include rowTemplate with aRow %}
+                    {% endfor %}
+                {% endif %}
             </ul>
         </div>
-        <div class="col-xs-12 text-right">
-            <button class="btn btn-default selector--inputondemand-addlinebutton">
-                <i class="fa fa-{{question_template_attribute.addlineicon}}"></i>
+        <div class="col-12 text-end">
+            <button type="button" class="btn btn-outline-secondary selector--inputondemand-addlinebutton" aria-controls="inputondemand-list-{{ basename }}" aria-describedby="inputondemand-addline-description-{{ basename }}">
+                {% set riClass = '' %}
+                {% if question_template_attribute.addlineicon is same as("plus") %}
+                    {% set riClass = 'ri-add-line' %}
+                {% elseif question_template_attribute.addlineicon is same as("plus-circle") %}
+                    {% set riClass = 'ri-add-circle-fill' %}
+                {% elseif question_template_attribute.addlineicon is same as("chevron-down") %}
+                    {% set riClass = 'ri-arrow-down-s-line' %}
+                {% elseif question_template_attribute.addlineicon is same as("user-plus") %}
+                    {% set riClass = 'ri-user-add-fill' %}
+                {% elseif question_template_attribute.addlineicon is same as("arrow-down") %}
+                    {% set riClass = 'ri-arrow-down-fill' %}
+                {% endif %}
+                <i class="fa fa-{{question_template_attribute.addlineicon}} {{ riClass }}" aria-hidden="true"></i>
                 &nbsp;{{gT("Add line")}}
             </button>
+            <span id="inputondemand-addline-description-{{ basename }}" class="visually-hidden">{{ gT("Adds a new input line and moves the focus to it.") }}</span>
         </div>
     </div>
 </div>

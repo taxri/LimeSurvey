@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'el', {
 	border: 'Πάχος Περιγράμματος',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'el', {
 		borderColor: 'Χρώμα Περιγράμματος',
 		data: 'Δεδομένα',
 		header: 'Κεφαλίδα',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Ναι',
 		no: 'Όχι',
 		invalidWidth: 'Το πλάτος του κελιού πρέπει να είναι αριθμός.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'el', {
 	headersColumn: 'Πρώτη στήλη',
 	headersNone: 'Κανένα',
 	headersRow: 'Πρώτη Γραμμή',
+	heightUnit: 'μονάδα ύψους',
 	invalidBorder: 'Το πάχος του περιγράμματος πρέπει να είναι ένας αριθμός.',
 	invalidCellPadding: 'Η αναπλήρωση των κελιών πρέπει να είναι θετικός αριθμός.',
 	invalidCellSpacing: 'Η απόσταση μεταξύ των κελιών πρέπει να είναι ένας θετικός αριθμός.',

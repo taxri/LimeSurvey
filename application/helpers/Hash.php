@@ -1,4 +1,5 @@
 <?php
+
 /**
  * CakePHP(tm) : Rapid Development Framework (http://cakephp.org)
  * Copyright (c) Cake Software Foundation, Inc. (http://cakefoundation.org)
@@ -29,7 +30,6 @@
  */
 class Hash
 {
-
 /**
  * Get a single value specified by $path out of $data.
  * Does not support the full dot notation feature set,
@@ -56,7 +56,6 @@ class Hash
             } else {
                 return null;
             }
-
         }
         return $data;
     }
@@ -103,7 +102,7 @@ class Hash
         if (strpos($path, '[') === false) {
             $tokens = explode('.', $path);
         } else {
-            // FIXME !
+            // FIXME !!!
             $tokens = String::tokenize($path, '.', '[', ']');
         }
 
@@ -115,10 +114,10 @@ class Hash
             $next = array();
 
             $conditions = false;
-            $position = strpos($token, '[');
+            $position = strpos((string) $token, '[');
             if ($position !== false) {
-                $conditions = substr($token, $position);
-                $token = substr($token, 0, $position);
+                $conditions = substr((string) $token, $position);
+                $token = substr((string) $token, 0, $position);
             }
 
             foreach ($context[$_key] as $item) {
@@ -140,7 +139,6 @@ class Hash
                 $next = $filter;
             }
             $context = array($_key => $next);
-
         }
         return $context[$_key];
     }
@@ -184,8 +182,8 @@ class Hash
 
         foreach ($conditions as $cond) {
             $attr = $cond['attr'];
-            $op = isset($cond['op']) ? $cond['op'] : null;
-            $val = isset($cond['val']) ? $cond['val'] : null;
+            $op = $cond['op'] ?? null;
+            $val = $cond['val'] ?? null;
 
             // Presence test.
             if (empty($op) && empty($val) && !isset($data[$attr])) {
@@ -197,11 +195,11 @@ class Hash
                 return false;
             }
 
-            $prop = isset($data[$attr]) ? $data[$attr] : null;
+            $prop = $data[$attr] ?? null;
 
             // Pattern matches and other operators.
             if ($op === '=' && $val && $val[0] === '/') {
-                if (!preg_match($val, $prop)) {
+                if (!preg_match($val, (string) $prop)) {
                     return false;
                 }
             } elseif (
@@ -214,7 +212,6 @@ class Hash
             ) {
                 return false;
             }
-
         }
         return true;
     }
@@ -356,7 +353,7 @@ class Hash
 
         $count = count($keys);
         for ($i = 0; $i < $count; $i++) {
-            $vals[$i] = isset($vals[$i]) ? $vals[$i] : null;
+            $vals[$i] = $vals[$i] ?? null;
         }
 
         if ($groupPath !== null) {
@@ -550,9 +547,9 @@ class Hash
                 }
                 $data = $element;
                 reset($data);
-                $path .= $key.$separator;
+                $path .= $key . $separator;
             } else {
-                $result[$path.$key] = $element;
+                $result[$path . $key] = $element;
             }
 
             if (empty($data) && !empty($stack)) {
@@ -647,7 +644,7 @@ class Hash
  * Counts the dimensions of an array.
  * Only considers the dimension of the first element in the array.
  *
- * If you have an un-even or heterogenous array, consider using Hash::maxDimensions()
+ * If you have an un-even or heterogeneous array, consider using Hash::maxDimensions()
  * to get the dimensions of the array.
  *
  * @return integer The number of dimensions in $data
@@ -978,10 +975,10 @@ class Hash
         $return = $idMap = array();
         $ids = self::extract($data, $options['idPath']);
 
-        $idKeys = explode('.', $options['idPath']);
+        $idKeys = explode('.', (string) $options['idPath']);
         array_shift($idKeys);
 
-        $parentKeys = explode('.', $options['parentPath']);
+        $parentKeys = explode('.', (string) $options['parentPath']);
         array_shift($parentKeys);
 
         foreach ($data as $result) {
@@ -1017,5 +1014,4 @@ class Hash
         }
         return array_values($return);
     }
-
 }

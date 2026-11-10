@@ -6,24 +6,57 @@
 
 $(document).on('ready pjax:scriptcomplete',function () {
     $('div.array-multi-flexi-text table.show-totals input:enabled').keyup(updatetotals);
-    $('div.array-multi-flexi-text table.show-totals input:enabled').each(updatetotals);
+    // Initial totals: Sum each table once, not once per input
+    $('div.array-multi-flexi-text table.show-totals').each(function () {
+        var inputs = $(this).find('input:enabled');
+        if (!inputs.length) {
+            return;
+        }
+        inputs.each(function () {
+            stripInvalidInput(this);
+        });
+        sumTable(this);
+    });
+    $('div.array-multi-flexi-text table.show-totals tr.subquestion-list').on('relevance:on relevance:off', function(){
+        sumTable(this);
+    });
+    $('div.array-multi-flexi-text table.show-totals').closest('div.array-multi-flexi-text').on('relevance:on', function(){
+        var firstRow = $(this).find('table.show-totals input:enabled:visible').first();
+        if (firstRow.length) {
+            sumTable(firstRow[0]);
+        }
+    });
 });
 
 function updatetotals(e) {
     console.ls.log(e);
-    var inputValue = $(this).val();
-    var sRadix = LSvar.sLEMradix;
-    var sTableID = $(this).closest('table').attr('id');
-    var sTable = $(this).closest('table');
-    var iGrandTotal = new Decimal(0);
+    if (stripInvalidInput(this)) {
+        sumTable(this);
+    }
+}
+
+/**
+ * Removes the last character of the input value if the value is not a valid number
+ * @param {HTMLInputElement} element
+ * @return {boolean} true if the value was valid
+ */
+function stripInvalidInput(element) {
+    var inputValue = $(element).val();
 
     if (!normalizeValue(inputValue)) {
-        $(this).val(inputValue.substring(0, (inputValue.length - 1)));
-        return;
+        $(element).val(inputValue.substring(0, (inputValue.length - 1)));
+        return false;
     }
 
+    return true;
+}
+
+function sumTable(element) {
+    var table = $(element).closest('table');
+    var iGrandTotal = new Decimal(0);
+
     // Sum all rows
-    sTable.find('tr').each(function () {
+    table.find('tr').each(function () {
         //the value of sum needs to be reset for each row, so it has to be set inside the row loop
         var sum = new Decimal(0);
         //find the elements in the current row and sum it
@@ -33,29 +66,34 @@ function updatetotals(e) {
             sum = sum.plus(value);
         });
         //set the value of currents rows sum to the total-combat element in the current row
-        $(this).find('input:disabled').val(formatValue(sum)).trigger('change').trigger('keyup').trigger('keydown');
+        $(this).find('td.total input:disabled').val(formatValue(sum)).trigger('change').trigger('keyup').trigger('keydown');
         iGrandTotal = iGrandTotal.plus(sum);
     });
+    
     // Sum all columns
-    // First get number of columns (only visible and enabled inputs)
-    var iColumnNum = $('#' + sTableID + ' tbody tr:first-child input:enabled:visible').length;
     //Get An array of jQuery Objects
-    var $iRow = sTable.find('tr');
-    //Iterate through the columns
-    for (var i = 1; i <= iColumnNum; i++) {
-        var sum = new Decimal(0);
-        $iRow.each(function () {
-            var item = $($(this).find('td').get((i - 1))).find('input:enabled:visible'),
-                val = normalizeValue($(item).val());
-            //sum the values
-            sum = sum.plus(val);
-        });
-        $($iRow.last().find('td').get((i - 1))).find('input:disabled').val(formatValue(sum)).trigger('change').trigger('keyup').trigger('keydown');
+    var $iRow = table.find('tr');
+    // If Totals are enabled for columns, there is a row with class "total"
+    var lastRow = $iRow.last();
+    if (lastRow.hasClass('total')) {
+        // First get number of columns (only visible and enabled inputs)
+        var visibleRows = table.find('tbody tr:visible');
+        var iColumnNum = visibleRows.first().find('input:enabled:visible').length;
+        //Iterate through the columns
+        for (var i = 1; i <= iColumnNum; i++) {
+            var sum = new Decimal(0);
+            $iRow.each(function () {
+                var item = $($(this).find('td').get((i - 1))).find('input:enabled:visible'),
+                    val = normalizeValue($(item).val());
+                //sum the values
+                sum = sum.plus(val);
+            });
+            $(lastRow.find('td.total').get((i - 1))).find('input:disabled').val(formatValue(sum)).trigger('change').trigger('keyup').trigger('keydown');
+        }
     }
 
-    //$('#'+sTableID+' tr:last-child td.total:nth-of-type('+iColumns+') input:disabled').val(formatValue(iGrandTotal));
-    $iRow.last().find('td.grand.total').find('input:disabled').val(formatValue(iGrandTotal)).trigger('change').trigger('keyup').trigger('keydown');
     // Grand total
+    $iRow.last().find('td.grand.total').find('input:disabled').val(formatValue(iGrandTotal)).trigger('change').trigger('keyup').trigger('keydown');
 }
 
 function formatValue(sValue) {

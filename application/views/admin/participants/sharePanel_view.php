@@ -1,40 +1,33 @@
 <?php
-/* @var $this AdminController */
+/**
+ * @var AdminController $this
+ * @var ParticipantShare $model
+ * @var string $massiveAction
+ * @var int $pageSizeShareParticipantView
+ */
 
 // DO NOT REMOVE This is for automated testing to validate we see that page
 echo viewHelper::getViewTestTag('participantsSharePanel');
 
 ?>
 <div id="pjax-content">
-    <div class="col-lg-12 list-surveys">
-        <h3><?php eT("Share panel"); ?> </h3>
-        <div class="row" style="margin-bottom: 100px">
-            <div class="container-fluid">
-                <div class="row">
-                    <?php
-                    $this->widget('bootstrap.widgets.TbGridView', array(
-                        'id' => 'share_central_participants',
-                        'emptyText' => gT('No shared participants found'),
-                        'itemsCssClass' => 'table table-striped items',
-                        'htmlOptions' => array('class'=> 'table-responsive'),
-                        'dataProvider' => $model->search(),
-                        'rowHtmlOptionsExpression' => '["data-participant_id" => $data->participant_id ]',
-                        'columns' => $model->columns,
-                        'filter'=>$model,
-                        'ajaxType' => 'POST',
-                        'afterAjaxUpdate' => 'LS.CPDB.bindButtons',
-                        'template'  => "{items}\n<div id='tokenListPager'><div class=\"col-sm-4\" id=\"massive-action-container\">$massiveAction</div><div class=\"col-sm-4 pager-container ls-ba \">{pager}</div><div class=\"col-sm-4 summary-container\">{summary}</div></div>",
-                        'summaryText'   => gT('Displaying {start}-{end} of {count} result(s).').' '. sprintf(gT('%s rows per page'),
-                            CHtml::dropDownList(
-                                'pageSizeShareParticipantView',
-                                $pageSizeShareParticipantView,
-                                Yii::app()->params['pageSizeOptions'],
-                                array('class'=>'changePageSize form-control', 'style'=>'display: inline; width: auto'))
-                            ),
-                        ));
-                    ?>
-                </div>
-            </div>
+    <div class="col-12 list-surveys">
+        <div class="row">
+            <?php
+                $this->widget('application.extensions.admin.grid.CLSGridView', [
+                    'id' => 'share_central_participants',
+                    'lsCaption' => gT('Share panel'),
+                    'dataProvider' => $model->search(),
+                    'columns' => $model->columns,
+                    'filter' => $model,
+                    'rowHtmlOptionsExpression' => '["data-participant_id" => $data->participant_id, "data-share_uid" => $data->share_uid]',
+                    'massiveActionTemplate' => $massiveAction,
+                    'emptyText'                => gT('No shared participants found.'),
+                    'ajaxType' => 'POST',
+                    'afterAjaxUpdate' => 'LS.CPDB.bindButtons',
+                    'lsPageSizeCurrentValue'     => $pageSizeShareParticipantView,
+                ]);
+                ?>
         </div>
     </div>
     <span id="locator" data-location="sharepanel">&nbsp;</span>

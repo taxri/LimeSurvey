@@ -3,7 +3,7 @@ const ConfirmDeleteModal = function (options) {
 
     options.fnOnShown = options.fnOnShown || function () {};
     options.fnOnHide = options.fnOnHide || function () {};
-    options.removeOnClose = options.removeOnClose || function () {};
+    options.removeOnClose = options.removeOnClose || true;
     options.fnOnHidden = options.fnOnHidden || function () {};
     options.fnOnLoaded = options.fnOnLoaded || function () {};
 
@@ -16,21 +16,23 @@ const ConfirmDeleteModal = function (options) {
         keepopen = options.keepopen || $item.data('keepopen') || '',
         gridReload = options.gridReload || $item.data('grid-reload') || '',
         gridid = options.gridid || $item.data('grid-id') || '',
-        buttonNo = options.buttonNo || $item.data('button-no') || '<i class="fa fa-times"></i>',
-        buttonYes = options.buttonYes || $item.data('button-yes') || '<i class="fa fa-check"></i>',
+        buttonNo = options.buttonNo || $item.data('button-no') || '<i class="ri-close-fill"></i>',
+        buttonYes = options.buttonYes || $item.data('button-yes') || '<i class="ri-check-fill"></i>',
+        buttonType = $item.data('button-type') || 'btn-primary',
+        closeButtonType = $item.data('close-button-type') || 'btn-outline-secondary',
         parentElement = options.parentElement || $item.data('parent-element') || 'body';
 
-    const closeIconHTML = '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>',
-        closeButtonHTML = '<button type="button" class="btn btn-default" data-dismiss="modal">' + buttonNo + '</button>',
-        confirmButtonHTML = '<button type="button" class="btn btn-primary selector--button-confirm">' + buttonYes + '</button>';
+    const closeIconHTML = '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>',
+        closeButtonHTML = '<button type="button" class="btn ' + closeButtonType + '" data-bs-dismiss="modal">' + buttonNo + '</button>',
+        confirmButtonHTML = '<button type="button" class="btn ' + buttonType + ' selector--button-confirm">' + buttonYes + '</button>';
 
 
     //Define all the blocks and combine them by jquery methods
-    const outerBlock = $('<div class="modal fade" tabindex="-1" role="dialog"></div>'),
+    const outerBlock = $('<div id="confirm-delete-modal" class="modal fade" tabindex="-1" role="dialog"></div>'),
         innerBlock = $('<div class="modal-dialog" role="document"></div>'),
         contentBlock = $('<div class="modal-content"></div>'),
         headerBlock = $('<div class="modal-header"></div>'),
-        headlineBlock = $('<h4 class="modal-title"></h4>'),
+        headlineBlock = $('<h5 class="modal-title"></h5>'),
         bodyBlock = $('<div class="modal-body"></div>'),
         footerBlock = $('<div class="modal-footer"></div>'),
         closeIcon = $(closeIconHTML),
@@ -47,8 +49,8 @@ const ConfirmDeleteModal = function (options) {
             if (confirmTitle !== '') {
                 const thisHeader = headerBlock.clone();
                 headlineBlock.text(confirmTitle);
-                thisHeader.append(closeIcon.clone());
                 thisHeader.append(headlineBlock);
+                thisHeader.append(closeIcon.clone());
                 thisContent.prepend(thisHeader);
             }
 
@@ -77,17 +79,17 @@ const ConfirmDeleteModal = function (options) {
                 formObject.append('<input name="' + key + '" value="' + value + '" type="' + type + '" ' + (htmlClass ? 'class="' + htmlClass + '"' : '') + ' />');
             }
 
-            formObject.append('<input name="' + LS.data.csrfTokenName + '" value="' + LS.data.csrfToken + '" type="hidden" />');
+            formObject.append($("<input type='hidden'>").attr("name", LS.data.csrfTokenName).attr("value", LS.data.csrfToken));
             modalObject.find('.modal-body').append(formObject)
             modalObject.find('.modal-body').append('<p>' + confirmText + '</p>');
 
             if (showTextArea !== '') {
-                modalObject.find('form').append('<textarea id="modalTextArea" name="modalTextArea" ></textarea>');
+                modalObject.find('form').append('<textarea id="modalTextArea" name="modalTextArea" class="form-control mb-3"></textarea>');
             }
 
         },
         runAjaxRequest = function () {
-            return LS.ajax({
+            return LS.AjaxHelper.ajax({
                 url: postUrl,
                 type: 'POST',
                 data: modalObject.find('form').serialize(),
@@ -115,7 +117,7 @@ const ConfirmDeleteModal = function (options) {
                     }
 
                     if (onSuccess) {
-                        var func = eval(onSuccess);
+                        var func = new Function(onSuccess);
                         func(html);
                         return;
                     }
@@ -136,12 +138,12 @@ const ConfirmDeleteModal = function (options) {
             });
             modalObject.on('shown.bs.modal', function () {
                 var self = this;
-                modalObject.find('.selector--button-confirm').on('click', function (e) {
+                modalObject.find('.selector--button-confirm').off('click.confirmdeletesubmit').on('click.confirmdeletesubmit', function (e) {
                     e.preventDefault();
 
                     if (!useAjax) {
                         modalObject.find('form').trigger('submit');
-                        modalObject.modal('close');
+                        modalObject.modal('hide');
                     } else {
                         // Ajax request
                         runAjaxRequest();
@@ -190,6 +192,9 @@ export default function confirmDeletemodal() {
     $(document).off('click.confirmModalSelector', 'a.selector--ConfirmModal');
     $(document).on('click.confirmModalSelector', 'a.selector--ConfirmModal', function (e) {
         e.preventDefault();
+        if ($(this).data('confirm-modal-appended') == 'yes') {
+            return;
+        }
         $(this).confirmModal({});
         $(this).trigger('click.confirmmodal');
     });

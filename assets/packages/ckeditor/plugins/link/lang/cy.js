@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'link', 'cy', {
 	acccessKey: 'Allwedd Mynediad',
@@ -13,6 +13,7 @@ CKEDITOR.plugins.setLang( 'link', 'cy', {
 		title: 'Priodweddau\'r Angor',
 		name: 'Enw\'r Angor',
 		errorName: 'Teipiwch enw\'r angor',
+		errorWhitespace: 'Anchor name cannot contain space characters', // MISSING
 		remove: 'Tynnwch yr Angor'
 	},
 	anchorId: 'Gan Id yr Elfen',
@@ -35,7 +36,9 @@ CKEDITOR.plugins.setLang( 'link', 'cy', {
 	noAnchors: '(Dim angorau ar gael yn y ddogfen)',
 	noEmail: 'Teipiwch gyfeiriad yr e-bost',
 	noUrl: 'Teipiwch URL y ddolen',
+	noTel: 'Please type the phone number', // MISSING
 	other: '<eraill>',
+	phoneNumber: 'Phone number', // MISSING
 	popupDependent: 'Dibynnol (Netscape)',
 	popupFeatures: 'Nodweddion Ffenestr Bop',
 	popupFullScreen: 'Sgrin Llawn (IE)',
@@ -60,6 +63,7 @@ CKEDITOR.plugins.setLang( 'link', 'cy', {
 	toAnchor: 'Dolen at angor yn y testun',
 	toEmail: 'E-bost',
 	toUrl: 'URL',
+	toPhone: 'Phone', // MISSING
 	toolbar: 'Dolen',
 	type: 'Math y Ddolen',
 	unlink: 'Datgysylltu',

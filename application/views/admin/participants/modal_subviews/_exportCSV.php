@@ -1,35 +1,53 @@
 <div id="exportcsv" title="exportcsv" role="dialog" tabindex="-1" class="modal fade">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title"><?php eT("Export participants"); ?> </h4>
+                <h2 class="modal-title h5"><?php eT("Export participants"); ?> </h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="form container-center">
-                    <div class='form-group row'>
-                        <label class='control-label col-sm-4' for='attributes'><?php eT('Attributes to export:');?></label>
-                        <div class='col-sm-8'>
-                            <select id="attributes" name="attributes" multiple="multiple" >
-                                <?php
-                                foreach ($aAttributes as $value)
-                                {
-                                    echo "<option value=" . $value['attribute_id'] . ">" . $value['defaultname'] . "</option>\n";
-                                }
-                                ?>
-                            </select>
+                <div class="form">
+                    <div class='mb-3 row'>
+                        <div class="col-4">
+                            <label class='form-label' id="export-csv-attributes-label" for='attributes'><?php eT('Attributes to export:');?></label>
+                            <input type="checkbox" value="" id="select-all">
+                            <label class="form-check-label" for="select-all">
+                                <?= gT('Select all'); ?>
+                            </label>
+                        </div>
+                        <div class='col-8' role="group" aria-labelledby="export-csv-attributes-label">
+                            <?php $this->widget(
+                                'yiiwheels.widgets.select2.WhSelect2',
+                                array(
+                                    'asDropDownList' => true,
+                                    'htmlOptions' => [
+                                        'multiple' => 'multiple',
+                                        'id' => 'attributes',
+                                        'aria-labelledby' => 'export-csv-attributes-label'
+                                    ],
+                                    'data' => array_combine(array_column($aAttributes, 'attribute_id'), array_column($aAttributes, 'defaultname')),
+                                    'value' => null,
+                                    'name' => 'attributes',
+                                    'pluginOptions' => []
+                                )
+                            ); ?>
                         </div>
                     </div>
-                <?php if (Yii::app()->getConfig('hideblacklisted') != 'N'): ?>
-                    <div class='alert alert-info'>
-                        <p><span class='fa fa-info-circle'></span>&nbsp;<?php eT('If you want to export blacklisted participants, set "Hide blacklisted participants" to "No" in CPDB settings.'); ?></p>
-                    </div>
+                <?php if (Yii::app()->getConfig('hideblacklisted') != 'N') : ?>
+                    <?php
+                    $this->widget('ext.AlertWidget.AlertWidget', [
+                        'text' => gT('If you want to export blocklisted participants, set "Hide blocklisted participants" to "No" in CPDB settings.'),
+                        'type' => 'info',
+                    ]);
+                    ?>
                 <?php endif; ?>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal"><?php eT('Close'); ?></button>
-                <button type="button" class="btn btn-default exportButton"><?php eT('Export'); ?></button>
+                <button type="button" class="btn btn-cancel" data-bs-dismiss="modal"><?php eT('Cancel'); ?></button>
+                <button type="button" class="btn btn-primary exportButton">
+                    <?php eT('Export'); ?>
+                </button>
             </div>
         </div>
     </div>
@@ -48,31 +66,18 @@
 </div>
 
 <div id='exportcsvallnorow' title='exportcsvallnorow' role="dialog" tabindex="-1" class="modal fade">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title"><?php eT("Export participants"); ?></h4>
+                <h2 class="modal-title h5"><?php eT("Export participants"); ?></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <?php eT("There are no participants to be exported."); ?>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal"><?php eT('Close'); ?></button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php eT('Close'); ?></button>
             </div>
         </div>
     </div>
 </div>
-
-<?php
-    App()->getClientScript()->registerScript('ExportCSVMultiSelectInit', "
-    $('#attributes').multiselect({
-        includeSelectAllOption: true, 
-        enableFiltering: true,
-        enableCaseInsensitiveFiltering: true, 
-        filterBehavior : \"text\",
-        selectAllText: '".gT("Select all")."',
-        filterPlaceholder: '".gT("Search for something...")."'
-    });
-    ", LSYii_ClientScript::POS_POSTSCRIPT);
-?>

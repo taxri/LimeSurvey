@@ -3,10 +3,10 @@
 /**
  * This is the model class for table "{{notifications}}".
  *
- * The followings are the available columns in table '{{notifications}}':
+ * The following are the available columns in table '{{notifications}}':
  * @property integer $id
  * @property string $entity survey or user
- * @property string $entity_id survey id or user id
+ * @property string $entity_id survey ID or user id
  * @property string $title
  * @property string $message
  * @property string $status new, read
@@ -18,13 +18,12 @@
  */
 class Notification extends LSActiveRecord
 {
-
-    const NORMAL_IMPORTANCE = 1; // Just notification in admin menu
-    const BELL_IMPORTANCE = 2; // TODO: Bell animation
-    const HIGH_IMPORTANCE = 3; // Popup on page load
+    const NORMAL_IMPORTANCE   = 1; // Just notification in admin menu
+    const NAG_ONCE_IMPORTANCE = 2; // Like 3 but always only shown once.
+    const HIGH_IMPORTANCE     = 3; // Popup on page load
 
     /**
-     * See example usage at manual page: https://manual.limesurvey.org/Notifications#Examples
+     * See example usage at manual page: https://www.limesurvey.org/manual/Notifications#Examples
      * @param array<string, mixed>|string|null $options If string then scenario
      */
     public function __construct($options = null)
@@ -49,7 +48,7 @@ class Notification extends LSActiveRecord
 
         // Only allow 'survey' or 'user' as entity
         if ($options['entity'] != 'survey' && $options['entity'] != 'user') {
-            throw new InvalidArgumentException('Invalid entity: '.$options['entity']);
+            throw new InvalidArgumentException('Invalid entity: ' . $options['entity']);
         }
 
         // Default to 'default' display class
@@ -64,7 +63,7 @@ class Notification extends LSActiveRecord
 
         // importance must be between 1 and 3
         if ($options['importance'] < 1 && $options['importance'] > 3) {
-            throw new InvalidArgumentException('Invalid importance: '.$options['importance']);
+            throw new InvalidArgumentException('Invalid importance: ' . $options['importance']);
         }
 
         // Set everything up
@@ -82,6 +81,7 @@ class Notification extends LSActiveRecord
     /**
      * Some shortcuts for easier use
      * @param array<string, mixed>
+     * @return mixed
      */
     protected function checkShortcuts($options)
     {
@@ -109,7 +109,7 @@ class Notification extends LSActiveRecord
     {
         foreach ($mandatory as $mand) {
             if (!isset($options[$mand]) || $options[$mand] == '') {
-                throw new InvalidArgumentException('Field '.$mand.' is mandatory for notification');
+                throw new InvalidArgumentException('Field ' . $mand . ' is mandatory for notification');
             }
         }
     }
@@ -132,13 +132,13 @@ class Notification extends LSActiveRecord
         // NOTE: you should only define rules for those attributes that
         // will receive user inputs.
         return array(
-            array('entity_id', 'numerical', 'integerOnly'=>true),
-            array('entity', 'length', 'max'=>64),
-            array('title', 'length', 'max'=>255),
+            array('entity_id', 'numerical', 'integerOnly' => true),
+            array('entity', 'length', 'max' => 64),
+            array('title', 'length', 'max' => 255),
             array('message, created, first_read', 'safe'),
             // The following rule is used by search().
             // @todo Please remove those attributes that should not be searched.
-            array('id, entity, entity_id, message, importance, created, first_read, status, title', 'safe', 'on'=>'search'),
+            array('id, entity, entity_id, message, importance, created, first_read, status, title', 'safe', 'on' => 'search'),
         );
     }
 
@@ -172,7 +172,7 @@ class Notification extends LSActiveRecord
     {
         // @todo Please modify the following code to remove attributes that should not be searched.
 
-        $criteria = new CDbCriteria;
+        $criteria = new CDbCriteria();
 
         $criteria->compare('id', $this->id);
         $criteria->compare('entity', $this->entity, true);
@@ -185,7 +185,7 @@ class Notification extends LSActiveRecord
         $criteria->compare('title', $this->title, true);
 
         return new CActiveDataProvider($this, array(
-            'criteria'=>$criteria,
+            'criteria' => $criteria,
         ));
     }
 
@@ -285,7 +285,7 @@ class Notification extends LSActiveRecord
         // TODO this should be in Survey model (relations?)
         $criteria = self::getCriteria($surveyId);
         $criteria2 = new CDbCriteria();
-        $criteria2->addCondition('importance = '.self::HIGH_IMPORTANCE);
+        $criteria2->addCondition('importance = ' . self::HIGH_IMPORTANCE);
         $criteria->mergeWith($criteria2, 'AND');
 
         return self::model()->findAll($criteria);
@@ -330,7 +330,7 @@ class Notification extends LSActiveRecord
     {
         $criteria = self::getCriteria($surveyId);
         $criteria2 = new CDbCriteria();
-        $criteria2->addCondition('importance = '.self::HIGH_IMPORTANCE);
+        $criteria2->addCondition('importance = ' . self::HIGH_IMPORTANCE . ' OR ' . 'importance = ' . self::NAG_ONCE_IMPORTANCE);
         $criteria->mergeWith($criteria2, 'AND');
 
         return self::model()->count($criteria);
@@ -370,11 +370,11 @@ class Notification extends LSActiveRecord
 
     /**
      * Broadcast a message to all users
-     * See example usage at manual page: https://manual.limesurvey.org/Notifications#Examples
+     * See example usage at manual page: https://www.limesurvey.org/manual/Notifications#Examples
      * @param array $options
      * @param array $users
      */
-    public static function broadcast(array $options, array $users = null)
+    public static function broadcast(array $options, ?array $users = null)
     {
         // Get all users if no $users were given
         if ($users === null) {

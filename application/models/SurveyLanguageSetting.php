@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    die('No direct script access allowed');
-}
+<?php
+
 /*
  * LimeSurvey
- * Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
+ * Copyright (C) 2007-2026 The LimeSurvey Project Team
  * All rights reserved.
  * License: GNU/GPL License v2 or later, see LICENSE.php
  * LimeSurvey is free software. This version may have been modified pursuant
@@ -48,6 +47,18 @@
  */
 class SurveyLanguageSetting extends LSActiveRecord
 {
+    private $oldSurveyId;
+    private $oldAlias;
+
+    public $surveyls_language = "";
+    public $surveyls_title = "";
+    public $surveyls_description = "";
+    public $surveyls_welcometext = "";
+    public $surveyls_endtext = "";
+    public $surveyls_policy_notice = "";
+    public $surveyls_policy_notice_label = "";
+    public $surveyls_url = "";
+    public $surveyls_urldescription = "";
 
     /** @inheritdoc */
     public function tableName()
@@ -65,10 +76,10 @@ class SurveyLanguageSetting extends LSActiveRecord
      * @inheritdoc
      * @return SurveyLanguageSetting
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
         /** @var self $model */
-        $model = parent::model($class);
+        $model = parent::model($className);
         return $model;
     }
 
@@ -101,46 +112,59 @@ class SurveyLanguageSetting extends LSActiveRecord
             array('email_admin_responses', 'lsdefault'),
 
             array('surveyls_email_invite_subj', 'LSYii_Validators'),
-            array('surveyls_email_invite_subj', 'length', 'min' => 0, 'max'=>255),
+            array('surveyls_email_invite_subj', 'length', 'min' => 0, 'max' => 255),
             array('surveyls_email_invite', 'LSYii_Validators'),
             array('surveyls_email_remind_subj', 'LSYii_Validators'),
-            array('surveyls_email_remind_subj', 'length', 'min' => 0, 'max'=>255),
+            array('surveyls_email_remind_subj', 'length', 'min' => 0, 'max' => 255),
             array('surveyls_email_remind', 'LSYii_Validators'),
             array('surveyls_email_confirm_subj', 'LSYii_Validators'),
-            array('surveyls_email_confirm_subj', 'length', 'min' => 0, 'max'=>255),
+            array('surveyls_email_confirm_subj', 'length', 'min' => 0, 'max' => 255),
             array('surveyls_email_confirm', 'LSYii_Validators'),
             array('surveyls_email_register_subj', 'LSYii_Validators'),
-            array('surveyls_email_register_subj', 'length', 'min' => 0, 'max'=>255),
+            array('surveyls_email_register_subj', 'length', 'min' => 0, 'max' => 255),
             array('surveyls_email_register', 'LSYii_Validators'),
             array('email_admin_notification_subj', 'LSYii_Validators'),
-            array('email_admin_notification_subj', 'length', 'min' => 0, 'max'=>255),
+            array('email_admin_notification_subj', 'length', 'min' => 0, 'max' => 255),
             array('email_admin_notification', 'LSYii_Validators'),
             array('email_admin_responses_subj', 'LSYii_Validators'),
-            array('email_admin_responses_subj', 'length', 'min' => 0, 'max'=>255),
+            array('email_admin_responses_subj', 'length', 'min' => 0, 'max' => 255),
             array('email_admin_responses', 'LSYii_Validators'),
 
             array('surveyls_title', 'LSYii_Validators'),
-            array('surveyls_title', 'length', 'min' => 0, 'max'=>200),
+            array('surveyls_title', 'length', 'min' => 0, 'max' => 200),
             array('surveyls_description', 'LSYii_Validators'),
             array('surveyls_welcometext', 'LSYii_Validators'),
             array('surveyls_endtext', 'LSYii_Validators'),
             array('surveyls_policy_notice', 'LSYii_Validators'),
             array('surveyls_policy_error', 'LSYii_Validators'),
             array('surveyls_policy_notice_label', 'LSYii_Validators'),
-            array('surveyls_policy_notice_label', 'length', 'min' => 0, 'max'=>192),
-            array('surveyls_url', 'filter', 'filter'=>'trim'),
-            array('surveyls_url', 'LSYii_Validators', 'isUrl'=>true),
+            array('surveyls_policy_notice_label', 'length', 'min' => 0, 'max' => 192),
+            array('surveyls_url', 'LSYii_FilterValidator', 'filter' => 'trim', 'skipOnEmpty' => true),
+            array('surveyls_url', 'LSYii_Validators', 'isUrl' => true),
             array('surveyls_urldescription', 'LSYii_Validators'),
-            array('surveyls_urldescription', 'length', 'min' => 0, 'max'=>255),
+            array('surveyls_urldescription', 'length', 'min' => 0, 'max' => 255),
+            array('surveyls_alias', 'length', 'min' => 0, 'max' => 100),
+            array('surveyls_alias', 'match', 'allowEmpty' => true, 'pattern' => '/^[^\d\W][\w\-]*$/u'), // Match alphanumeric strings, including "-" and unicode characters. Cannot be completely numeric.
+            array('surveyls_alias', 'checkAliasUniqueness'),
+            array('surveyls_alias', 'LSYii_ShortUrlValidator'),
+            array('surveyls_alias', 'LSYii_Validators'), // The regex rule shouldn't allow any XSS, but we add LSYii_Validators to be sure.
 
-            array('surveyls_dateformat', 'numerical', 'integerOnly'=>true, 'min'=>'1', 'max'=>'12', 'allowEmpty'=>true),
-            array('surveyls_numberformat', 'numerical', 'integerOnly'=>true, 'min'=>'0', 'max'=>'1', 'allowEmpty'=>true),
+            array('surveyls_dateformat', 'numerical', 'integerOnly' => true, 'min' => '1', 'max' => '12', 'allowEmpty' => true),
+            array('surveyls_numberformat', 'numerical', 'integerOnly' => true, 'min' => '0', 'max' => '1', 'allowEmpty' => true),
+            array('attachments','filter','filter' => array($this, 'filterAttachments')),
         );
     }
 
-    public  function defaultScope()
+    /**
+     * @inheritdoc
+     * Pass this to all findAll query : indexed by surveyls_language : return only one survey ID
+     * @see https://www.yiiframework.com/doc/api/1.1/CActiveRecord#defaultScope-detail
+     * Remind to use resetScope if you need to disable this behaviour
+     * @see https://www.yiiframework.com/doc/api/1.1/CActiveRecord#resetScope-detail
+     */
+    public function defaultScope()
     {
-        return array('index'=>'surveyls_language');
+        return array('index' => 'surveyls_language');
     }
 
     /**
@@ -151,7 +175,7 @@ class SurveyLanguageSetting extends LSActiveRecord
     public function lsdefault($attribute)
     {
         $oSurvey = Survey::model()->findByPk($this->surveyls_survey_id);
-        $sEmailFormat = $oSurvey->htmlemail == 'Y' ? 'html' : '';
+        $sEmailFormat = $oSurvey->isHtmlEmail ? 'html' : '';
         $aDefaultTexts = templateDefaultTexts($this->surveyls_language, 'unescaped', $sEmailFormat);
 
             $aDefaultTextData = array('surveyls_email_invite_subj' => $aDefaultTexts['invitation_subject'],
@@ -167,15 +191,42 @@ class SurveyLanguageSetting extends LSActiveRecord
                 'email_admin_responses_subj' => $aDefaultTexts['admin_detailed_notification_subject'],
                 'email_admin_responses' => $aDefaultTexts['admin_detailed_notification']
             );
-        if ($sEmailFormat == "html") {
-            $aDefaultTextData['admin_detailed_notification'] = $aDefaultTexts['admin_detailed_notification_css'].$aDefaultTexts['admin_detailed_notification'];
-        }
+            if ($sEmailFormat == "html") {
+                $aDefaultTextData['admin_detailed_notification'] = $aDefaultTexts['admin_detailed_notification_css'] . $aDefaultTexts['admin_detailed_notification'];
+            }
 
-        if (empty($this->$attribute)) {
-            $this->$attribute = $aDefaultTextData[$attribute];
-        }
+            if (empty($this->$attribute)) {
+                $this->$attribute = $aDefaultTextData[$attribute];
+            }
     }
 
+    /**
+     * Customs filter for rules attachments
+     *
+     * @param string $attribute
+     * @return null|string
+     */
+    public function filterAttachments($attribute)
+    {
+        $attachmentsByType = $this->validateAttachments($attribute, !in_array($this->scenario, ['import', 'copy']));
+        if (empty($attachmentsByType)) {
+            // Save empty attachments as null value
+            return null;
+        }
+        return json_encode($attachmentsByType);
+    }
+
+    /**
+     * Previously broken validatioin rules, replace by filter
+     *
+     * @deprecated 6.16.16
+     * @param string $attribute
+     * @return null|string
+     */
+    public function attachmentsInfo($attribute)
+    {
+        return $this->filterAttachments($this->$attribute);
+    }
 
     /**
      * Returns the token's captions
@@ -185,22 +236,11 @@ class SurveyLanguageSetting extends LSActiveRecord
      */
     public function getAttributeCaptions()
     {
+        if (empty($this->surveyls_attributecaptions)) {
+            return [];
+        }
         $captions = @json_decode($this->surveyls_attributecaptions, true);
         return $captions !== false ? $captions : array();
-    }
-
-    /**
-     * @param mixed|bool $condition
-     * @param bool $return_query
-     * @return mixed
-     */
-    public function getAllRecords($condition = false, $return_query = true)
-    {
-        $query = Yii::app()->db->createCommand()->select('*')->from('{{surveys_languagesettings}}');
-        if ($condition != false) {
-            $query->where($condition);
-        }
-        return ($return_query) ? $query->queryAll() : $query;
     }
 
     /**
@@ -256,7 +296,7 @@ class SurveyLanguageSetting extends LSActiveRecord
      * @param bool $xssfiltering
      * @return bool
      */
-    function updateRecord($data, $condition = '', $xssfiltering = false)
+    public function updateRecord($data, $condition = '', $xssfiltering = false)
     {
         $record = $this->findByPk($condition);
         foreach ($data as $key => $value) {
@@ -271,12 +311,160 @@ class SurveyLanguageSetting extends LSActiveRecord
      * @param array $data
      * @return bool
      */
-    function insertSomeRecords($data)
+    public function insertSomeRecords($data)
     {
-        $lang = new self;
+        $lang = new self();
         foreach ($data as $k => $v) {
             $lang->$k = $v;
         }
         return $lang->save();
+    }
+
+    /**
+     * Validates that the alias is not used in another survey
+     */
+    public function checkAliasUniqueness()
+    {
+        if (empty($this->surveyls_alias)) {
+            return;
+        }
+        if ($this->surveyls_alias !== $this->oldAlias || $this->surveyls_survey_id != $this->oldSurveyId) {
+            $model = self::model()->find(
+                'surveyls_alias = ? AND surveyls_survey_id <> ?',
+                [$this->surveyls_alias, $this->surveyls_survey_id]
+            );
+            if ($model != null) {
+                $this->addError('surveyls_alias', gT('Alias must be unique'));
+            }
+        }
+    }
+
+    protected function afterFind()
+    {
+        parent::afterFind();
+        $this->oldSurveyId = $this->surveyls_survey_id;
+        if (isset($this->surveyls_alias)) {
+            $this->oldAlias = $this->surveyls_alias;
+        }
+    }
+
+    /**
+     * Returns the array of email attachments data without exposing sensitive paths
+     * Used for export_helper
+     * @return string[][][] : array of attachments array by template, sample by key [template][][url,size,relevance]
+     */
+    public function getAttachmentsData()
+    {
+        $attachments = $this->getValidAttachments(false); // Do not check when export
+        if (is_array($attachments)) {
+            $uploadDir = realpath(Yii::app()->getConfig('uploaddir'));
+            foreach ($attachments as &$template) {
+                foreach ($template as &$attachment) {
+                    if (substr($attachment['url'], 0, strlen($uploadDir)) == $uploadDir) {
+                        $url = substr($attachment['url'], strlen($uploadDir));
+                        $url = ltrim($url, "/\\");
+                        $attachment['url'] = $url;
+                    }
+                }
+            }
+        }
+        return $attachments;
+    }
+
+    /**
+     * Get valid attachments in array
+     * @param boolean $exist check if file exist in a valid directory
+     * @return string[][][] : array of attachments array by template, sample by key [template][][url,size,relevance]
+     **/
+    public function getValidAttachments($exist = true)
+    {
+        return $this->validateAttachments($this->attachments, $exist);
+    }
+
+    /**
+     * Get valid attachments in array
+     * @param string $string the attachment string to be filtered
+     * @param boolean $exist check if file exist in a valid directory
+     * @return string[][][] : array of attachments array by template, sample by key [template][][url,size,relevance]
+     **/
+    public function validateAttachments($string, $exist = true)
+    {
+        if (empty($string) || !is_string($string)) {
+            return [];
+        }
+        $attachments = json_decode($string, 1);
+        if (empty($attachments) || !is_array($attachments)) {
+            return [];
+        }
+        $validAttachements = [];
+        foreach ($attachments as $template => $templateAttachements) {
+            foreach ($templateAttachements as $attachment) {
+                if (!isset($attachment['url'])) {
+                    continue;
+                }
+                if ($exist && !$this->getAttachmentFileExist($attachment['url'])) {
+                    continue;
+                }
+                if ($exist) {
+                    $attachment['size'] = filesize($attachment['url']);
+                }
+                $validAttachements[$template][] = [
+                    'url' => $attachment['url'],
+                    'size' => $attachment['size'] ?? '0',
+                    'relevance' => $attachment['relevance'] ?? '1',
+                ];
+            }
+        }
+        return $validAttachements;
+    }
+
+    /**
+     * get if template have all attachment valid
+     * @param string $template the template
+     * @return boolean
+     **/
+    public function hasAllAttachments($template)
+    {
+        $attachments = $this->getValidAttachments(false);
+        if (empty($attachments) || empty($attachments[$template])) {
+            return true;
+        }
+        foreach ($attachments[$template] as $attachment) {
+            if (!isset($attachment['url'])) {
+                continue;
+            }
+            if (!$this->getAttachmentFileExist($attachment['url'])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Check if a file for attachment exist
+     * @param string $file
+     * @return boolean
+     */
+    public function getAttachmentFileExist($file)
+    {
+        if (
+            App()->is_file(
+                realpath($file),
+                realpath(App()->getConfig('uploaddir') . DIRECTORY_SEPARATOR . "surveys" . DIRECTORY_SEPARATOR . $this->surveyls_survey_id),
+                false
+            )
+        ) {
+            return true;
+        }
+        if (
+            App()->is_file(
+                realpath($file),
+                realpath(App()->getConfig('uploaddir') . DIRECTORY_SEPARATOR . "global"),
+                false
+            )
+        ) {
+            return true;
+        }
+        return false;
     }
 }

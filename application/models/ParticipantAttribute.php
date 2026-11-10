@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    exit('No direct script access allowed');
-}
+<?php
+
 /*
  * LimeSurvey
- * Copyright (C) 2013 The LimeSurvey Project Team / Carsten Schmitz
+ * Copyright (C) 2013-2026 The LimeSurvey Project Team
  * All rights reserved.
  * License: GNU/GPL License v2 or later, see LICENSE.php
  * LimeSurvey is free software. This version may have been modified pursuant
@@ -28,15 +27,14 @@
  */
 class ParticipantAttribute extends LSActiveRecord
 {
-
     /**
      * @inheritdoc
      * @return ParticipantAttribute
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
         /** @var self $model */
-        $model = parent::model($class);
+        $model = parent::model($className);
         return $model;
     }
 
@@ -59,7 +57,7 @@ class ParticipantAttribute extends LSActiveRecord
         // class name for the relations automatically generated below.
         return array(
             'participant' => array(self::HAS_ONE, 'Participant', 'participant_id'),
-            'participant_attribute_name'=>array(self::BELONGS_TO, 'ParticipantAttributeName', 'attribute_id')
+            'participant_attribute_name' => array(self::BELONGS_TO, 'ParticipantAttributeName', 'attribute_id')
         );
     }
 
@@ -69,7 +67,8 @@ class ParticipantAttribute extends LSActiveRecord
      */
     public function getAttributeInfo($participantid)
     {
-        return self::model()->findAllByAttributes(array('participant_id' => $participantid));
+        $model = self::model()->with('participant_attribute_name')->findAllByAttributes(array('participant_id' => $participantid));
+        return $model;
     }
 
     /**
@@ -78,18 +77,50 @@ class ParticipantAttribute extends LSActiveRecord
      */
     public function updateParticipantAttributeValue($data)
     {
-        $query = Yii::app()->db->createCommand()
-            ->select('*')
-            ->where("participant_id='".$data['participant_id']."' AND attribute_id = ".$data['attribute_id'])
+        $result = Yii::app()->db->createCommand()
+            ->select('COUNT(*)')
+            ->where(
+                "participant_id = :participant_id AND attribute_id = :attribute_id",
+                [":participant_id" => $data['participant_id'], ':attribute_id' => $data['attribute_id']]
+            )
             ->from('{{participant_attribute}}')
-            ->queryAll();
-        if (count($query) > 0) {
+            ->queryScalar();
+        if ($result > 0) {
             Yii::app()->db->createCommand()
-                    ->update('{{participant_attribute}}', $data, "participant_id = '".$data['participant_id']."' AND attribute_id = ".$data['attribute_id']);
+                ->update('{{participant_attribute}}', $data, "participant_id = '" . $data['participant_id'] . "' AND attribute_id = " . $data['attribute_id']);
         } else {
             Yii::app()->db->createCommand()
-                    ->insert('{{participant_attribute}}', $data);
+                ->insert('{{participant_attribute}}', $data);
         }
     }
 
+    /**
+     * Get current surveyId for other model/function
+     * @return int
+     */
+    public function getSurveyId()
+    {
+        return 0;
+    }
+
+    /**
+     * @inheritdoc
+     * But without filter on attributes (not same than activerecords)
+     * @param string $action
+     * @return void
+     */
+    public function decryptEncryptAttributes($action = 'decrypt')
+    {
+        // load sodium library
+        $sodium = Yii::app()->sodium;
+        /* @var [] the attribute_id need encrypt and decrypt */
+        $aParticipantAttributes = CHtml::listData(
+            ParticipantAttributeName::model()->findAll(["select" => "attribute_id", "condition" => "encrypted = 'Y' and core_attribute <> 'Y'"]),
+            'attribute_id',
+            'attribute_id'
+        );
+        if (array_key_exists($this->attribute_id, $aParticipantAttributes)) {
+            $this->value = $sodium->$action($this->value);
+        }
+    }
 }

@@ -1,22 +1,24 @@
 ﻿/**
- * @license Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+ * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 /**
- * @fileOverview The [Language](http://ckeditor.com/addon/language) plugin.
+ * @fileOverview The [Language](https://ckeditor.com/cke4/addon/language) plugin.
  */
 
 'use strict';
 
 ( function() {
 
-	var allowedContent = 'span[!lang,!dir]',
-		requiredContent = 'span[lang,dir]';
+	var allowedContent = 'span[!lang,dir]',
+		requiredContent = 'span[lang]';
 
 	CKEDITOR.plugins.add( 'language', {
 		requires: 'menubutton',
-		lang: 'ar,az,bg,ca,cs,cy,da,de,de-ch,el,en,en-gb,eo,es,es-mx,eu,fa,fi,fo,fr,gl,he,hr,hu,id,it,ja,km,ko,ku,nb,nl,no,oc,pl,pt,pt-br,ru,sk,sl,sq,sv,tr,tt,ug,uk,vi,zh,zh-cn', // %REMOVE_LINE_CORE%
+		// jscs:disable maximumLineLength
+		lang: 'ar,az,bg,ca,cs,cy,da,de,de-ch,el,en,en-au,en-gb,eo,es,es-mx,et,eu,fa,fi,fo,fr,gl,he,hr,hu,id,it,ja,km,ko,ku,lt,lv,nb,nl,no,oc,pl,pt,pt-br,ro,ru,sk,sl,sq,sr,sr-latn,sv,tr,tt,ug,uk,vi,zh,zh-cn', // %REMOVE_LINE_CORE%
+		// jscs:enable maximumLineLength
 		icons: 'language', // %REMOVE_LINE_CORE%
 		hidpi: true, // %REMOVE_LINE_CORE%
 
@@ -104,6 +106,24 @@
 				requiredContent: requiredContent,
 				toolbar: 'bidi,30',
 				command: 'language',
+				contentTransformations: [
+					[
+						// Add missing proper `dir` attribute when <span> element has only `lang` attribute (#5085).
+						{
+							element: 'span',
+							left: function( element ) {
+								return element.attributes.lang && ( !element.attributes.dir || element.attributes.dir === '' );
+							},
+							right: function( element ) {
+								var rtlLanguages = CKEDITOR.tools.object.keys( CKEDITOR.lang.rtl ),
+									isRtlLanguage = CKEDITOR.tools.array.indexOf( rtlLanguages, element.attributes.lang ) !== -1,
+									dirAttribute = isRtlLanguage ? 'rtl' : 'ltr';
+
+								element.attributes.dir = dirAttribute;
+							}
+						}
+					]
+				],
 				onMenu: function() {
 					var activeItems = {},
 						currentLanguagedElement = plugin.getCurrentLangElement( editor );
@@ -141,7 +161,7 @@
 				for ( var i = 0; i < activePath.length; i++ ) {
 					pathMember = activePath[ i ];
 
-					if ( !ret && pathMember.getName() == 'span' && pathMember.hasAttribute( 'dir' ) && pathMember.hasAttribute( 'lang' ) )
+					if ( !ret && pathMember.getName() == 'span' && pathMember.hasAttribute( 'lang' ) )
 						ret = pathMember;
 				}
 			}
@@ -153,7 +173,7 @@
 
 /**
  * Specifies the list of languages available in the
- * [Language](http://ckeditor.com/addon/language) plugin. Each entry
+ * [Language](https://ckeditor.com/cke4/addon/language) plugin. Each entry
  * should be a string in the following format:
  *
  *		<languageCode>:<languageLabel>[:<textDirection>]
@@ -166,7 +186,7 @@
  * * _textDirection_: (optional) One of the following values: `rtl` or `ltr`,
  * 	indicating the reading direction of the language. Defaults to `ltr`.
  *
- * See the [SDK sample](http://sdk.ckeditor.com/samples/language.html).
+ * See the {@glink examples/language example}.
  *
  *		config.language_list = [ 'he:Hebrew:rtl', 'pt:Portuguese', 'de:German' ];
  *

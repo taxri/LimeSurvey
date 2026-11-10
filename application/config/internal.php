@@ -1,4 +1,6 @@
-<?php if (!defined('BASEPATH')) {
+<?php
+
+if (!defined('BASEPATH')) {
     exit('No direct script access allowed');
 }
 
@@ -8,25 +10,17 @@
  *
  */
 
-if (!file_exists(dirname(__FILE__).'/config.php')) {
-    $userConfig = require(dirname(__FILE__).'/config-sample-mysql.php');
+if (!file_exists(dirname(__FILE__) . '/config.php')) {
+    $userConfig = require(dirname(__FILE__) . '/config-sample-mysql.php');
 } else {
-    $userConfig = require(dirname(__FILE__).'/config.php');
+    $userConfig = require(dirname(__FILE__) . '/config.php');
 }
 
-if (!date_default_timezone_set(@date_default_timezone_get())) {
-
-    date_default_timezone_set('Europe/London');
-}
-
+date_default_timezone_set('UTC'); 
 
 if (function_exists('mb_internal_encoding')) {
     // Needed to substring arabic etc
     mb_internal_encoding('UTF-8');
-    if (ini_get('mbstring.internal_encoding')) {
-        ini_set('mbstring.internal_encoding', 'UTF-8');
-    }
-
 } else {
     // Do nothing, will be checked in installation
 }
@@ -39,94 +33,99 @@ $internalConfig = array(
     'defaultController' => 'surveys',
 
     'aliases' => array(
+
+        // LimeSurvey's Yii modules
+        'modules' => realpath(__DIR__ . '/../../modules'),
+
         // Third party path
-        'third_party' => realpath(__DIR__.'/../../third_party'),
-        'core' => realpath(__DIR__.'/../../assets/packages'),
-        'fonts' => realpath(__DIR__.'/../../assets/fonts'),
+        'vendor' => realpath(__DIR__ . '/../../vendor'),
+        'node_modules' => realpath(__DIR__ . '/../../node_modules'),
+        'node_modules_datatables' => realpath(__DIR__ . '/../../node_modules/datatables.net'),
+        'node_modules_datatables_bs5' => realpath(__DIR__ . '/../../node_modules/datatables.net-bs5'),
+        'node_modules_decimal' => realpath(__DIR__ . '/../../node_modules/decimal.js'),
+        'node_modules_jquery_actual' => realpath(__DIR__ . '/../../node_modules/jquery.actual'),
+        'node_modules.chartjs' => realpath(__DIR__ . '/../../node_modules/chart.js/dist'),
+        'node_modules.moment.min' => realpath(__DIR__ . '/../../node_modules/moment/min'),
+        'core' => realpath(__DIR__ . '/../../assets/packages'),
+        'fonts' => realpath(__DIR__ . '/../../assets/fonts'),
 
+        // bootstrap 5 configuration
+        'bootstrap' => realpath(__DIR__ . '/../../assets/bootstrap_5'),
         // yiistrap configuration
-        'bootstrap' => realpath(__DIR__.'/../extensions/bootstrap'),
-        'questiontypes' => realpath(__DIR__.'/../extensions/questionTypes'),
-        'vendor.twbs.bootstrap.dist' => realpath(__DIR__.'/../extensions/bootstrap'),
+        'yiistrap_fork' => realpath(__DIR__ . '/../extensions/bootstrap5'),
+        'vendor.twbs.bootstrap.dist' => realpath(__DIR__ . '/../extensions/bootstrap'),
         // yiiwheels configuration
-        'yiiwheels' => realpath(__DIR__.'/../extensions/yiiwheels'),
-        'vendor.twbs.bootstrap.dist',
+        'yiiwheels' => realpath(__DIR__ . '/../extensions/yiiwheels'),
+//        'vendor.twbs.bootstrap.dist',
 
-        // Twig aliases. We don't want to change the file ETwigViewRenderer, so we can update it without difficulties
-        // However, LimeSurvey directory tree is not a standard Yii Application tree.
-        // we use 'third_party' instead of 'vendor'
-        // This line just point application.vendor.Twig to application/third_party/Twig
-        // @see: ETwigViewRenderer::$twigPathAlias
-        'application.vendor.Twig'=>'application.third_party.Twig',
-        // 'CaptchaExtendedAction' => realpath(__DIR__ . '/../extensions/captchaExtended/CaptchaExtendedAction.php'),
-        // 'CaptchaExtendedValidator' => realpath(__DIR__ . '/../extensions/captchaExtended/CaptchaExtendedValidator.php')
+        //Basic questiontype objects
+        'questiontypes' => realpath(__DIR__ . '/../core/QuestionTypes')
     ),
 
     /*
-
-
     here you can load the different modules
     more about YII modules :
     https://www.yiiframework.com/doc/guide/1.1/en/basics.module
-
-
-
-
-    'modules'=>array(
-            'yourmodule'=array(
-            'class' => 'Use a yii Alias',
-
-        )
-
-            'gii'=>array(
-                'class'=>'system.gii.GiiModule',
-                'password'=>'toto',
-                    'newFileMode'=>0666,
-                    'newDirMode'=>0777,
-            ),
-        ),
-
-
-
     */
+    'modules' => array(
 
-    'params'=>array(
-        'defaultPageSize'=>10, // Default page size for most of the grids
-        'pageSizeOptions'=>array(5=>5, 10=>10, 20=>20, 50=>50, 100=>100), // Default page size options for most of the grids
-        'pageSizeOptionsTokens'=>array(5=>5, 10=>10, 25=>25, 50=>50, 100=>100, 250=>250, 500=>500, 1000=>1000, 2500=>2500, 5000=>5000, 10000=>10000), // Tokens needs different options
-        'defaultEllipsizeHeaderValue'=>30, // Default max characters before ellipsizing the headers of responses grid
-        'defaultEllipsizeQuestionValue'=>50, // Default max characters before ellipsizing the questions inside responses grid
+        /* Root Modules are real Yii Modules and can be initiate like this:
+        'HelloWorld' => array(
+          'class' => 'modules.root.HelloWorld.HelloWorldModule',
+        ),
+        */
+
+        /* Here you can unlock Gii
+        'gii'=>array(
+            'class'=>'system.gii.GiiModule',
+            'password'=>'YOURPASSWORD',
+            'newFileMode'=>0666,
+            'newDirMode'=>0777,
+        ),
+        */
+    ),
+    'params' => array(
+        'defaultPageSize' => 10, // Default page size for most of the grids
+        'pageSizeOptions' => array(5 => 5, 10 => 10, 20 => 20, 50 => 50, 100 => 100, 250 => 250, 500 => 500,), // Default page size options for most of the grids
+        'pageSizeOptionsTokens' => array(5 => 5, 10 => 10, 25 => 25, 50 => 50, 100 => 100, 250 => 250, 500 => 500, 1000 => 1000, 2500 => 2500, 5000 => 5000, 10000 => 10000), // Tokens needs different options
+        'defaultEllipsizeHeaderValue' => 30, // Default max characters before ellipsizing the headers of responses grid
+        'defaultEllipsizeQuestionValue' => 50, // Default max characters before ellipsizing the questions inside responses grid
     ),
 
     'import' => array(
         'application.core.*',
         'application.core.db.*',
         'application.models.*',
+        'application.models.Interfaces.*',
+        'application.models.Traits.*',
+        'application.helpers.*',
         'application.controllers.*',
         'application.modules.*',
-        'bootstrap.helpers.*',
-        'bootstrap.widgets.*',
-        'bootstrap.behaviors.*',
+        'yiistrap_fork.widgets.*',
+        'yiistrap_fork.helpers.*',
+        'yiistrap_fork.behaviors.*',
         'yiiwheels.widgets.select2.WhSelect2',
-        'third_party.Twig.*',
+        'vendor.Twig.*',
+        'vendor.sodium.*',
         'ext.captchaExtended.CaptchaExtendedAction',
-        'ext.captchaExtended.CaptchaExtendedValidator'
-
+        'ext.captchaExtended.CaptchaExtendedValidator',
+        'questiontypes.*'
     ),
-    'preload' => array('log'),
+    'preload' => array('log', 'ETwigViewRenderer'),
     'components' => array(
-        // yiistrap configuration
-        'bootstrap' => array(
-            'class' => 'bootstrap.components.TbApi',
-        ),
         // yiiwheels configuration
         'yiiwheels' => array(
             'class' => 'yiiwheels.YiiWheels',
         ),
-
-        'clientScript'=>array(
+        'sodium' => array(
+            'class' => 'LSSodium',
+       ),
+        'sodiumOld' => [
+            'class' => 'LSSodiumOld'
+        ],
+        'clientScript' => array(
             'packages' => array_merge(
-                require('third_party.php'),
+                require('vendor.php'),
                 require('packages.php'),
                 require('questiontypes.php'),
                 require('fonts.php')
@@ -144,18 +143,22 @@ $internalConfig = array(
             'excludeFiles' => array("config.xml", "node_modules", "src"),
             'class' => 'application.core.LSYii_AssetManager'
         ),
-
+        /* Leave default errorhandler : managed in LSYii_Application->onException */
+        'errorHandler' => [
+        ],
         'request' => array(
-            'class'=>'LSHttpRequest',
-            'enableCsrfValidation'=>true, // CSRF protection
-            'enableCookieValidation'=>false, // Enable to activate cookie protection
-            'noCsrfValidationParams'=>array(),
-            'noCsrfValidationRoutes'=>array(
-                'remotecontrol',
+            'class' => 'LSHttpRequest',
+            'enableCsrfValidation' => true, // CSRF protection
+            'enableCookieValidation' => false, // Enable to activate cookie protection
+            'noCsrfValidationParams' => array(),
+            'noCsrfValidationRoutes' => array(
+                'rest',
+                'admin/remotecontrol',
                 'plugins/unsecure',
             ),
             'csrfCookie' => array(
-                'secure' => ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443))
+                'secure' => ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)),
+                'httpOnly' => true
             ),
         ),
         'user' => array(
@@ -172,18 +175,35 @@ $internalConfig = array(
                 'profile' => array(
                     'class' => 'CProfileLogRoute'
                 ),
+                // RemoteControl calls saved in /tmp/runtime/remotecontrol.log, only logged when 'rpc_log' is enabled (see config-defaults.php)
+                'remotecontrol' => array(
+                    'class' => 'CFileLogRoute',
+                    'levels' => 'info, warning',
+                    'categories' => 'remotecontrol',
+                    'logFile' => 'remotecontrol.log',
+                    'maxFileSize' => 10240,
+                ),
 
                 // Log file saved in /tmp/runtime/plugin.log
+                // Only uncomment this section if you want to log plugin activities
+                // because the log could contain sensitive information
+                /*
                 'plugin' => array(
                     'class' => 'CFileLogRoute',
                     'levels' => 'trace, info, error, warning',
                     'logFile' => 'plugin.log',
                     'categories' => 'plugin.*'  // The category will be the name of the plugin
-                )
+                ),
+                */
             )
         ),
-        'cache'=>array(
+        'cache' => array(
             'class' => defined('YII_DEBUG') && YII_DEBUG ? 'system.caching.CDummyCache' : 'CFileCache',
+        ),
+        // For more info about the emcache, see application/helpers/expressions/em_cache_helper.php.
+        // Disabled by default. Enable by adding emcache in config.php after installation.
+        'emcache' => array(
+            'class' => 'system.caching.CDummyCache'
         ),
         'db' => array(
             'schemaCachingDuration' => 3600,
@@ -197,35 +217,44 @@ $internalConfig = array(
                 'secure' => ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443))
             ),
         ),
+        'sourceLanguage' => 'en',
         'messages' => array(
-            'class' => 'CGettextMessageSource',
-            'cachingDuration'=>3600,
+            'class' => 'application.core.LSMessageSource',
+            'cachingDuration' => 3600,
             'forceTranslation' => true,
             'useMoFile' => true,
-            'basePath' => __DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'locale'
+            'basePath' => __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'locale'
         ),
         'pluginManager' => array(
             'class' => "\\LimeSurvey\\PluginManager\\PluginManager",
             'api' => "\\LimeSurvey\\PluginManager\\LimesurveyApi"
         ),
-        'format'=>array(
-            'class'=>'application.extensions.CustomFormatter'
+        'format' => array(
+            'class' => 'application.extensions.CustomFormatter'
         ),
-
+        'LimeMailer' => array(
+            /* This allow update LimeMailer in config, but no namespace in this condition … */
+            'class' => 'application.core.LimeMailer',
+        ),
+        'ETwigViewRenderer' => array(
+            'class' => 'vendor.vintagesucks.twig-renderer.ETwigViewRenderer',
+            'twigPathAlias' => 'vendor.twig.twig.lib.Twig'
+        ),
         'twigRenderer' => array(
             'class' => 'application.core.LSETwigViewRenderer',
+            'twigPathAlias' => 'vendor.twig.twig.lib.Twig',
 
             // All parameters below are optional, change them to your needs
             'fileExtension' => '.twig',
             'options' => array(
-                'debug' => defined('YII_DEBUG') && YII_DEBUG ?true:false,
+                'debug' => defined('YII_DEBUG') && YII_DEBUG ? true : false,
             ),
             'extensions' => array(
                 'LS_Twig_Extension',
-                'Twig_Extension_Sandbox',
-                'Twig_Extension_StringLoader',
-                'Twig_Extension_Debug',
-                // 'Twig_Extension_Escaper' // In the future, this extenstion could be use to build a powerfull XSS filter
+                '\Twig\Extension\SandboxExtension',
+                '\Twig\Extension\StringLoaderExtension',
+                'LS_Twig_Debug_Extension',
+                // 'Twig_Extension_Escaper' // In the future, this extension could be used to build a powerful XSS filter
             ),
             'globals' => array(
                 'html' => 'CHtml'
@@ -252,15 +281,25 @@ $internalConfig = array(
                 /* String management */
                 'processString'           => 'LS_Twig_Extension::processString',
                 'flatString'              => 'LS_Twig_Extension::flatString',
+                'flattenText'             => 'flattenText', /* Not in 3.X Temporary keep it */
                 'ellipsizeString'         => 'LS_Twig_Extension::ellipsizeString',
-                'flatEllipsizeText'       => 'LS_Twig_Extension::flatEllipsizeText',
+                'flatEllipsizeText'       => 'LS_Twig_Extension::flatEllipsizeText', /* Temporary keep it */
                 'str_replace'             => 'str_replace',
+                'strpos'                  => 'strpos',
                 'getConfig'               => 'LS_Twig_Extension::getConfig',
+                'getExpressionManagerOutput' => 'LS_Twig_Extension::getExpressionManagerOutput',/* Not in 3.X */
+                'getTextDisplayWidget'       => 'LS_Twig_Extension::getTextDisplayWidget',/* Not in 3.X */
+                'checkPermission'         => 'LS_Twig_Extension::checkPermission',/* Not in 3.X */
                 'getAllQuestionClasses'   => 'LS_Twig_Extension::getAllQuestionClasses',
+                'getLanguageNameFromCode'    => 'getLanguageNameFromCode',/* Not in 3.X */
+                'getLanguageRTL'          => 'LS_Twig_Extension::getLanguageRTL',
+                'getHtmlLangAttributeValue' => 'getHtmlLangAttributeValue',
+
                 'intval'                  => 'intval',
-                'empty'                   => 'empty',
+                'empty'                   => 'LS_Twig_Extension::isEmpty',
                 'count'                   => 'LS_Twig_Extension::safecount',
                 'reset'                   => 'reset',
+                'strip_tags'              => 'strip_tags',
                 'in_array'                => 'in_array',
                 'in_multiarray'           => 'LS_Twig_Extension::in_multiarray',
                 'array_search'            => 'array_search',
@@ -268,35 +307,39 @@ $internalConfig = array(
                 'getPost'                 => 'LS_Twig_Extension::getPost',
                 'getParam'                => 'LS_Twig_Extension::getParam',
                 'getQuery'                => 'LS_Twig_Extension::getQuery',
-                'isset'                   => 'isset',
+                'isset'                   => 'LS_Twig_Extension::isSet',
                 'assetPublish'            => 'LS_Twig_Extension::assetPublish',
                 'image'                   => 'LS_Twig_Extension::image',
                 'imageSrc'                => 'LS_Twig_Extension::imageSrc',
+                'templateResourceUrl'                => 'LS_Twig_Extension::templateResourceUrl',
                 'sprintf'                 => 'sprintf',
                 'gT'                      => 'gT',
-                'ngT'                      => 'ngT',
+                'ngT'                     => 'ngT',
+                'createAbsoluteUrl'       => 'LS_Twig_Extension::createAbsoluteUrl',/* Not in 3.X */
                 'createUrl'               => 'LS_Twig_Extension::createUrl',
                 'json_decode'             => 'LS_Twig_Extension::json_decode',
                 'json_encode'             => 'CJSON::encode',
-                'getLanguageNameFromCode' => 'getLanguageNameFromCode',
                 'checkconditionFunction'  => 'checkconditionFunction',
                 'doRender'                => 'doRender',
-                'flattenText'             => 'flattenText',
                 'getEditor'               => 'getEditor',
                 'darkencss'               => 'LS_Twig_Extension::darkencss',
                 'lightencss'              => 'LS_Twig_Extension::lightencss',
+                'makeFlashMessage'        => 'makeFlashMessage',
                 'getAllTokenAnswers'      => 'LS_Twig_Extension::getAllTokenAnswers',
-                'getAllAnswers'           => 'LS_Twig_Extension::getAllAnswers',
+                'getGoogleAnalyticsTrackingUrl' => 'LS_Twig_Extension::getGoogleAnalyticsTrackingUrl',
             ),
             'filters' => array(
                 'jencode' => 'CJSON::encode',
                 't'     => 'gT',
                 'gT'    => 'gT',
+                'isAbsoluteUrl' => 'check_absolute_url',
+                'isImageUrl' => 'check_image_url',
             ),
 
             'sandboxConfig' => array(
                 'tags' => array('if', 'for', 'set', 'autoescape', 'block', 'embed', 'use', 'include', 'macro', 'import'),
                 'filters' => array(
+                    'default',
                     'escape',
                     'raw',
                     't',
@@ -310,31 +353,44 @@ $internalConfig = array(
                     'split',
                     'trim',
                     'json_encode',
+                    'round',
                     'replace',
                     'last',
                     'first',
+                    'url_encode',
                     'capitalize',
                     'lower',
                     'upper',
-                    'strip_tags',
+                    'striptags',
                     'number_format',
+                    'isAbsoluteUrl',
+                    'isImageUrl'
                 ),
                 'methods' => array(
-                    'ETwigViewRendererStaticClassProxy' =>  array("encode", "textfield", "form", "link", "emailField", "beginForm", "endForm", "dropDownList", "htmlButton", "passwordfield", "hiddenfield", "textArea", "checkBox"),
+                    'ETwigViewRendererStaticClassProxy' =>  array("encode", "textfield", "form", "link", "emailField", "beginForm", "endForm", "dropDownList", "htmlButton", "passwordfield", "hiddenfield", "textArea", "checkBox", "tag"),
                     'Survey'                            =>  array("getAllLanguages", "localizedtitle"),
                     'LSHttpRequest'                     =>  array("getParam"),
-                    'LSCaptcha'                          =>  array("renderOut")
+                    'LSCaptcha'                          =>  array("renderOut"),
+                    'TemplateConfiguration'             =>  array("__toString"),
+                    'SimpleXMLElement'                  =>  array("__toString"),
                 ),
-                'properties' => array(
+                'properties' =>  array(
                     'ETwigViewRendererYiiCoreStaticClassesProxy' => array("Html"),
                     'LSYii_Application'                          => array("request"),
                     'TemplateConfiguration'             =>  array("sTemplateurl"),
-                    'Survey' => array('sid', 'admin', 'active', 'expires', 'startdate', 'anonymized', 'format', 'savetimings', 'template', 'language', 'datestamp', 'usecookie', 'allowprev', 'printanswers', 'showxquestions', 'showgroupinfo', 'shownoanswer', 'showqnumcode', 'showwelcome', 'showprogress', 'questionindex', 'navigationdelay', 'nokeyboard', 'alloweditaftercompletion', 'hasTokensTable', 'hasResponsesTable'),
-                    'Question' => array('qid', 'parent_qid', 'sid', 'gid', 'type', 'title', 'question', 'help', 'other', 'mandatory', 'language', 'scale_qid'),
-                    'QuestionGroups' => array('gid', 'sid', 'group_name', 'group_order', 'description', 'language', 'randomization_group', 'grelevance')
+                    'Survey' => array('sid', 'admin', 'active', 'expires', 'startdate', 'anonymized', 'format', 'savetimings', 'template', 'language', 'datestamp', 'usecookie', 'allowprev', 'printanswers', 'showxquestions', 'showgroupinfo', 'shownoanswer', 'preselectnoanswer', 'showqnumcode', 'showwelcome', 'showprogress', 'questionindex', 'navigationdelay', 'alloweditaftercompletion', 'hasTokensTable', 'hasResponsesTable', 'showsurveypolicynotice', 'aOptions', 'isListPublic', 'sSurveyUrl', 'localizedTitle'),
+                    'SurveyLanguageSetting' => array('surveyls_description', 'surveyls_welcometext', 'surveyls_endtext', 'surveyls_policy_notice', 'surveyls_policy_error', 'surveyls_policy_notice_label', 'surveyls_title'),
+                    'Question' => array('qid', 'parent_qid', 'sid', 'gid', 'type', 'title', 'relevance', 'question', 'help', 'other', 'mandatory', 'language', 'scale_qid', 'questionType', 'questionl10ns', 'survey', 'text', 'scenario', 'answer', 'code', 'comment'),
+                    'QuestionGroups' => array('gid', 'sid', 'group_name', 'group_order', 'description', 'language', 'randomization_group', 'grelevance'),
+                    'Template' => array('title', 'name'),
+                    'QuestionType' => array('code'),
+                    'Answer' => array('aid', 'answerl10ns', 'code', 'assessment_value'),
+                    'QuestionL10n' => array('question'),
+                    'AnswerL10n' => array('answer'),
                 ),
                 'functions' => array(
                     'getLanguageData',
+                    'getLanguageRTL',
                     'array_flip',
                     'array_intersect_key',
 
@@ -351,15 +407,22 @@ $internalConfig = array(
                     'unregisterScriptForAjax',
                     'listCoreScripts',
                     'listScriptFiles',
-                    'processString',
 
+                    'processString',
                     'flatEllipsizeText',
                     'flatString',
                     'ellipsizeString',
                     'flatEllipsizeText',
                     'str_replace',
+                    'strpos',
+                    'flattenText',
                     'getConfig',
+                    'getExpressionManagerOutput',
+                    'getTextDisplayWidget',
+                    'getLanguageNameFromCode',
+                    'getHtmlLangAttributeValue',
                     'getAllQuestionClasses',
+                    'checkPermission',
                     'intval',
                     'empty',
                     'count',
@@ -375,9 +438,11 @@ $internalConfig = array(
                     'assetPublish',
                     'image',
                     'imageSrc',
+                    'templateResourceUrl',
                     'sprintf',
                     'gT',
                     'ngT',
+                    'createAbsoluteUrl',
                     'createUrl',
                     'json_decode',
                     'json_encode',
@@ -385,33 +450,40 @@ $internalConfig = array(
                     /* Not in twigRenderer[functions] */
                     'include',
                     'dump',
-                    'getLanguageNameFromCode',
                     'checkconditionFunction',
                     'doRender',
-                    'flattenText',
                     'range',
                     'getEditor',
                     'darkencss',
                     'lightencss',
                     'getAllTokenAnswers',
-                    'getAllAnswers',
+                    'makeFlashMessage',
+                    'getGoogleAnalyticsTrackingUrl',
                 ),
             ),
-
         ),
+        'extensionUpdaterServiceLocator' => array(
+            'class' => '\LimeSurvey\ExtensionInstaller\ExtensionUpdaterServiceLocator',
+        ),
+        'versionFetcherServiceLocator' => array(
+            'class' => '\LimeSurvey\ExtensionInstaller\VersionFetcherServiceLocator',
+        ),
+        'formExtensionService' => [
+            'class' => '\LimeSurvey\Libraries\FormExtension\FormExtensionService',
+        ]
     )
 );
 
 
 
-$result = CMap::mergeArray($internalConfig, $userConfig);
+$result = \LimeSurvey\Helpers\ConfigMergeHelper::merge($internalConfig, $userConfig);
 /**
  * Some workarounds for erroneous settings in user config.php.
  * seems not to be used anymore...
  */
 $result['defaultController'] = ($result['defaultController'] == 'survey') ? $internalConfig['defaultController'] : $result['defaultController'];
 /**
- * Allways add needed routes at end
+ * Always add needed routes at end
  */
 $result['components']['urlManager']['rules']['<_controller:\w+>/<_action:\w+>'] = '<_controller>/<_action>';
 

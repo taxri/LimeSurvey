@@ -14,13 +14,13 @@ function getRatingSlider(qID){
     basicSettings = {
     },
     package = {
-      sliderHtmlElement       : $("<div id='emoji_slider_container_"+qID+"' class='slider-wrapper' aria-hidden='true'></div>"),               //wrapper for the slider parts
+      sliderHtmlElement       : $("<div id='emoji_slider_container_"+qID+"' class='ls-emojislider slider-wrapper' aria-hidden='true'></div>"),               //wrapper for the slider parts
       sliderInnerHtmlElement  : $("<div class='slider-labels'></div>"),                                                    //the labels of the wrapper
       sliderGrabContainer     : $("<div id='emoji_slider_grab_container_"+qID+"' class='slider-grab-container'></div>"),   //the container for the handle and the colorline
       sliderLine              : $("<div id='slider_line_item_"+qID+"' class='slider-line'></div>"),                        //The colored baseline
       sliderHandle            : $("<div id='slider_handle_item_"+qID+"' class='slider-handle'></div>"),                    //the handle
       sliderLabelEmoji        : $("<div class='slider-label'><i class='emoji emoji-enormous'></i></div>"),
-      sliderLabelNoAnswer     : $("<div class='slider-label slider-label-6' data-position='6'><i class='fa fa-ban' style='font-size:28px;'></i></div>")
+      sliderLabelNoAnswer     : $("<div class='slider-label slider-label-6' data-position='6'><i class='emoji emoji-enormous emoji-noanswer'></i></div>"),
     },
     mapEmojiToValue = function(position){
       var imageMap = {1: "emoji-sad",2: "emoji-mildlyunamused",3: "emoji-whatever",4: "emoji-smile",5: "emoji-grin-eyes",6: "emoji-grin",7: "emoji-bigsmile"};
@@ -65,14 +65,32 @@ function getRatingSlider(qID){
     //Method setting the value on the EM-calculateable part
     setValueAndColorize = function(index){
       answersList.find('input[type=radio][value='+index+']').trigger('click');
-      $("#emoji_slider_container_"+qID).find(".slider-label").find('i').removeClass('emoji-color'); //remove all other color-classes
-      if(index==6){ //if it is the "no Answer" set, add text-danger instead of emoji-color
-         $("#emoji_slider_container_"+qID).find(".slider-label-6").find('i').addClass('text-danger');
+      colorize(index);
+      if(index==6){ //"no answer" position
          answersList.find('input[type=radio][value=""]').trigger('click');
-      } else {
-        $("#emoji_slider_container_"+qID).find(".slider-label-6").find('i').removeClass('text-danger');
-        $("#emoji_slider_container_"+qID).find(".slider-label-"+index).find('i').addClass('emoji-color');
       }
+    },
+    //Method highlighting the emoji of the given position
+    colorize = function(index){
+      $("#emoji_slider_container_"+qID).find(".slider-label").find('i').removeClass('emoji-color'); //remove all other color-classes
+      $("#emoji_slider_container_"+qID).find(".slider-label-"+index).find('i').addClass('emoji-color');
+    },
+    //Method returning the slider position of a radio button ("no answer" is position 6)
+    getIndexFromRadio = function(radio){
+      return $(radio).val() === "" ? 6 : $(radio).val();
+    },
+    //Method updating the slider when the hidden radio buttons are changed by keyboard
+    onRadioChange = function(){
+      var index = getIndexFromRadio(this);
+      colorize(index);
+      setSliderPosition(getSliderPositionFromIndex(index), package.sliderGrabContainer);
+    },
+    //Method marking the emoji of the hidden radio button that has the keyboard focus
+    onRadioFocus = function(){
+      $("#emoji_slider_container_"+qID).find(".slider-label-"+getIndexFromRadio(this)).addClass('slider-label-focused');
+    },
+    onRadioBlur = function(){
+      $("#emoji_slider_container_"+qID).find(".slider-label").removeClass('slider-label-focused');
     },
     //Method to unset all events on dragend
     onEndDrag = function(e){
@@ -142,6 +160,8 @@ function getRatingSlider(qID){
       });
     //Bind events for clicking on the labels
       $("#emoji_slider_container_"+qID).find('.slider-label').on('click',onSetHandlePosition);
+    //Keep the slider in sync with the hidden radio buttons, which remain usable by keyboard
+      answersList.find('input[type=radio]').on('change', onRadioChange).on('focus', onRadioFocus).on('blur', onRadioBlur);
     },
     pinUpHtml = function(){
       //Fill the inner Element with the labels
@@ -174,7 +194,7 @@ function getRatingSlider(qID){
   //hide the basic radioes
     pinUpHtml();
     bindEventsToContainer();
-    answersList.addClass("slidered-list sr-only");
+    answersList.addClass("slidered-list visually-hidden");
   //if a value is set, set it in the emojis
   var openValue = checkOpenValue();
     if(openValue){

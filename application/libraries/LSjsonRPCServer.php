@@ -1,26 +1,27 @@
 <?php
+
     Yii::import('application.libraries.BigData', true);
     Yii::import('application.libraries.jsonRPCServer');
-    class LSjsonRPCServer extends jsonRPCServer
-    {
-        /**
-         * This function handle a request binding it to a given object
-         *
-         * @param remotecontrol_handle $object
-         * @return boolean
-         */
+class LSjsonRPCServer extends jsonRPCServer
+{
+    /**
+     * This function handle a request binding it to a given object
+     *
+     * @param remotecontrol_handle $object
+     * @return boolean
+     */
     public static function handle($object)
     {
         // checks if a JSON-RCP request has been received
         if (
             $_SERVER['REQUEST_METHOD'] != 'POST' ||
             empty($_SERVER['CONTENT_TYPE']) ||
-            strpos($_SERVER['CONTENT_TYPE'], "application/json") === false
-            ) {
+            strpos((string) $_SERVER['CONTENT_TYPE'], "application/json") === false
+        ) {
             // This is not a JSON-RPC request
             return false;
         }
-        
+
         // reads the input data
         $request = json_decode(file_get_contents('php://input'), true);
         // executes the task on local object
@@ -57,13 +58,13 @@
         }
 
         // output the response
-        if (is_null($request) || !empty($request['id'])) {
-// notifications don't want response
-            header('content-type: text/javascript');
+        // Notifications (no id or a null id) don't want a response: An id of 0 or "0" is a valid request id
+        if (is_null($request) || isset($request['id'])) {
+            header('content-type: application/json');
             BigData::json_echo($response);
         }
 
         // finish
         return true;
     }
-    }
+}

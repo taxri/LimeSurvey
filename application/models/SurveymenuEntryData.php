@@ -2,10 +2,9 @@
 
 class SurveymenuEntryData extends CFormModel
 {
-
     public $rawData = null;
     public $render = null;
-    public $link = "admin/survey/sa/rendersidemenulink";
+    public $link = "surveyAdministration/rendersidemenulink";
     public $linkData  = array();
     public $linkExternal = false;
     public $surveyid  = 0;
@@ -17,20 +16,20 @@ class SurveymenuEntryData extends CFormModel
     /**
      * @param integer|null $surveyid
      */
-    public function apply($menuEntry, $surveyid)
+    public function apply($menuEntry, $surveyid = null)
     {
         $this->surveyid = $surveyid;
         $this->menuEntry = $menuEntry;
 
-        $oData = json_decode(stripcslashes($this->menuEntry->data));
+        $oData = json_decode(stripcslashes((string)$this->menuEntry->data));
         $jsonError = json_last_error();
         if ($jsonError) {
             $this->rawData = [];
         } else {
             $this->rawData = $oData;
-            $this->_parseDataAttribute();
+            $this->parseDataAttribute();
         }
-        $this->_parseLink();
+        $this->parseLink();
     }
 
     public function createOptionJson($addSurveyID = false, $addQuestionGroupId = false, $addQuestionId = false)
@@ -65,33 +64,45 @@ class SurveymenuEntryData extends CFormModel
         return json_encode(array('render' => $baseArray));
     }
 
+    /**
+     * Build the URL of the menu entry.
+     * A full URL (with scheme) set as an external link is used as is, with the link data appended as query parameters.
+     * Any other link is treated as a route.
+     * @return string
+     */
     public function linkCreator()
     {
-        if( $this->linkExternal ) {
-            return $this->link;
+        if ($this->linkExternal && preg_match('#^([a-z][a-z0-9+.-]*:)?//#i', (string)$this->link)) {
+            if (empty($this->linkData)) {
+                return $this->link;
+            }
+            $separator = strpos((string)$this->link, '?') === false ? '?' : '&';
+            return $this->link . $separator . http_build_query($this->linkData);
+        }
+        if ($this->linkExternal) {
+            return  Yii::app()->getController()->createAbsoluteUrl($this->link, $this->linkData);
         }
         return  Yii::app()->getController()->createUrl($this->link, $this->linkData);
-        
     }
 
-    private function _parseDataAttribute()
+    private function parseDataAttribute()
     {
 
-        $this->isActive = $this->_recursiveIssetWithDefault($this->rawData, array('render', 'isActive'), 0, $this->isActive);
-        $this->linkExternal = $this->_recursiveIssetWithDefault($this->rawData, array('render', 'link', 'external'), 0, $this->linkExternal);
-        $this->pjaxed = $this->_recursiveIssetWithDefault($this->rawData, array('render', 'link', 'pjaxed'), 0, $this->pjaxed);
-        $alinkData = $this->_recursiveIssetWithDefault($this->rawData, array('render', 'link', 'data'), 0, $this->linkData);
+        $this->isActive = $this->recursiveIssetWithDefault($this->rawData, array('render', 'isActive'), 0, $this->isActive);
+        $this->linkExternal = (bool)$this->recursiveIssetWithDefault($this->rawData, array('render', 'link', 'external'), 0, $this->linkExternal);
+        // External links open in a new window and can never be loaded with pjax
+        $this->pjaxed = !$this->linkExternal && (bool)$this->recursiveIssetWithDefault($this->rawData, array('render', 'link', 'pjaxed'), 0, $this->pjaxed);
+        $alinkData = $this->recursiveIssetWithDefault($this->rawData, array('render', 'link', 'data'), 0, $this->linkData);
 
         foreach ($alinkData as $key => $value) {
             if (is_array($value)) {
-                $value = $this->_getValueForLinkData($value);
+                $value = $this->getValueForLinkData($value);
             }
             $this->linkData[$key] = $value;
         }
     }
 
-
-    private function _parseLink()
+    private function parseLink()
     {
 
         if (empty($this->menuEntry->menu_link)) {
@@ -100,33 +111,34 @@ class SurveymenuEntryData extends CFormModel
         } else {
             $this->link = $this->menuEntry->menu_link;
         }
-
     }
 
     /**
+     * @param $variable
      * @param string[] $checkArray
+     * @param int $i
+     * @param callable $fallback
+     * @return mixed|null
      */
-    private function _recursiveIssetWithDefault($variable, $checkArray, $i = 0, $fallback = null)
+    private function recursiveIssetWithDefault($variable, $checkArray, $i = 0, $fallback = null)
     {
         $default = null;
         if (is_array($variable) && array_key_exists($checkArray[$i], $variable)) {
                     $default = $variable[$checkArray[$i]];
-        } else if (is_object($variable) && property_exists($variable, $checkArray[$i])) {
+        } elseif (is_object($variable) && property_exists($variable, $checkArray[$i])) {
                     $default = $variable->{$checkArray[$i]};
         }
         if (!isset($default)) {
                     return $fallback;
-        } else if (count($checkArray) > $i + 1) {
-                    return $this->_recursiveIssetWithDefault($default, $checkArray, $i + 1, $fallback);
+        } elseif (count($checkArray) > $i + 1) {
+                    return $this->recursiveIssetWithDefault($default, $checkArray, $i + 1, $fallback);
         } else {
                     return $default;
         }
-
     }
 
-    private function _getValueForLinkData($getDataPair)
+    private function getValueForLinkData($getDataPair)
     {
-
         $oSurvey = Survey::model()->findByPk($this->surveyid);
         list($type, $attribute) = $getDataPair;
         $oTypeObject = null;
@@ -139,12 +151,12 @@ class SurveymenuEntryData extends CFormModel
                 break;
             case 'questiongroup':
                 if (App()->getRequest()->getParam('gid')) {
-                    $oTypeObject = QuestionGroup::model()->findByPk(array('gid'=>App()->getRequest()->getParam('gid'),'language'=>App()->getLanguage()));
+                    $oTypeObject = QuestionGroup::model()->findByPk(array('gid' => App()->getRequest()->getParam('gid'),'language' => App()->getLanguage()));
                 }
                 break;
             case 'question':
                 if (App()->getRequest()->getParam('qid')) {
-                    $oTypeObject = QuestionGroup::model()->findByPk(array('gid'=>App()->getRequest()->getParam('qid'),'language'=>App()->getLanguage()));
+                    $oTypeObject = QuestionGroup::model()->findByPk(array('gid' => App()->getRequest()->getParam('qid'),'language' => App()->getLanguage()));
                 }
                 break;
             break;
@@ -153,5 +165,4 @@ class SurveymenuEntryData extends CFormModel
         $result = $oTypeObject != null ? $oTypeObject->{$attribute} : null;
         return $result;
     }
-
 }

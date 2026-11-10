@@ -1,10 +1,11 @@
 <?php
+
 if (!defined('BASEPATH')) {
     exit('No direct script access allowed');
 }
     /*
     * LimeSurvey
-    * Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
+    * Copyright (C) 2007-2026 The LimeSurvey Project Team
     * All rights reserved.
     * License: GNU/GPL License v2 or later, see LICENSE.php
     * LimeSurvey is free software. This version may have been modified pursuant
@@ -15,6 +16,7 @@ if (!defined('BASEPATH')) {
     *
        */
 
+//@todo this should be a table with values from getLanguageData, then using ONLY the model to get values/arrays from it
 
     /*
     * Internationalization and Localization utilities
@@ -25,8 +27,8 @@ if (!defined('BASEPATH')) {
 
 
     /**
-     * Returns all available dateformats in a structured aray
-     * If $iDateFormat is given only the particual dateformat will be returned
+     * Returns all available dateformats in a structured array
+     * If $iDateFormat is given only the particular dateformat will be returned
      *
      * @param $iDateFormat integer
      * @param $sLanguageCode string
@@ -38,18 +40,18 @@ function getDateFormatData($iDateFormat = 0, $sLanguageCode = 'en')
     // Bootstrap DateTimePicker uses capital letters, but
     // we still need small jsdate letters for dropdown client side.
     $aDateFormats = array(
-        1=> array('phpdate' => 'd.m.Y', 'jsdate' => 'DD.MM.YYYY', 'jsdate_original' => 'dd.mm.yyyy', 'dateformat' => gT('dd.mm.yyyy')),
-        2=> array('phpdate' => 'd-m-Y', 'jsdate' => 'DD-MM-YYYY', 'jsdate_original' => 'dd-mm-yyyy', 'dateformat' => gT('dd-mm-yyyy')),
-        3=> array('phpdate' => 'Y.m.d', 'jsdate' => 'YYYY.MM.DD', 'jsdate_original' => 'yyyy.mm.dd', 'dateformat' => gT('yyyy.mm.dd')),
-        4=> array('phpdate' => 'j.n.Y', 'jsdate' => 'D.M.YYYY', 'jsdate_original' => 'd.m.yyyy', 'dateformat' => gT('d.m.yyyy')),
-        5=> array('phpdate' => 'd/m/Y', 'jsdate' => 'DD/MM/YYYY', 'jsdate_original' => 'dd/mm/yyyy', 'dateformat' => gT('dd/mm/yyyy')),
-        6=> array('phpdate' => 'Y-m-d', 'jsdate' => 'YYYY-MM-DD', 'jsdate_original' => 'yyyy-mm-dd', 'dateformat' => gT('yyyy-mm-dd')),
-        7=> array('phpdate' => 'Y/m/d', 'jsdate' => 'YYYY/MM/DD', 'jsdate_original' => 'yyyy/mm/dd', 'dateformat' => gT('yyyy/mm/dd')),
-        8=> array('phpdate' => 'j/n/Y', 'jsdate' => 'D/M/YYYY', 'jsdate_original' => 'd/m/yyyy', 'dateformat' => gT('d/m/yyyy')),
-        9=> array('phpdate' => 'm-d-Y', 'jsdate' => 'MM-DD-YYYY', 'jsdate_original' => 'mm-dd-yyyy', 'dateformat' => gT('mm-dd-yyyy')),
-        10=>array('phpdate' => 'm.d.Y', 'jsdate' => 'MM.DD.YYYY', 'jsdate_original' => 'mm.dd.yyyy', 'dateformat' => gT('mm.dd.yyyy')),
-        11=>array('phpdate' => 'm/d/Y', 'jsdate' => 'MM/DD/YYYY', 'jsdate_original' => 'mm/dd/yyyy', 'dateformat' => gT('mm/dd/yyyy')),
-        12=>array('phpdate' => 'j-n-Y', 'jsdate' => 'D-M-YYYY', 'jsdate_original' => 'd-m-yyyy', 'dateformat' => gT('d-m-yyyy'))
+        1 => array('phpdate' => 'd.m.Y', 'jsdate' => 'DD.MM.YYYY', 'dateformat' => gT('dd.mm.yyyy')),
+        2 => array('phpdate' => 'd-m-Y', 'jsdate' => 'DD-MM-YYYY', 'dateformat' => gT('dd-mm-yyyy')),
+        3 => array('phpdate' => 'Y.m.d', 'jsdate' => 'YYYY.MM.DD', 'dateformat' => gT('yyyy.mm.dd')),
+        4 => array('phpdate' => 'j.n.Y', 'jsdate' => 'D.M.YYYY', 'dateformat' => gT('d.m.yyyy')),
+        5 => array('phpdate' => 'd/m/Y', 'jsdate' => 'DD/MM/YYYY', 'dateformat' => gT('dd/mm/yyyy')),
+        6 => array('phpdate' => 'Y-m-d', 'jsdate' => 'YYYY-MM-DD', 'dateformat' => gT('yyyy-mm-dd')),
+        7 => array('phpdate' => 'Y/m/d', 'jsdate' => 'YYYY/MM/DD', 'dateformat' => gT('yyyy/mm/dd')),
+        8 => array('phpdate' => 'j/n/Y', 'jsdate' => 'D/M/YYYY', 'dateformat' => gT('d/m/yyyy')),
+        9 => array('phpdate' => 'm-d-Y', 'jsdate' => 'MM-DD-YYYY', 'dateformat' => gT('mm-dd-yyyy')),
+        10 => array('phpdate' => 'm.d.Y', 'jsdate' => 'MM.DD.YYYY', 'dateformat' => gT('mm.dd.yyyy')),
+        11 => array('phpdate' => 'm/d/Y', 'jsdate' => 'MM/DD/YYYY', 'dateformat' => gT('mm/dd/yyyy')),
+        12 => array('phpdate' => 'j-n-Y', 'jsdate' => 'D-M-YYYY', 'dateformat' => gT('d-m-yyyy'))
     );
 
     if ($iDateFormat > 12 || $iDateFormat < 0) {
@@ -62,11 +64,21 @@ function getDateFormatData($iDateFormat = 0, $sLanguageCode = 'en')
     }
 }
 
+/**
+ * Returns the languages supported by LimeSurvey and their locale metadata.
+ *
+ * @param boolean $bOrderByNative If true, order the returned array by native language name instead of by (English) description
+ * @param string|null $sLanguageCode Cache key for the language active when the descriptions are translated
+ * @return array Array keyed by language code. Entries include descriptions, writing direction, and date and number formats;
+ *               optional metadata includes CLDR and Moment.js locales and 'fdow' (0 = Sunday through 6 = Saturday)
+ */
 function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
 {
 
     static $result = array();
 
+    // Callers pass the session language, which can be unset
+    $sLanguageCode = (string) $sLanguageCode;
     if (isset($result[$sLanguageCode][$bOrderByNative])) {
         return $result[$sLanguageCode][$bOrderByNative];
     }
@@ -77,6 +89,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['af']['rtl'] = false;
     $supportedLanguages['af']['dateformat'] = 1;
     $supportedLanguages['af']['radixpoint'] = 1;
+    $supportedLanguages['af']['momentjs'] = 'af';
+    $supportedLanguages['af']['fdow'] = 1;
 
     // Albanian
     $supportedLanguages['sq']['description'] = gT('Albanian');
@@ -84,6 +98,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['sq']['rtl'] = false;
     $supportedLanguages['sq']['dateformat'] = 1;
     $supportedLanguages['sq']['radixpoint'] = 1;
+    $supportedLanguages['sq']['momentjs'] = 'sq';
+    $supportedLanguages['sq']['fdow'] = 1;
 
     // Amharic
     $supportedLanguages['am']['description'] = gT('Amharic');
@@ -91,6 +107,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['am']['rtl'] = false;
     $supportedLanguages['am']['dateformat'] = 2;
     $supportedLanguages['am']['radixpoint'] = 1;
+    $supportedLanguages['am']['momentjs'] = null;
+    $supportedLanguages['am']['fdow'] = 0;
 
     // Arabic
     $supportedLanguages['ar']['description'] = gT('Arabic');
@@ -98,13 +116,35 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ar']['rtl'] = true;
     $supportedLanguages['ar']['dateformat'] = 2;
     $supportedLanguages['ar']['radixpoint'] = 0;
+    $supportedLanguages['ar']['momentjs'] = 'ar';
+    $supportedLanguages['ar']['fdow'] = 6;
 
     // Armenian
-    $supportedLanguages['hy']['description'] = gT('Armenian');
+    $supportedLanguages['hy']['description'] = gT('Armenian (Eastern)');
     $supportedLanguages['hy']['nativedescription'] = '&#1392;&#1377;&#1397;&#1381;&#1408;&#1381;&#1398;';
     $supportedLanguages['hy']['rtl'] = false;
     $supportedLanguages['hy']['dateformat'] = 1;
     $supportedLanguages['hy']['radixpoint'] = 1;
+    $supportedLanguages['hy']['momentjs'] = 'hy-am';
+    $supportedLanguages['hy']['fdow'] = 1;
+
+    // Western Armenian
+    $supportedLanguages['hyw']['description'] = gT('Armenian (Western)');
+    $supportedLanguages['hyw']['nativedescription'] = '&#x531;&#x580;&#x565;&#x582;&#x574;&#x57F;&#x561;&#x570;&#x561;&#x575;&#x565;&#x580;&#x567;&#x576;';
+    $supportedLanguages['hyw']['rtl'] = false;
+    $supportedLanguages['hyw']['dateformat'] = 1;
+    $supportedLanguages['hyw']['radixpoint'] = 1;
+    $supportedLanguages['hyw']['momentjs'] = 'hy-am';
+    $supportedLanguages['hyw']['fdow'] = 1;
+
+    // Azerbaijani
+    $supportedLanguages['az']['description'] = gT('Azerbaijani');
+    $supportedLanguages['az']['nativedescription'] = 'Azerbaycanca';
+    $supportedLanguages['az']['rtl'] = false;
+    $supportedLanguages['az']['dateformat'] = 5;
+    $supportedLanguages['az']['radixpoint'] = 1;
+    $supportedLanguages['az']['momentjs'] = 'az';
+    $supportedLanguages['az']['fdow'] = 1;
 
     // Basque
     $supportedLanguages['eu']['description'] = gT('Basque');
@@ -112,6 +152,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['eu']['rtl'] = false;
     $supportedLanguages['eu']['dateformat'] = 3;
     $supportedLanguages['eu']['radixpoint'] = 1;
+    $supportedLanguages['eu']['momentjs'] = 'eu';
+    $supportedLanguages['eu']['fdow'] = 1;
 
     // Belarusian
     $supportedLanguages['be']['description'] = gT('Belarusian');
@@ -119,6 +161,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['be']['rtl'] = false;
     $supportedLanguages['be']['dateformat'] = 1;
     $supportedLanguages['be']['radixpoint'] = 1;
+    $supportedLanguages['be']['momentjs'] = 'be';
+    $supportedLanguages['be']['fdow'] = 1;
 
     // Bengali
     $supportedLanguages['bn']['description'] = gT('Bengali');
@@ -126,6 +170,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['bn']['rtl'] = false;
     $supportedLanguages['bn']['dateformat'] = 2;
     $supportedLanguages['bn']['radixpoint'] = 0;
+    $supportedLanguages['bn']['momentjs'] = 'bn';
+    $supportedLanguages['bn']['fdow'] = 0;
 
     // Bosnian
     $supportedLanguages['bs']['description'] = gT('Bosnian');
@@ -133,6 +179,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['bs']['rtl'] = false;
     $supportedLanguages['bs']['dateformat'] = 4;
     $supportedLanguages['bs']['radixpoint'] = 0;
+    $supportedLanguages['bs']['momentjs'] = 'bs';
+    $supportedLanguages['bs']['fdow'] = 1;
 
     // Bulgarian
     $supportedLanguages['bg']['description'] = gT('Bulgarian');
@@ -140,14 +188,18 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['bg']['rtl'] = false;
     $supportedLanguages['bg']['dateformat'] = 1;
     $supportedLanguages['bg']['radixpoint'] = 0;
+    $supportedLanguages['bg']['momentjs'] = 'bg';
+    $supportedLanguages['bg']['fdow'] = 1;
 
     // Catalan
-    $supportedLanguages['ca-valencia']['description'] = gT('Catalan (Valencian)');
-    $supportedLanguages['ca-valencia']['nativedescription'] = 'Catal&#224; (Valenci&#224;)';
+    $supportedLanguages['ca-valencia']['description'] = gT('Valencian');
+    $supportedLanguages['ca-valencia']['nativedescription'] = 'Valenci&#224;';
     $supportedLanguages['ca-valencia']['rtl'] = false;
     $supportedLanguages['ca-valencia']['dateformat'] = 1;
     $supportedLanguages['ca-valencia']['radixpoint'] = 1;
     $supportedLanguages['ca-valencia']['cldr'] = 'ca';
+    $supportedLanguages['ca-valencia']['momentjs'] = 'ca';
+    $supportedLanguages['ca-valencia']['fdow'] = 1;
 
     // Catalan
     $supportedLanguages['ca']['description'] = gT('Catalan');
@@ -155,13 +207,24 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ca']['rtl'] = false;
     $supportedLanguages['ca']['dateformat'] = 1;
     $supportedLanguages['ca']['radixpoint'] = 1;
+    $supportedLanguages['ca']['momentjs'] = 'ca';
+    $supportedLanguages['ca']['fdow'] = 1;
 
-    // Welsh
-    $supportedLanguages['cy']['description'] = gT('Welsh');
-    $supportedLanguages['cy']['nativedescription'] = 'Cymraeg';
-    $supportedLanguages['cy']['rtl'] = false;
-    $supportedLanguages['cy']['dateformat'] = 5;
-    $supportedLanguages['cy']['radixpoint'] = 0;
+    // Cebuano
+    $supportedLanguages['ceb']['description'] = gT('Cebuano');
+    $supportedLanguages['ceb']['nativedescription'] = 'Cebuano';
+    $supportedLanguages['ceb']['rtl'] = false;
+    $supportedLanguages['ceb']['dateformat'] = 1;
+    $supportedLanguages['ceb']['radixpoint'] = 1;
+    $supportedLanguages['ceb']['fdow'] = 1;
+
+    // Chichewa
+    $supportedLanguages['ny']['description'] = gT('Chichewa');
+    $supportedLanguages['ny']['nativedescription'] = 'Chichewa';
+    $supportedLanguages['ny']['rtl'] = false;
+    $supportedLanguages['ny']['dateformat'] = 5;
+    $supportedLanguages['ny']['radixpoint'] = 0;
+    $supportedLanguages['ny']['fdow'] = 1;
 
     // Chinese (Simplified)
     $supportedLanguages['zh-Hans']['description'] = gT('Chinese (Simplified)');
@@ -169,6 +232,18 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['zh-Hans']['rtl'] = false;
     $supportedLanguages['zh-Hans']['dateformat'] = 6;
     $supportedLanguages['zh-Hans']['radixpoint'] = 0;
+    $supportedLanguages['zh-Hans']['momentjs'] = 'zh-cn';
+    $supportedLanguages['zh-Hans']['fdow'] = 1;
+
+    // Creole (Haiti)
+    $supportedLanguages['hat']['description'] = gT('Creole (Haitian)');
+    $supportedLanguages['hat']['nativedescription'] = 'Kreyòl ayisyen';
+    $supportedLanguages['hat']['rtl'] = false;
+    $supportedLanguages['hat']['dateformat'] = 6;
+    $supportedLanguages['hat']['radixpoint'] = 1;
+    $supportedLanguages['hat']['cldr'] = 'fr_ht';
+    $supportedLanguages['hat']['bcp47'] = 'ht';
+    $supportedLanguages['hat']['fdow'] = 1;
 
     // Chinese (Traditional - Hong Kong)
     $supportedLanguages['zh-Hant-HK']['description'] = gT('Chinese (Traditional - Hong Kong)');
@@ -176,6 +251,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['zh-Hant-HK']['rtl'] = false;
     $supportedLanguages['zh-Hant-HK']['dateformat'] = 6;
     $supportedLanguages['zh-Hant-HK']['radixpoint'] = 0;
+    $supportedLanguages['zh-Hant-HK']['momentjs'] = 'zh-hk';
+    $supportedLanguages['zh-Hant-HK']['fdow'] = 0;
 
     // Chinese (Traditional - Taiwan)
     $supportedLanguages['zh-Hant-TW']['description'] = gT('Chinese (Traditional - Taiwan)');
@@ -183,6 +260,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['zh-Hant-TW']['rtl'] = false;
     $supportedLanguages['zh-Hant-TW']['dateformat'] = 6;
     $supportedLanguages['zh-Hant-TW']['radixpoint'] = 0;
+    $supportedLanguages['zh-Hant-TW']['momentjs'] = 'zh-tw';
+    $supportedLanguages['zh-Hant-TW']['fdow'] = 0;
 
     // Croatian
     $supportedLanguages['hr']['description'] = gT('Croatian');
@@ -190,6 +269,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['hr']['rtl'] = false;
     $supportedLanguages['hr']['dateformat'] = 4;
     $supportedLanguages['hr']['radixpoint'] = 1;
+    $supportedLanguages['hr']['momentjs'] = 'hr';
+    $supportedLanguages['hr']['fdow'] = 1;
 
     // Czech
     $supportedLanguages['cs']['description'] = gT('Czech');
@@ -197,6 +278,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['cs']['rtl'] = false;
     $supportedLanguages['cs']['dateformat'] = 4;
     $supportedLanguages['cs']['radixpoint'] = 1;
+    $supportedLanguages['cs']['momentjs'] = 'cs';
+    $supportedLanguages['cs']['fdow'] = 1;
 
     // Czech informal
     $supportedLanguages['cs-informal']['description'] = gT('Czech (informal)');
@@ -205,7 +288,9 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['cs-informal']['dateformat'] = 4;
     $supportedLanguages['cs-informal']['radixpoint'] = 1;
     $supportedLanguages['cs-informal']['cldr'] = 'cs';
-
+    $supportedLanguages['cs-informal']['momentjs'] = 'cs';
+    $supportedLanguages['cs-informal']['bcp47'] = 'cs';
+    $supportedLanguages['cs-informal']['fdow'] = 1;
 
     // Danish
     $supportedLanguages['da']['description'] = gT('Danish');
@@ -213,6 +298,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['da']['rtl'] = false;
     $supportedLanguages['da']['dateformat'] = 2;
     $supportedLanguages['da']['radixpoint'] = 1;
+    $supportedLanguages['da']['momentjs'] = 'da';
+    $supportedLanguages['da']['fdow'] = 1;
 
     // Dari
     $supportedLanguages['prs']['description'] = gT('Dari');
@@ -221,6 +308,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['prs']['dateformat'] = 6;
     $supportedLanguages['prs']['radixpoint'] = 0;
     $supportedLanguages['prs']['cldr'] = 'fa_af';
+    $supportedLanguages['prs']['momentjs'] = null;
+    $supportedLanguages['prs']['fdow'] = 0;
 
     // Dutch
     $supportedLanguages['nl']['description'] = gT('Dutch');
@@ -228,6 +317,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['nl']['rtl'] = false;
     $supportedLanguages['nl']['dateformat'] = 2;
     $supportedLanguages['nl']['radixpoint'] = 1;
+    $supportedLanguages['nl']['momentjs'] = 'nl';
+    $supportedLanguages['nl']['fdow'] = 1;
 
     // Dutch
     $supportedLanguages['nl-informal']['description'] = gT('Dutch (informal)');
@@ -236,6 +327,9 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['nl-informal']['dateformat'] = 2;
     $supportedLanguages['nl-informal']['radixpoint'] = 1;
     $supportedLanguages['nl-informal']['cldr'] = 'nl';
+    $supportedLanguages['nl-informal']['momentjs'] = 'nl';
+    $supportedLanguages['nl-informal']['bcp47'] = 'nl';
+    $supportedLanguages['nl-informal']['fdow'] = 1;
 
     // English
     $supportedLanguages['en']['description'] = gT('English');
@@ -243,6 +337,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['en']['rtl'] = false;
     $supportedLanguages['en']['dateformat'] = 9;
     $supportedLanguages['en']['radixpoint'] = 0;
+    $supportedLanguages['en']['momentjs'] = 'en';
+    $supportedLanguages['en']['fdow'] = 0;
 
     // Estonian
     $supportedLanguages['et']['description'] = gT('Estonian');
@@ -250,6 +346,17 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['et']['rtl'] = false;
     $supportedLanguages['et']['dateformat'] = 4;
     $supportedLanguages['et']['radixpoint'] = 1;
+    $supportedLanguages['et']['momentjs'] = 'et';
+    $supportedLanguages['et']['fdow'] = 1;
+
+    // Filipino - Tagalog
+    $supportedLanguages['fil']['description'] = gT('Filipino');
+    $supportedLanguages['fil']['nativedescription'] = 'Wikang Filipino';
+    $supportedLanguages['fil']['rtl'] = false;
+    $supportedLanguages['fil']['dateformat'] = 1;
+    $supportedLanguages['fil']['radixpoint'] = 1;
+    $supportedLanguages['fil']['momentjs'] = 'fil';
+    $supportedLanguages['fil']['fdow'] = 1;
 
     // Finnish
     $supportedLanguages['fi']['description'] = gT('Finnish');
@@ -257,6 +364,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['fi']['rtl'] = false;
     $supportedLanguages['fi']['dateformat'] = 4;
     $supportedLanguages['fi']['radixpoint'] = 1;
+    $supportedLanguages['fi']['momentjs'] = 'fi';
+    $supportedLanguages['fi']['fdow'] = 1;
 
     // French
     $supportedLanguages['fr']['description'] = gT('French');
@@ -264,6 +373,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['fr']['rtl'] = false;
     $supportedLanguages['fr']['dateformat'] = 5;
     $supportedLanguages['fr']['radixpoint'] = 1;
+    $supportedLanguages['fr']['momentjs'] = 'fr';
+    $supportedLanguages['fr']['fdow'] = 1;
 
     // Fula
     $supportedLanguages['ful']['description'] = gT('Fula');
@@ -272,6 +383,9 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ful']['dateformat'] = 5;
     $supportedLanguages['ful']['radixpoint'] = 1;
     $supportedLanguages['ful']['cldr'] = 'ff';
+    $supportedLanguages['ful']['momentjs'] = null;
+    $supportedLanguages['ful']['bcp47'] = 'ff';
+    $supportedLanguages['ful']['fdow'] = 0;
 
     // Galician
     $supportedLanguages['gl']['description'] = gT('Galician');
@@ -279,6 +393,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['gl']['rtl'] = false;
     $supportedLanguages['gl']['dateformat'] = 5;
     $supportedLanguages['gl']['radixpoint'] = 1;
+    $supportedLanguages['gl']['momentjs'] = 'gl';
+    $supportedLanguages['gl']['fdow'] = 1;
 
     // Georgian
     $supportedLanguages['ka']['description'] = gT('Georgian');
@@ -286,6 +402,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ka']['rtl'] = false;
     $supportedLanguages['ka']['dateformat'] = 1;
     $supportedLanguages['ka']['radixpoint'] = 1;
+    $supportedLanguages['ka']['momentjs'] = 'ka';
+    $supportedLanguages['ka']['fdow'] = 1;
 
     // German
     $supportedLanguages['de']['description'] = gT('German');
@@ -293,6 +411,19 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['de']['rtl'] = false;
     $supportedLanguages['de']['dateformat'] = 1;
     $supportedLanguages['de']['radixpoint'] = 1;
+    $supportedLanguages['de']['momentjs'] = 'de';
+    $supportedLanguages['de']['fdow'] = 1;
+
+    // German easy
+    $supportedLanguages['de-easy']['description'] = gT('German (easy)');
+    $supportedLanguages['de-easy']['nativedescription'] = 'Deutsch - Leichte Sprache';
+    $supportedLanguages['de-easy']['rtl'] = false;
+    $supportedLanguages['de-easy']['dateformat'] = 1;
+    $supportedLanguages['de-easy']['radixpoint'] = 1;
+    $supportedLanguages['de-easy']['cldr'] = 'de';
+    $supportedLanguages['de-easy']['momentjs'] = 'de';
+    $supportedLanguages['de-easy']['bcp47'] = 'de-simple';
+    $supportedLanguages['de-easy']['fdow'] = 1;
 
     // German informal
     $supportedLanguages['de-informal']['description'] = gT('German (informal)');
@@ -301,6 +432,9 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['de-informal']['dateformat'] = 1;
     $supportedLanguages['de-informal']['radixpoint'] = 1;
     $supportedLanguages['de-informal']['cldr'] = 'de';
+    $supportedLanguages['de-informal']['momentjs'] = 'de';
+    $supportedLanguages['de-informal']['bcp47'] = 'de';
+    $supportedLanguages['de-informal']['fdow'] = 1;
 
     // Gujarati
     $supportedLanguages['gu']['description'] = gT('Gujarati');
@@ -308,6 +442,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['gu']['rtl'] = false;
     $supportedLanguages['gu']['dateformat'] = 2;
     $supportedLanguages['gu']['radixpoint'] = 0;
+    $supportedLanguages['gu']['momentjs'] = 'gu';
+    $supportedLanguages['gu']['fdow'] = 0;
 
     // Greek
     $supportedLanguages['el']['description'] = gT('Greek');
@@ -315,13 +451,36 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['el']['rtl'] = false;
     $supportedLanguages['el']['dateformat'] = 8;
     $supportedLanguages['el']['radixpoint'] = 1;
+    $supportedLanguages['el']['momentjs'] = 'el';
+    $supportedLanguages['el']['fdow'] = 1;
 
-    // Hindi
-    $supportedLanguages['hi']['description'] = gT('Hindi');
-    $supportedLanguages['hi']['nativedescription'] = '&#2361;&#2367;&#2344;&#2381;&#2342;&#2368;';
-    $supportedLanguages['hi']['rtl'] = false;
-    $supportedLanguages['hi']['dateformat'] = 2;
-    $supportedLanguages['hi']['radixpoint'] = 0;
+    // Greenlandic
+    $supportedLanguages['kal']['description'] = gT('Greenlandic');
+    $supportedLanguages['kal']['nativedescription'] = 'Kalaallisut';
+    $supportedLanguages['kal']['rtl'] = false;
+    $supportedLanguages['kal']['dateformat'] = 2;
+    $supportedLanguages['kal']['radixpoint'] = 1;
+    $supportedLanguages['kal']['momentjs'] = null;
+    $supportedLanguages['kal']['bcp47'] = 'kl';
+    $supportedLanguages['kal']['fdow'] = 0;
+
+    // Hazaragi
+    $supportedLanguages['haz']['description'] = gT('Hazaragi');
+    $supportedLanguages['haz']['nativedescription'] = '&#x622;&#x632;&#x631;&#x6AF;&#x6CC;';
+    $supportedLanguages['haz']['rtl'] = true;
+    $supportedLanguages['haz']['dateformat'] = 2;
+    $supportedLanguages['haz']['radixpoint'] = 0;
+    $supportedLanguages['haz']['momentjs'] = 'fa';
+    $supportedLanguages['haz']['fdow'] = 6;
+    $supportedLanguages['haz']['cldr'] = 'fa';
+
+    // Hausa
+    $supportedLanguages['ha']['description'] = gT('Hausa');
+    $supportedLanguages['ha']['nativedescription'] = 'Hausa';
+    $supportedLanguages['ha']['rtl'] = false;
+    $supportedLanguages['ha']['dateformat'] = 1;
+    $supportedLanguages['ha']['radixpoint'] = 1;
+    $supportedLanguages['ha']['fdow'] = 1;
 
     // Hebrew
     $supportedLanguages['he']['description'] = gT('Hebrew');
@@ -329,6 +488,27 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['he']['rtl'] = true;
     $supportedLanguages['he']['dateformat'] = 5;
     $supportedLanguages['he']['radixpoint'] = 0;
+    $supportedLanguages['he']['momentjs'] = 'he';
+    $supportedLanguages['he']['fdow'] = 0;
+
+    // Hindi
+    $supportedLanguages['hi']['description'] = gT('Hindi');
+    $supportedLanguages['hi']['nativedescription'] = '&#2361;&#2367;&#2344;&#2381;&#2342;&#2368;';
+    $supportedLanguages['hi']['rtl'] = false;
+    $supportedLanguages['hi']['dateformat'] = 2;
+    $supportedLanguages['hi']['radixpoint'] = 0;
+    $supportedLanguages['hi']['momentjs'] = 'hi';
+    $supportedLanguages['hi']['fdow'] = 0;
+
+    // Hiligaynon
+    $supportedLanguages['hil']['description'] = gT('Hiligaynon');
+    $supportedLanguages['hil']['nativedescription'] = 'Ilonggo';
+    $supportedLanguages['hil']['rtl'] = false;
+    $supportedLanguages['hil']['dateformat'] = 1;
+    $supportedLanguages['hil']['radixpoint'] = 1;
+    $supportedLanguages['hil']['momentjs'] = 'tl';
+    $supportedLanguages['hil']['fdow'] = 0;
+    $supportedLanguages['hil']['cldr'] = 'fil';
 
     // Hungarian
     $supportedLanguages['hu']['description'] = gT('Hungarian');
@@ -336,6 +516,19 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['hu']['rtl'] = false;
     $supportedLanguages['hu']['dateformat'] = 6;
     $supportedLanguages['hu']['radixpoint'] = 1;
+    $supportedLanguages['hu']['momentjs'] = 'hu';
+    $supportedLanguages['hu']['fdow'] = 1;
+
+    // Hungarian informal
+    $supportedLanguages['hu-informal']['description'] = gT('Hungarian (informal)');
+    $supportedLanguages['hu-informal']['nativedescription'] = 'Magyar (tegez&#337;d&#337;)';
+    $supportedLanguages['hu-informal']['rtl'] = false;
+    $supportedLanguages['hu-informal']['dateformat'] = 6;
+    $supportedLanguages['hu-informal']['radixpoint'] = 1;
+    $supportedLanguages['hu-informal']['cldr'] = 'hu';
+    $supportedLanguages['hu-informal']['momentjs'] = 'hu';
+    $supportedLanguages['hu-informal']['bcp47'] = 'hu';
+    $supportedLanguages['hu-informal']['fdow'] = 1;
 
     // Icelandic
     $supportedLanguages['is']['description'] = gT('Icelandic');
@@ -343,6 +536,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['is']['rtl'] = false;
     $supportedLanguages['is']['dateformat'] = 1;
     $supportedLanguages['is']['radixpoint'] = 1;
+    $supportedLanguages['is']['momentjs'] = 'is';
+    $supportedLanguages['is']['fdow'] = 1;
 
     // Indonesian
     $supportedLanguages['id']['description'] = gT('Indonesian');
@@ -350,6 +545,17 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['id']['rtl'] = false;
     $supportedLanguages['id']['dateformat'] = 5;
     $supportedLanguages['id']['radixpoint'] = 1;
+    $supportedLanguages['id']['momentjs'] = 'id';
+    $supportedLanguages['id']['fdow'] = 0;
+
+    // Inuktitut
+    $supportedLanguages['ike']['description'] = gT('Inuktitut');
+    $supportedLanguages['ike']['nativedescription'] = '&#x1403;&#x14C4;&#x1483;&#x144E;&#x1450;&#x1466;';
+    $supportedLanguages['ike']['rtl'] = false;
+    $supportedLanguages['ike']['dateformat'] = 5;
+    $supportedLanguages['ike']['radixpoint'] = 1;
+    $supportedLanguages['ike']['momentjs'] = null;
+    $supportedLanguages['ike']['fdow'] = 0;
 
     // Irish
     $supportedLanguages['ie']['description'] = gT('Irish');
@@ -358,6 +564,17 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ie']['dateformat'] = 2;
     $supportedLanguages['ie']['radixpoint'] = 0;
     $supportedLanguages['ie']['cldr'] = 'ga';
+    $supportedLanguages['ie']['momentjs'] = 'ga';
+    $supportedLanguages['ie']['bcp47'] = 'ga';
+    $supportedLanguages['ie']['fdow'] = 1;
+
+    // Hiligaynon
+    $supportedLanguages['ilo']['description'] = gT('Ilocano');
+    $supportedLanguages['ilo']['nativedescription'] = 'Ilokano';
+    $supportedLanguages['ilo']['rtl'] = false;
+    $supportedLanguages['ilo']['dateformat'] = 1;
+    $supportedLanguages['ilo']['radixpoint'] = 1;
+    $supportedLanguages['ilo']['fdow'] = 1;
 
     // Italian
     $supportedLanguages['it']['description'] = gT('Italian');
@@ -365,6 +582,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['it']['rtl'] = false;
     $supportedLanguages['it']['dateformat'] = 5;
     $supportedLanguages['it']['radixpoint'] = 1;
+    $supportedLanguages['it']['momentjs'] = 'it';
+    $supportedLanguages['it']['fdow'] = 1;
 
     // Italian informal
     $supportedLanguages['it-informal']['description'] = gT('Italian (informal)');
@@ -373,6 +592,9 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['it-informal']['dateformat'] = 5;
     $supportedLanguages['it-informal']['radixpoint'] = 1;
     $supportedLanguages['it-informal']['cldr'] = 'it';
+    $supportedLanguages['it-informal']['momentjs'] = 'it';
+    $supportedLanguages['it-informal']['bcp47'] = 'it';
+    $supportedLanguages['it-informal']['fdow'] = 1;
 
     // Japanese
     $supportedLanguages['ja']['description'] = gT('Japanese');
@@ -380,6 +602,26 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ja']['rtl'] = false;
     $supportedLanguages['ja']['dateformat'] = 6;
     $supportedLanguages['ja']['radixpoint'] = 0;
+    $supportedLanguages['ja']['momentjs'] = 'ja';
+    $supportedLanguages['ja']['fdow'] = 0;
+
+    // Kannada
+    $supportedLanguages['kn']['description'] = gT('Kannada');
+    $supportedLanguages['kn']['nativedescription'] = '&#xC95;&#xCA8;&#xCCD;&#xCA8;&#xCA1;';
+    $supportedLanguages['kn']['rtl'] = false;
+    $supportedLanguages['kn']['dateformat'] = 2;
+    $supportedLanguages['kn']['radixpoint'] = 0;
+    $supportedLanguages['kn']['momentjs'] = 'kn';
+    $supportedLanguages['kn']['fdow'] = 0;
+
+    // Kazakh
+    $supportedLanguages['kk']['description'] = gT('Kazakh');
+    $supportedLanguages['kk']['nativedescription'] = 'Qazaq&#351;a';
+    $supportedLanguages['kk']['rtl'] = false;
+    $supportedLanguages['kk']['dateformat'] = 1;
+    $supportedLanguages['kk']['radixpoint'] = 1;
+    $supportedLanguages['kk']['momentjs'] = 'kk';
+    $supportedLanguages['kk']['fdow'] = 1;
 
     // Kinyarwanda
     $supportedLanguages['rw']['description'] = gT('Kinyarwanda');
@@ -387,6 +629,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['rw']['rtl'] = false;
     $supportedLanguages['rw']['dateformat'] = 5;
     $supportedLanguages['rw']['radixpoint'] = 1;
+    $supportedLanguages['rw']['momentjs'] = null;
+    $supportedLanguages['rw']['fdow'] = 0;
 
     // Korean
     $supportedLanguages['ko']['description'] = gT('Korean');
@@ -394,6 +638,18 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ko']['rtl'] = false;
     $supportedLanguages['ko']['dateformat'] = 7;
     $supportedLanguages['ko']['radixpoint'] = 0;
+    $supportedLanguages['ko']['momentjs'] = 'ko';
+    $supportedLanguages['ko']['fdow'] = 0;
+
+    // Khmer
+    $supportedLanguages['km']['description'] = gT('Khmer');
+    $supportedLanguages['km']['nativedescription'] = 'Khmer';
+    $supportedLanguages['km']['rtl'] = false;
+    $supportedLanguages['km']['dateformat'] = 5;
+    $supportedLanguages['km']['radixpoint'] = 1;
+    $supportedLanguages['km']['cldr'] = 'km';
+    $supportedLanguages['km']['momentjs'] = null;
+    $supportedLanguages['km']['fdow'] = 0;
 
     // Kirundi
     $supportedLanguages['run']['description'] = gT('Kirundi');
@@ -401,7 +657,11 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['run']['rtl'] = false;
     $supportedLanguages['run']['dateformat'] = 1;
     $supportedLanguages['run']['radixpoint'] = 1;
-    
+    $supportedLanguages['run']['cldr'] = 'rn';
+    $supportedLanguages['run']['momentjs'] = null;
+    $supportedLanguages['run']['bcp47'] = 'rn';
+    $supportedLanguages['run']['fdow'] = 0;
+
     // Kurdish (Sorani)
     $supportedLanguages['ckb']['description'] = gT('Kurdish (Sorani)');
     $supportedLanguages['ckb']['nativedescription'] = '&#1705;&#1608;&#1585;&#1583;&#1740;&#1740; &#1606;&#1575;&#1608;&#1749;&#1606;&#1583;&#1740;';
@@ -409,6 +669,18 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ckb']['dateformat'] = 1;
     $supportedLanguages['ckb']['radixpoint'] = 1;
     $supportedLanguages['ckb']['cldr'] = 'ku';
+    $supportedLanguages['ckb']['momentjs'] = 'ku';
+    $supportedLanguages['ckb']['fdow'] = 6;
+
+    // Kurdish (Kurmanji)
+    $supportedLanguages['kmr']['description'] = gT('Kurdish (Kurmanji)');
+    $supportedLanguages['kmr']['nativedescription'] = 'Kurmanc&#xEE;';
+    $supportedLanguages['kmr']['rtl'] = false;
+    $supportedLanguages['kmr']['dateformat'] = 1;
+    $supportedLanguages['kmr']['radixpoint'] = 1;
+    $supportedLanguages['kmr']['cldr'] = 'ku';
+    $supportedLanguages['kmr']['momentjs'] = 'ku';
+    $supportedLanguages['kmr']['fdow'] = 6;
 
     // Kyrgyz
     $supportedLanguages['ky']['description'] = gT('Kyrgyz');
@@ -416,20 +688,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ky']['rtl'] = false;
     $supportedLanguages['ky']['dateformat'] = 1;
     $supportedLanguages['ky']['radixpoint'] = 1;
-
-    // Luxembourgish
-    $supportedLanguages['lb']['description'] = gT('Luxembourgish');
-    $supportedLanguages['lb']['nativedescription'] = 'L&#235;tzebuergesch';
-    $supportedLanguages['lb']['rtl'] = false;
-    $supportedLanguages['lb']['dateformat'] = 1;
-    $supportedLanguages['lb']['radixpoint'] = 1;
-
-    // Lithuanian
-    $supportedLanguages['lt']['description'] = gT('Lithuanian');
-    $supportedLanguages['lt']['nativedescription'] = 'Lietuvi&#371;';
-    $supportedLanguages['lt']['rtl'] = false;
-    $supportedLanguages['lt']['dateformat'] = 6;
-    $supportedLanguages['lt']['radixpoint'] = 1;
+    $supportedLanguages['ky']['momentjs'] = 'ky';
+    $supportedLanguages['ky']['fdow'] = 1;
 
     // Latvian
     $supportedLanguages['lv']['description'] = gT('Latvian');
@@ -437,6 +697,27 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['lv']['rtl'] = false;
     $supportedLanguages['lv']['dateformat'] = 6;
     $supportedLanguages['lv']['radixpoint'] = 1;
+    $supportedLanguages['lv']['momentjs'] = 'lv';
+    $supportedLanguages['lv']['fdow'] = 1;
+
+    // Lithuanian
+    $supportedLanguages['lt']['description'] = gT('Lithuanian');
+    $supportedLanguages['lt']['nativedescription'] = 'Lietuvi&#371;';
+    $supportedLanguages['lt']['rtl'] = false;
+    $supportedLanguages['lt']['dateformat'] = 6;
+    $supportedLanguages['lt']['radixpoint'] = 1;
+    $supportedLanguages['lt']['momentjs'] = 'lt';
+    $supportedLanguages['lt']['fdow'] = 1;
+
+    // Luxembourgish
+    $supportedLanguages['lb']['description'] = gT('Luxembourgish');
+    $supportedLanguages['lb']['nativedescription'] = 'L&#235;tzebuergesch';
+    $supportedLanguages['lb']['rtl'] = false;
+    $supportedLanguages['lb']['dateformat'] = 1;
+    $supportedLanguages['lb']['radixpoint'] = 1;
+    $supportedLanguages['lb']['cldr'] = 'fr_lu';
+    $supportedLanguages['lb']['momentjs'] = 'lb';
+    $supportedLanguages['lb']['fdow'] = 1;
 
     // Macedonian
     $supportedLanguages['mk']['description'] = gT('Macedonian');
@@ -444,42 +725,35 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['mk']['rtl'] = false;
     $supportedLanguages['mk']['dateformat'] = 1;
     $supportedLanguages['mk']['radixpoint'] = 1;
-
-    // Mongolian
-    $supportedLanguages['mn']['description'] = gT('Mongolian');
-    $supportedLanguages['mn']['nativedescription'] = '&#1052;&#1086;&#1085;&#1075;&#1086;&#1083;';
-    $supportedLanguages['mn']['rtl'] = false;
-    $supportedLanguages['mn']['dateformat'] = 3;
-    $supportedLanguages['mn']['radixpoint'] = 0;
+    $supportedLanguages['mk']['momentjs'] = 'mk';
+    $supportedLanguages['mk']['fdow'] = 1;
 
     // Malay
     $supportedLanguages['ms']['description'] = gT('Malay');
     $supportedLanguages['ms']['nativedescription'] = 'Bahasa Melayu';
     $supportedLanguages['ms']['rtl'] = false;
     $supportedLanguages['ms']['dateformat'] = 1;
-    $supportedLanguages['ms']['radixpoint'] = 0;    
-    
+    $supportedLanguages['ms']['radixpoint'] = 0;
+    $supportedLanguages['ms']['momentjs'] = 'ms';
+    $supportedLanguages['ms']['fdow'] = 1;
+
     // Malayalam
     $supportedLanguages['ml']['description'] =  gT('Malayalam');
     $supportedLanguages['ml']['nativedescription'] = 'Malay&#257;&#7735;a&#7745;';
     $supportedLanguages['ml']['rtl'] = false;
     $supportedLanguages['ml']['dateformat'] = 2;
     $supportedLanguages['ml']['radixpoint'] = 0;
+    $supportedLanguages['ml']['momentjs'] = 'ml';
+    $supportedLanguages['ml']['fdow'] = 0;
 
-    
     // Maltese
     $supportedLanguages['mt']['description'] = gT('Maltese');
     $supportedLanguages['mt']['nativedescription'] = 'Malti';
     $supportedLanguages['mt']['rtl'] = false;
     $supportedLanguages['mt']['dateformat'] = 1;
     $supportedLanguages['mt']['radixpoint'] = 0;
-    
-    // Maltese
-    $supportedLanguages['mt']['description'] = gT('Maltese');
-    $supportedLanguages['mt']['nativedescription'] = 'Malti';
-    $supportedLanguages['mt']['rtl'] = false;
-    $supportedLanguages['mt']['dateformat'] = 1;
-    $supportedLanguages['mt']['radixpoint'] = 0;
+    $supportedLanguages['mt']['momentjs'] = 'mt';
+    $supportedLanguages['mt']['fdow'] = 1;
 
     // Marathi
     $supportedLanguages['mr']['description'] = gT('Marathi');
@@ -487,15 +761,27 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['mr']['rtl'] = false;
     $supportedLanguages['mr']['dateformat'] = 2;
     $supportedLanguages['mr']['radixpoint'] = 0;
-    
+    $supportedLanguages['mr']['momentjs'] = 'mr';
+    $supportedLanguages['mr']['fdow'] = 0;
+
+    // Mongolian
+    $supportedLanguages['mn']['description'] = gT('Mongolian');
+    $supportedLanguages['mn']['nativedescription'] = '&#1052;&#1086;&#1085;&#1075;&#1086;&#1083;';
+    $supportedLanguages['mn']['rtl'] = false;
+    $supportedLanguages['mn']['dateformat'] = 3;
+    $supportedLanguages['mn']['radixpoint'] = 0;
+    $supportedLanguages['mn']['momentjs'] = 'mn';
+    $supportedLanguages['mn']['fdow'] = 0;
+
     // Montenegrin
     $supportedLanguages['cnr']['description'] = gT('Montenegrin');
     $supportedLanguages['cnr']['nativedescription'] = 'Crnogorski';
     $supportedLanguages['cnr']['rtl'] = false;
     $supportedLanguages['cnr']['dateformat'] = 4;
     $supportedLanguages['cnr']['radixpoint'] = 1;
-    $supportedLanguages['cnr']['cldr'] ='sr_Latn_ME';
-    
+    $supportedLanguages['cnr']['cldr'] = 'sr_Latn_ME';
+    $supportedLanguages['cnr']['momentjs'] = 'me';
+    $supportedLanguages['cnr']['fdow'] = 1;
 
     // Myanmar / Burmese
     $supportedLanguages['mya']['description'] = gT('Myanmar (Burmese)');
@@ -503,6 +789,9 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['mya']['rtl'] = false;
     $supportedLanguages['mya']['dateformat'] = 1;
     $supportedLanguages['mya']['radixpoint'] = 1;
+    $supportedLanguages['mya']['momentjs'] = 'my';
+    $supportedLanguages['mya']['bcp47'] = 'my';
+    $supportedLanguages['mya']['fdow'] = 1;
 
     // Norwegian Bokmal
     $supportedLanguages['nb']['description'] = gT('Norwegian (Bokmal)');
@@ -510,6 +799,17 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['nb']['rtl'] = false;
     $supportedLanguages['nb']['dateformat'] = 4;
     $supportedLanguages['nb']['radixpoint'] = 1;
+    $supportedLanguages['nb']['momentjs'] = 'nb';
+    $supportedLanguages['nb']['fdow'] = 1;
+
+    // Nepali
+    $supportedLanguages['ne']['description'] = gT('Nepali');
+    $supportedLanguages['ne']['nativedescription'] = 'Nepali';
+    $supportedLanguages['ne']['rtl'] = false;
+    $supportedLanguages['ne']['dateformat'] = 6;
+    $supportedLanguages['ne']['radixpoint'] = 0;
+    $supportedLanguages['ne']['momentjs'] = 'ne';
+    $supportedLanguages['ne']['fdow'] = 0;
 
     // Norwegian Nynorsk
     $supportedLanguages['nn']['description'] = gT('Norwegian (Nynorsk)');
@@ -517,6 +817,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['nn']['rtl'] = false;
     $supportedLanguages['nn']['dateformat'] = 4;
     $supportedLanguages['nn']['radixpoint'] = 1;
+    $supportedLanguages['nn']['momentjs'] = 'nn';
+    $supportedLanguages['nn']['fdow'] = 1;
 
     // Occitan
     $supportedLanguages['oc']['description'] = gT('Occitan');
@@ -524,6 +826,16 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['oc']['rtl'] = false;
     $supportedLanguages['oc']['dateformat'] = 5;
     $supportedLanguages['oc']['radixpoint'] = 1;
+    $supportedLanguages['oc']['momentjs'] = 'oc-lnc';
+    $supportedLanguages['oc']['fdow'] = 1;
+
+    // Odia
+    $supportedLanguages['ory']['description'] = gT('Odia');
+    $supportedLanguages['ory']['nativedescription'] = "&#xB13;&#xB21;&#xB3C;&#xB3F;&#xB06;";
+    $supportedLanguages['ory']['rtl'] = false;
+    $supportedLanguages['ory']['dateformat'] = 5;
+    $supportedLanguages['ory']['radixpoint'] = 1;
+    $supportedLanguages['ory']['fdow'] = 0;
 
     // Pashto
     $supportedLanguages['ps']['description'] = gT('Pashto');
@@ -531,13 +843,17 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ps']['rtl'] = true;
     $supportedLanguages['ps']['dateformat'] = 6;
     $supportedLanguages['ps']['radixpoint'] = 0;
+    $supportedLanguages['ps']['momentjs'] = null;
+    $supportedLanguages['ps']['fdow'] = 0;
 
     // Persian
     $supportedLanguages['fa']['description'] = gT('Persian');
     $supportedLanguages['fa']['nativedescription'] = '&#1601;&#1575;&#1585;&#1587;&#1740;';
     $supportedLanguages['fa']['rtl'] = true;
-    $supportedLanguages['fa']['dateformat'] = 6;                                                                        
+    $supportedLanguages['fa']['dateformat'] = 6;
     $supportedLanguages['fa']['radixpoint'] = 0;
+    $supportedLanguages['fa']['momentjs'] = 'fa';
+    $supportedLanguages['fa']['fdow'] = 6;
 
     // Papiamento (Curacao and Bonaire)
     $supportedLanguages['pap-CW']['description'] = gT('Papiamento (Curaçao & Bonaire)');
@@ -546,6 +862,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['pap-CW']['dateformat'] = 2;
     $supportedLanguages['pap-CW']['radixpoint'] = 1;
     $supportedLanguages['pap-CW']['cldr'] = 'en'; // Fix me - Yii does not provide Papiamento support, yet
+    $supportedLanguages['pap-CW']['momentjs'] = null;
+    $supportedLanguages['pap-CW']['fdow'] = 0;
 
     // Polish
     $supportedLanguages['pl']['description'] = gT('Polish');
@@ -553,6 +871,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['pl']['rtl'] = false;
     $supportedLanguages['pl']['dateformat'] = 1;
     $supportedLanguages['pl']['radixpoint'] = 1;
+    $supportedLanguages['pl']['momentjs'] = 'pl';
+    $supportedLanguages['pl']['fdow'] = 1;
 
     // Polish
     $supportedLanguages['pl-informal']['description'] = gT('Polish (Informal)');
@@ -561,6 +881,9 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['pl-informal']['dateformat'] = 1;
     $supportedLanguages['pl-informal']['radixpoint'] = 1;
     $supportedLanguages['pl-informal']['cldr'] = 'pl';
+    $supportedLanguages['pl-informal']['momentjs'] = 'pl';
+    $supportedLanguages['pl-informal']['bcp47'] = 'pl';
+    $supportedLanguages['pl-informal']['fdow'] = 1;
 
     // Portuguese
     $supportedLanguages['pt']['description'] = gT('Portuguese');
@@ -568,6 +891,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['pt']['rtl'] = false;
     $supportedLanguages['pt']['dateformat'] = 5;
     $supportedLanguages['pt']['radixpoint'] = 1;
+    $supportedLanguages['pt']['momentjs'] = 'pt';
+    $supportedLanguages['pt']['fdow'] = 1;
 
     // Brazilian Portuguese
     $supportedLanguages['pt-BR']['description'] = gT('Portuguese (Brazilian)');
@@ -575,6 +900,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['pt-BR']['rtl'] = false;
     $supportedLanguages['pt-BR']['dateformat'] = 5;
     $supportedLanguages['pt-BR']['radixpoint'] = 1;
+    $supportedLanguages['pt-BR']['momentjs'] = 'pt-br';
+    $supportedLanguages['pt-BR']['fdow'] = 0;
 
     // Punjabi
     $supportedLanguages['pa']['description'] = gT('Punjabi');
@@ -582,6 +909,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['pa']['rtl'] = false;
     $supportedLanguages['pa']['dateformat'] = 2;
     $supportedLanguages['pa']['radixpoint'] = 0;
+    $supportedLanguages['pa']['momentjs'] = 'pa-in';
+    $supportedLanguages['pa']['fdow'] = 0;
 
     // Romanian
     $supportedLanguages['ro']['description'] = gT('Romanian');
@@ -589,6 +918,18 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ro']['rtl'] = false;
     $supportedLanguages['ro']['dateformat'] = 1;
     $supportedLanguages['ro']['radixpoint'] = 1;
+    $supportedLanguages['ro']['momentjs'] = 'ro';
+    $supportedLanguages['ro']['fdow'] = 1;
+
+    // Romansh
+    $supportedLanguages['roh']['description'] = gT('Romansh');
+    $supportedLanguages['roh']['nativedescription'] = 'Rumantsch';
+    $supportedLanguages['roh']['rtl'] = false;
+    $supportedLanguages['roh']['dateformat'] = 1;
+    $supportedLanguages['roh']['radixpoint'] = 1;
+    $supportedLanguages['roh']['momentjs'] = null;
+    $supportedLanguages['roh']['bcp47'] = 'rm';
+    $supportedLanguages['roh']['fdow'] = 0;
 
     // Russian
     $supportedLanguages['ru']['description'] = gT('Russian');
@@ -596,27 +937,17 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ru']['rtl'] = false;
     $supportedLanguages['ru']['dateformat'] = 1;
     $supportedLanguages['ru']['radixpoint'] = 1;
-    
-    // Sinhala
-    $supportedLanguages['si']['description'] = gT('Sinhala');
-    $supportedLanguages['si']['nativedescription'] = '&#3523;&#3538;&#3458;&#3524;&#3517;';
-    $supportedLanguages['si']['rtl'] = false;
-    $supportedLanguages['si']['dateformat'] = 5;
-    $supportedLanguages['si']['radixpoint'] = 0;
+    $supportedLanguages['ru']['momentjs'] = 'ru';
+    $supportedLanguages['ru']['fdow'] = 1;
 
-    // Slovak
-    $supportedLanguages['sk']['description'] = gT('Slovak');
-    $supportedLanguages['sk']['nativedescription'] = 'Sloven&#269;ina';
-    $supportedLanguages['sk']['rtl'] = false;
-    $supportedLanguages['sk']['dateformat'] = 4;
-    $supportedLanguages['sk']['radixpoint'] = 1;
-
-    // Slovenian
-    $supportedLanguages['sl']['description'] = gT('Slovenian');
-    $supportedLanguages['sl']['nativedescription'] = 'Sloven&#353;&#269;ina';
-    $supportedLanguages['sl']['rtl'] = false;
-    $supportedLanguages['sl']['dateformat'] = 4;
-    $supportedLanguages['sl']['radixpoint'] = 1;
+    // Sami
+    $supportedLanguages['smi']['description'] = gT('Sami (Northern)');
+    $supportedLanguages['smi']['nativedescription'] = 'Davvisámegiella';
+    $supportedLanguages['smi']['rtl'] = false;
+    $supportedLanguages['smi']['dateformat'] = 4;
+    $supportedLanguages['smi']['radixpoint'] = 1;
+    $supportedLanguages['smi']['momentjs'] = 'sme';
+    $supportedLanguages['smi']['fdow'] = 0;
 
     // Serbian
     $supportedLanguages['sr']['description'] = gT('Serbian (Cyrillic)');
@@ -624,6 +955,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['sr']['rtl'] = false;
     $supportedLanguages['sr']['dateformat'] = 4;
     $supportedLanguages['sr']['radixpoint'] = 1;
+    $supportedLanguages['sr']['momentjs'] = 'sr-cyrl';
+    $supportedLanguages['sr']['fdow'] = 1;
 
     // Serbian (Latin script)
     $supportedLanguages['sr-Latn']['description'] = gT('Serbian (Latin)');
@@ -631,6 +964,44 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['sr-Latn']['rtl'] = false;
     $supportedLanguages['sr-Latn']['dateformat'] = 4;
     $supportedLanguages['sr-Latn']['radixpoint'] = 1;
+    $supportedLanguages['sr-Latn']['momentjs'] = 'sr';
+    $supportedLanguages['sr-Latn']['fdow'] = 1;
+
+    // Sinhala
+    $supportedLanguages['si']['description'] = gT('Sinhala');
+    $supportedLanguages['si']['nativedescription'] = '&#3523;&#3538;&#3458;&#3524;&#3517;';
+    $supportedLanguages['si']['rtl'] = false;
+    $supportedLanguages['si']['dateformat'] = 5;
+    $supportedLanguages['si']['radixpoint'] = 0;
+    $supportedLanguages['si']['momentjs'] = 'si';
+    $supportedLanguages['si']['fdow'] = 0;
+
+    // Slovak
+    $supportedLanguages['sk']['description'] = gT('Slovak');
+    $supportedLanguages['sk']['nativedescription'] = 'Sloven&#269;ina';
+    $supportedLanguages['sk']['rtl'] = false;
+    $supportedLanguages['sk']['dateformat'] = 4;
+    $supportedLanguages['sk']['radixpoint'] = 1;
+    $supportedLanguages['sk']['momentjs'] = 'sk';
+    $supportedLanguages['sk']['fdow'] = 1;
+
+    // Slovenian
+    $supportedLanguages['sl']['description'] = gT('Slovenian');
+    $supportedLanguages['sl']['nativedescription'] = 'Sloven&#353;&#269;ina';
+    $supportedLanguages['sl']['rtl'] = false;
+    $supportedLanguages['sl']['dateformat'] = 4;
+    $supportedLanguages['sl']['radixpoint'] = 1;
+    $supportedLanguages['sl']['momentjs'] = 'sl';
+    $supportedLanguages['sl']['fdow'] = 1;
+
+    // Somali
+    $supportedLanguages['so']['description'] = gT('Somali');
+    $supportedLanguages['so']['nativedescription'] = 'Af-Soomaali';
+    $supportedLanguages['so']['rtl'] = false;
+    $supportedLanguages['so']['dateformat'] = 9;
+    $supportedLanguages['so']['radixpoint'] = 1;
+    $supportedLanguages['so']['momentjs'] = null;
+    $supportedLanguages['so']['fdow'] = 0;
 
     // Spanish
     $supportedLanguages['es']['description'] = gT('Spanish');
@@ -638,6 +1009,20 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['es']['rtl'] = false;
     $supportedLanguages['es']['dateformat'] = 5;
     $supportedLanguages['es']['radixpoint'] = 1;
+    $supportedLanguages['es']['momentjs'] = 'es';
+    $supportedLanguages['es']['fdow'] = 1;
+
+    // Spanish (informal)
+    $supportedLanguages['es-informal']['description'] = gT('Spanish (informal)');
+    $supportedLanguages['es-informal']['nativedescription'] = 'Espa&#241;ol (informal)';
+    $supportedLanguages['es-informal']['rtl'] = false;
+    $supportedLanguages['es-informal']['dateformat'] = 5;
+    $supportedLanguages['es-informal']['radixpoint'] = 1;
+    $supportedLanguages['es-informal']['cldr'] = 'es';
+    $supportedLanguages['es-informal']['momentjs'] = 'es';
+    $supportedLanguages['es-informal']['bcp47'] = 'es';
+    $supportedLanguages['es-informal']['fdow'] = 1;
+
 
     // Spanish (Argentina)
     $supportedLanguages['es-AR']['description'] = gT('Spanish (Argentina)');
@@ -645,6 +1030,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['es-AR']['rtl'] = false;
     $supportedLanguages['es-AR']['dateformat'] = 5;
     $supportedLanguages['es-AR']['radixpoint'] = 0;
+    $supportedLanguages['es-AR']['momentjs'] = 'es';
+    $supportedLanguages['es-AR']['fdow'] = 1;
 
     // Spanish (Argentina) (Informal)
     $supportedLanguages['es-AR-informal']['description'] = gT('Spanish (Argentina) (Informal)');
@@ -653,6 +1040,9 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['es-AR-informal']['dateformat'] = 5;
     $supportedLanguages['es-AR-informal']['radixpoint'] = 0;
     $supportedLanguages['es-AR-informal']['cldr'] = 'es-AR';
+    $supportedLanguages['es-AR-informal']['momentjs'] = 'es';
+    $supportedLanguages['es-AR-informal']['bcp47'] = 'es-AR';
+    $supportedLanguages['es-AR-informal']['fdow'] = 1;
 
     // Spanish (Chile)
     $supportedLanguages['es-CL']['description'] = gT('Spanish (Chile)');
@@ -660,6 +1050,17 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['es-CL']['rtl'] = false;
     $supportedLanguages['es-CL']['dateformat'] = 5;
     $supportedLanguages['es-CL']['radixpoint'] = 0;
+    $supportedLanguages['es-CL']['momentjs'] = 'es';
+    $supportedLanguages['es-CL']['fdow'] = 1;
+
+    // Spanish (Colombia)
+    $supportedLanguages['es-CO']['description'] = gT('Spanish (Colombia)');
+    $supportedLanguages['es-CO']['nativedescription'] = 'Espa&#241;ol colombiano';
+    $supportedLanguages['es-CO']['rtl'] = false;
+    $supportedLanguages['es-CO']['dateformat'] = 5;
+    $supportedLanguages['es-CO']['radixpoint'] = 0;
+    $supportedLanguages['es-CO']['momentjs'] = 'es';
+    $supportedLanguages['es-CO']['fdow'] = 1;
 
     // Spanish (Mexico)
     $supportedLanguages['es-MX']['description'] = gT('Spanish (Mexico)');
@@ -667,6 +1068,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['es-MX']['rtl'] = false;
     $supportedLanguages['es-MX']['dateformat'] = 5;
     $supportedLanguages['es-MX']['radixpoint'] = 0;
+    $supportedLanguages['es-MX']['momentjs'] = 'es';
+    $supportedLanguages['es-MX']['fdow'] = 1;
 
     // Swahili
     $supportedLanguages['swh']['description'] = gT('Swahili');
@@ -675,6 +1078,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['swh']['dateformat'] = 1;
     $supportedLanguages['swh']['radixpoint'] = 1;
     $supportedLanguages['swh']['cldr'] = 'sw';
+    $supportedLanguages['swh']['momentjs'] = 'sw';
+    $supportedLanguages['swh']['fdow'] = 1;
 
     // Swedish
     $supportedLanguages['sv']['description'] = gT('Swedish');
@@ -682,6 +1087,26 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['sv']['rtl'] = false;
     $supportedLanguages['sv']['dateformat'] = 6;
     $supportedLanguages['sv']['radixpoint'] = 1;
+    $supportedLanguages['sv']['momentjs'] = 'sv';
+    $supportedLanguages['sv']['fdow'] = 1;
+
+    // Tagalog
+    $supportedLanguages['tl']['description'] = gT('Tagalog');
+    $supportedLanguages['tl']['nativedescription'] = 'Tagalog';
+    $supportedLanguages['tl']['rtl'] = false;
+    $supportedLanguages['tl']['dateformat'] = 1;
+    $supportedLanguages['tl']['radixpoint'] = 1;
+    $supportedLanguages['tl']['momentjs'] = 'tl-ph';
+    $supportedLanguages['tl']['fdow'] = 1;
+
+    // Tajik
+    $supportedLanguages['tg']['description'] = gT('Tajik');
+    $supportedLanguages['tg']['nativedescription'] = '&#x422;&#x43E;&#x4B7;&#x438;&#x43A;&#x4E3;';
+    $supportedLanguages['tg']['rtl'] = false;
+    $supportedLanguages['tg']['dateformat'] = 6;
+    $supportedLanguages['tg']['radixpoint'] = 0;
+    $supportedLanguages['tg']['momentjs'] = 'tg';
+    $supportedLanguages['tg']['fdow'] = 1;
 
     // Tamil
     $supportedLanguages['ta']['description'] = gT('Tamil');
@@ -689,13 +1114,17 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ta']['rtl'] = false;
     $supportedLanguages['ta']['dateformat'] = 2;
     $supportedLanguages['ta']['radixpoint'] = 0;
+    $supportedLanguages['ta']['momentjs'] = 'ta';
+    $supportedLanguages['ta']['fdow'] = 0;
 
-    // Turkish
-    $supportedLanguages['tr']['description'] = gT('Turkish');
-    $supportedLanguages['tr']['nativedescription'] = 'T&#252;rk&#231;e';
-    $supportedLanguages['tr']['rtl'] = false;
-    $supportedLanguages['tr']['dateformat'] = 5;
-    $supportedLanguages['tr']['radixpoint'] = 1;
+    // Telugu
+    $supportedLanguages['te']['description'] = gT('Telugu');
+    $supportedLanguages['te']['nativedescription'] = '&#xC24;&#xC46;&#xC32;&#xC41;&#xC17;&#xC41;';
+    $supportedLanguages['te']['rtl'] = false;
+    $supportedLanguages['te']['dateformat'] = 2;
+    $supportedLanguages['te']['radixpoint'] = 0;
+    $supportedLanguages['te']['momentjs'] = 'te';
+    $supportedLanguages['te']['fdow'] = 0;
 
     // Thai
     $supportedLanguages['th']['description'] = gT('Thai');
@@ -703,6 +1132,26 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['th']['rtl'] = false;
     $supportedLanguages['th']['dateformat'] = 5;
     $supportedLanguages['th']['radixpoint'] = 0;
+    $supportedLanguages['th']['momentjs'] = 'th';
+    $supportedLanguages['th']['fdow'] = 0;
+
+    // Thai - Tigrinya
+    $supportedLanguages['ti']['description'] = gT('Tigrinya');
+    $supportedLanguages['ti']['nativedescription'] = '&#x1275;&#x130d;&#x122d;&#x129b;';
+    $supportedLanguages['ti']['rtl'] = false;
+    $supportedLanguages['ti']['dateformat'] = 9;
+    $supportedLanguages['ti']['radixpoint'] = 0;
+    $supportedLanguages['ti']['momentjs'] = null;
+    $supportedLanguages['ti']['fdow'] = 0;
+
+    // Turkish
+    $supportedLanguages['tr']['description'] = gT('Turkish');
+    $supportedLanguages['tr']['nativedescription'] = 'T&#252;rk&#231;e';
+    $supportedLanguages['tr']['rtl'] = false;
+    $supportedLanguages['tr']['dateformat'] = 5;
+    $supportedLanguages['tr']['radixpoint'] = 1;
+    $supportedLanguages['tr']['momentjs'] = 'tr';
+    $supportedLanguages['tr']['fdow'] = 1;
 
     //Ukrainian
     $supportedLanguages['uk']['description'] = gT('Ukrainian');
@@ -710,6 +1159,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['uk']['rtl'] = false;
     $supportedLanguages['uk']['dateformat'] = 1;
     $supportedLanguages['uk']['radixpoint'] = 1;
+    $supportedLanguages['uk']['momentjs'] = 'uk';
+    $supportedLanguages['uk']['fdow'] = 1;
 
     //Urdu
     $supportedLanguages['ur']['description'] = gT('Urdu');
@@ -717,6 +1168,26 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['ur']['rtl'] = true;
     $supportedLanguages['ur']['dateformat'] = 2;
     $supportedLanguages['ur']['radixpoint'] = 0;
+    $supportedLanguages['ur']['momentjs'] = 'ur';
+    $supportedLanguages['ur']['fdow'] = 1;
+
+    //Uzbek
+    $supportedLanguages['uz']['description'] = gT('Uzbek');
+    $supportedLanguages['uz']['nativedescription'] = "O'zbek";
+    $supportedLanguages['uz']['rtl'] = false;
+    $supportedLanguages['uz']['dateformat'] = 1;
+    $supportedLanguages['uz']['radixpoint'] = 1;
+    $supportedLanguages['uz']['momentjs'] = 'uz';
+    $supportedLanguages['uz']['fdow'] = 1;
+
+    //Uyghur
+    $supportedLanguages['ug']['description'] = gT('Uyghur');
+    $supportedLanguages['ug']['nativedescription'] = 'ئۇيغۇرچە';
+    $supportedLanguages['ug']['rtl'] = true;
+    $supportedLanguages['ug']['dateformat'] = 6;
+    $supportedLanguages['ug']['radixpoint'] = 0;
+    $supportedLanguages['ug']['momentjs'] = 'ug-cn';
+    $supportedLanguages['ug']['fdow'] = 1;
 
     // Vietnamese
     $supportedLanguages['vi']['description'] = gT('Vietnamese');
@@ -724,6 +1195,46 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['vi']['rtl'] = false;
     $supportedLanguages['vi']['dateformat'] = 5;
     $supportedLanguages['vi']['radixpoint'] = 1;
+    $supportedLanguages['vi']['momentjs'] = 'vi';
+    $supportedLanguages['vi']['fdow'] = 1;
+
+    // Welsh
+    $supportedLanguages['cy']['description'] = gT('Welsh');
+    $supportedLanguages['cy']['nativedescription'] = 'Cymraeg';
+    $supportedLanguages['cy']['rtl'] = false;
+    $supportedLanguages['cy']['dateformat'] = 5;
+    $supportedLanguages['cy']['radixpoint'] = 0;
+    $supportedLanguages['cy']['momentjs'] = 'cy';
+    $supportedLanguages['cy']['fdow'] = 1;
+
+    // Xhosa
+    $supportedLanguages['xho']['description'] = gT('Xhosa');
+    $supportedLanguages['xho']['nativedescription'] = 'isiXhosa';
+    $supportedLanguages['xho']['rtl'] = false;
+    $supportedLanguages['xho']['dateformat'] = 5;
+    $supportedLanguages['xho']['radixpoint'] = 1;
+    $supportedLanguages['xho']['momentjs'] = 'null';
+    $supportedLanguages['xho']['bcp47'] = 'xh';
+    $supportedLanguages['xho']['fdow'] = 0;
+
+    // Yakut
+    $supportedLanguages['sah']['description'] = gT('Yakut');
+    $supportedLanguages['sah']['nativedescription'] = '&#x421;&#x430;&#x445;&#x430; &#x442;&#x44B;&#x43B;&#x430;';
+    $supportedLanguages['sah']['rtl'] = false;
+    $supportedLanguages['sah']['dateformat'] = 5;
+    $supportedLanguages['sah']['radixpoint'] = 1;
+    $supportedLanguages['sah']['momentjs'] = 'null';
+    $supportedLanguages['sah']['fdow'] = 0;
+
+    // Zulu
+    $supportedLanguages['yor']['description'] = gT('Yoruba');
+    $supportedLanguages['yor']['nativedescription'] = '&#xC8;d&#xE8; Yor&#xF9;b&#xE1;';
+    $supportedLanguages['yor']['rtl'] = false;
+    $supportedLanguages['yor']['dateformat'] = 5;
+    $supportedLanguages['yor']['radixpoint'] = 1;
+    $supportedLanguages['yor']['momentjs'] = null;
+    $supportedLanguages['yor']['bcp47'] = 'yo';
+    $supportedLanguages['yor']['fdow'] = 0;
 
     // Zulu
     $supportedLanguages['zu']['description'] = gT('Zulu');
@@ -731,6 +1242,8 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
     $supportedLanguages['zu']['rtl'] = false;
     $supportedLanguages['zu']['dateformat'] = 5;
     $supportedLanguages['zu']['radixpoint'] = 1;
+    $supportedLanguages['zu']['momentjs'] = null;
+    $supportedLanguages['zu']['fdow'] = 0;
 
     if ($bOrderByNative) {
         uasort($supportedLanguages, "userSortNative");
@@ -745,19 +1258,22 @@ function getLanguageData($bOrderByNative = false, $sLanguageCode = 'en')
 
 
     /**
-     *  Returns avaliable formats for Radix Points (Decimal Separators) or returns
+     *  Returns available formats for Radix Points (Decimal Separators) or returns
      *  radix point info about a specific format.
      *
      *  @param int $format Format ID/Number [optional]
+     *
+     * @return integer|array
      */
 function getRadixPointData($format = -1)
 {
     $aRadixFormats = array(
-    0=>array('separator'=> '.', 'desc'=> gT('Dot (.)')),
-    1=>array('separator'=> ',', 'desc'=> gT('Comma (,)'))
+    0 => array('separator' => '.', 'desc' => gT('Dot (.)')),
+    1 => array('separator' => ',', 'desc' => gT('Comma (,)'))
     );
 
     // hack for fact that null sometimes sent to this function
+    //todo then change the hack ...
     if (is_null($format)) {
         $format = 0;
     }
@@ -851,17 +1367,16 @@ function getJSDateFromDateFormat($sDateformat)
      * @returns array
      *
      */
-function getDateFormatDataForQID($aQidAttributes, $mThisSurvey)
+function getDateFormatDataForQID($aQidAttributes, $mThisSurvey, $language = '')
 {
-    if (isset($aQidAttributes['date_format']) && trim($aQidAttributes['date_format']) != '') {
+    if (isset($aQidAttributes['date_format']) && trim((string) $aQidAttributes['date_format']) != '') {
         $aDateFormatDetails = array();
-        $aDateFormatDetails['dateformat'] = trim($aQidAttributes['date_format']);
+        $aDateFormatDetails['dateformat'] = trim((string) $aQidAttributes['date_format']);
         $aDateFormatDetails['phpdate'] = getPHPDateFromDateFormat($aDateFormatDetails['dateformat']);
         $aDateFormatDetails['jsdate'] = getJSDateFromDateFormat($aDateFormatDetails['dateformat']);
-        $aDateFormatDetails['jsdate_original'] = $aDateFormatDetails['dateformat']; // In dropdown, this is fed to Date in Javascript, not Bootstrap
     } else {
         if (!is_array($mThisSurvey)) {
-            $mThisSurvey = array('surveyls_dateformat' => getDateFormatForSID($mThisSurvey));
+            $mThisSurvey = array('surveyls_dateformat' => getDateFormatForSID($mThisSurvey, $language));
         }
         $aDateFormatDetails = getDateFormatData($mThisSurvey['surveyls_dateformat']);
     }
@@ -916,7 +1431,12 @@ function canShowDatePicker($dateformatdetails, $dateformats = null)
     return $showpicker;
 }
 
-
+/**
+ * Returns a language code from the name
+ *
+ * @param string $languagetosearch this is the name of the language (e.g. 'English' see array in getLanguageData())
+ * @return int|string
+ */
 function getLanguageCodefromLanguage($languagetosearch)
 {
     $detaillanguages = getLanguageData(false, Yii::app()->session['adminlang']);
@@ -933,11 +1453,11 @@ function getLanguageCodefromLanguage($languagetosearch)
 
 /**
 * Returns a language name from the code
-* 
-* @param string $codetosearch
+*
+* @param string  $codetosearch
 * @param boolean $withnative
-* @param string $sTranslationLanguage
-* @returns string|array
+* @param string  $sTranslationLanguage
+* @return string|array
 * @todo Should not give back different data types
 */
 function getLanguageNameFromCode($codetosearch, $withnative = true, $sTranslationLanguage = null)
@@ -968,6 +1488,29 @@ function getLanguageRTL($sLanguageCode)
     }
 }
 
+/**
+ * Returns a valid BCP 47 language tag for use in the HTML lang attribute.
+ * Some LimeSurvey language codes append a non-standard variant suffix
+ * (e.g. 'nl-informal', 'de-easy') that is not a valid BCP 47 subtag; for those,
+ * the 'bcp47' entry in getLanguageData() gives the valid tag to use instead.
+ * Note: this intentionally does NOT reuse the 'cldr' mapping from getLanguageData().
+ * That mapping is meant for ICU locale/collation fallback (see LSYii_Locale,
+ * SortHelper) and maps some already-valid codes (e.g. 'lb', 'hat', 'pap-CW')
+ * to an unrelated approximate locale, which would misrepresent the actual
+ * content language if used for the HTML lang attribute.
+ *
+ * @param string $sLanguageCode
+ * @return string
+ */
+function getHtmlLangAttributeValue($sLanguageCode)
+{
+    $aLanguageData = getLanguageData(false, $sLanguageCode);
+    if (!empty($aLanguageData[$sLanguageCode]['bcp47'])) {
+        return $aLanguageData[$sLanguageCode]['bcp47'];
+    }
+    return (string) $sLanguageCode;
+}
+
     /**
      * Returns the locale settings for a certain language code
      *
@@ -992,34 +1535,41 @@ function getLanguageDetails($codetosearch)
      */
 function convertLStoDateTimePickerLocale($sLocale)
 {
-    // Strip informal string always for easier matching
-    $sLocale = str_replace('-informal', '', $sLocale);
-    $aConversions = array('ca-valencia'=>'ca',
-                        'hy'=>'hy-am',
-                        'zh-Hans'=>'zh-cn',
-                        'zh-Hant-HK'=>'zh-cn',
-                        'zh-Hant-TW'=>'zh-tw',
-                        'prs'=>'fa',
-                        'pa'=>'pa-in',
-                        'sr'=>'sr-cyrl',
-                        'es-AR'=>'es',
-                        'es-CL'=>'es',
-                        'es-MX'=>'es',
-                        'swh'=>'sw'
-                        );
-    if (isset($aConversions[$sLocale])) {
-        $sLocale = $aConversions[$sLocale];
+    $languageData = getLanguageData(false, $sLocale);
+    if (empty($languageData[$sLocale]['momentjs'])) {
+        return 'en';
     }
-    return strtolower($sLocale);
+    return $languageData[$sLocale]['momentjs'];
+}
+
+/**
+ * Returns the first day of the week to be used by the date/time picker widget for a given
+ * LimeSurvey language, since the Tempus Dominus picker library does not derive this from its
+ * 'locale' option (unlike the moment.js based widget it replaced).
+ *
+ * @param string $sLocale LimeSurvey language code (e.g. 'en', 'de')
+ * @return int First day of week: 0 = Sunday, 1 = Monday, ..., 6 = Saturday (defaults to 0 when no metadata is available)
+ */
+function convertLStoDateTimePickerFirstDayOfWeek($sLocale)
+{
+    $languageData = getLanguageData(false, $sLocale);
+    if (!isset($languageData[$sLocale]['fdow'])) {
+        return 0;
+    }
+    return (int) $languageData[$sLocale]['fdow'];
 }
 
 function getLanguageDataRestricted($bOrderByNative = false, $sDetail = 'full')
 {
     $aLanguageData = getLanguageData($bOrderByNative);
+    $aResult = [];
 
-    if (trim(Yii::app()->getConfig('restrictToLanguages')) != '') {
-        foreach (explode(' ', trim(Yii::app()->getConfig('restrictToLanguages'))) as $key) {
-            $aResult[$key] = $aLanguageData[$key];
+    if (trim((string) Yii::app()->getConfig('restrictToLanguages')) != '') {
+        foreach (explode(' ', trim((string) Yii::app()->getConfig('restrictToLanguages'))) as $key) {
+            // Skip stale/unknown codes (e.g. removed language packs) to avoid undefined array key warnings
+            if (isset($aLanguageData[$key])) {
+                $aResult[$key] = $aLanguageData[$key];
+            }
         }
     } else {
         $aResult = $aLanguageData;

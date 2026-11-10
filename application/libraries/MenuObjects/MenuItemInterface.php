@@ -3,7 +3,7 @@
 namespace LimeSurvey\Menu;
 
 /**
- * Interface descriptions here: https://manual.limesurvey.org/Extra_menus_event
+ * Interface descriptions here: https://www.limesurvey.org/manual/Extra_menus_event
  */
 interface MenuItemInterface
 {
@@ -13,4 +13,3 @@ interface MenuItemInterface
     public function isDivider();
     public function isSmallText();
 }
-

@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    exit('No direct script access allowed');
-}
+<?php
+
 /*
    * LimeSurvey
-   * Copyright (C) 2013 The LimeSurvey Project Team / Carsten Schmitz
+   * Copyright (C) 2013-2026 The LimeSurvey Project Team
    * All rights reserved.
    * License: GNU/GPL License v2 or later, see LICENSE.php
    * LimeSurvey is free software. This version may have been modified pursuant
@@ -16,14 +15,17 @@
 
 /**
  * Class DefaultValue
+ * The default values are default answers for questions that could be selected by the user.
+ * (e.g. a subquestion that is selected as the default answer for the question in advance)
  *
- * @property integer $qid Question id
- * @property integer $scale_id
- * @property string $language
- * @property string $specialtype
- * @property string $defaultvalue
+ * @property integer $dvid primary key
+ * @property integer $qid The question id
+ * @property integer $scale_id Scale of question
+ * @property string $specialtype of column “other” currently (no GUI for comments)
  *
  * @property Question $question
+ *
+ * @property DefaultValueL10n[] $defaultvalueL10ns
  */
 class DefaultValue extends LSActiveRecord
 {
@@ -31,16 +33,15 @@ class DefaultValue extends LSActiveRecord
     public $specialtype = '';
     public $scale_id = '';
     public $sqid = 0;
-    public $language = ''; // required ?
 
     /**
      * @inheritdoc
      * @return DefaultValue
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
         /** @var self $model */
-        $model = parent::model($class);
+        $model = parent::model($className);
         return $model;
     }
 
@@ -53,17 +54,15 @@ class DefaultValue extends LSActiveRecord
     /** @inheritdoc */
     public function primaryKey()
     {
-        return array('qid', 'specialtype', 'scale_id', 'sqid', 'language');
+        return array('dvid');
     }
 
     /** @inheritdoc */
     public function relations()
     {
-        $alias = $this->getTableAlias();
         return array(
-            'question' => array(self::HAS_ONE, 'Question', '',
-                'on' => "$alias.qid = question.qid",
-            ),
+            'question' => array(self::HAS_ONE, 'Question', "qid"),
+            'defaultvaluel10ns' => array(self::HAS_MANY, 'DefaultValueL10n', 'dvid')
         );
     }
 
@@ -72,29 +71,7 @@ class DefaultValue extends LSActiveRecord
     {
         return array(
             array('qid', 'required'),
-            array('qid', 'numerical', 'integerOnly'=>true),
-            array('qid', 'unique', 'criteria'=>array(
-                    'condition'=>'specialtype=:specialtype and scale_id=:scale_id and sqid=:sqid and language=:language',
-                    'params'=>array(
-                        ':specialtype'=>$this->specialtype,
-                        ':scale_id'=>$this->scale_id,
-                        ':sqid'=>$this->sqid,
-                        ':language'=>$this->language,
-                    )
-                ),
-                'message'=>'{attribute} "{value}" is already in use.'),
+            array('qid,sqid,scale_id', 'numerical', 'integerOnly' => true),
         );
-    }
-
-    public function insertRecords($data)
-    {
-        $oRecord = new self;
-        foreach ($data as $k => $v) {
-                    $oRecord->$k = $v;
-        }
-        if ($oRecord->validate()) {
-                    return $oRecord->save();
-        }
-        tracevar($oRecord->getErrors());
     }
 }

@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'link', 'nb', {
 	acccessKey: 'Aksessknapp',
@@ -13,6 +13,7 @@ CKEDITOR.plugins.setLang( 'link', 'nb', {
 		title: 'Egenskaper for anker',
 		name: 'Ankernavn',
 		errorName: 'Vennligst skriv inn ankernavnet',
+		errorWhitespace: 'Anchor name cannot contain space characters', // MISSING
 		remove: 'Fjern anker'
 	},
 	anchorId: 'Element etter ID',
@@ -35,7 +36,9 @@ CKEDITOR.plugins.setLang( 'link', 'nb', {
 	noAnchors: '(Ingen anker i dokumentet)',
 	noEmail: 'Vennligst skriv inn e-postadressen',
 	noUrl: 'Vennligst skriv inn lenkens URL',
+	noTel: 'Vennligst skriv inn telefonnummeret',
 	other: '<annen>',
+	phoneNumber: 'Telefonnummer',
 	popupDependent: 'Avhenging (Netscape)',
 	popupFeatures: 'Egenskaper for popup-vindu',
 	popupFullScreen: 'Fullskjerm (IE)',
@@ -60,6 +63,7 @@ CKEDITOR.plugins.setLang( 'link', 'nb', {
 	toAnchor: 'Lenke til anker i teksten',
 	toEmail: 'E-post',
 	toUrl: 'URL',
+	toPhone: 'Telefon',
 	toolbar: 'Lenke',
 	type: 'Lenketype',
 	unlink: 'Fjern lenke',

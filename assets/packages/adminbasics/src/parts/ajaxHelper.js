@@ -2,14 +2,14 @@
  * Collection of ajax helper
  */
 import * as globals from './globalMethods';
-import notifyFader from './notifyFader';
+import ajaxAlerts from './ajaxAlerts';
 
 const onSuccess = (response) => {
     
     // Check type of response and take action accordingly
     if (response == '') {
         console.error('No response from server');
-        notifyFader.create('No response from server', 'alert-danger');
+        ajaxAlerts('No response from server', 'danger', {showCloseButton: true});
         return false;
     }
 
@@ -23,13 +23,13 @@ const onSuccess = (response) => {
 
     // No permission
     if (!response.hasPermission) {
-        notifyFader(response.noPermissionText, 'well-lg bg-danger text-center');
+        ajaxAlerts(response.noPermissionText, 'danger', {showCloseButton: true});
         return false;
     }
 
     // Error popup
     if (response.error) {
-        notifyFader(response.error.message, 'well-lg bg-danger text-center');
+        ajaxAlerts(response.error.message, 'danger', {showCloseButton: true});
         return false;
     }
 
@@ -37,11 +37,12 @@ const onSuccess = (response) => {
     if (response.outputType == 'jsonoutputhtml') {
         $('#' + response.target).html(response.html);
         globals.globalWindowMethods.doToolTip();
+        return;
     }
 
     // Success popup
     if (response.success) {
-        notifyFader(response.success, 'well-lg bg-primary text-center');
+        ajaxAlerts(response.success, 'success', {showCloseButton: true});
     }
 
     // Modal popup
@@ -96,4 +97,29 @@ const ajax = (options) => {
    return $.ajax(options);
 }
 
-export {ajax, onSuccess};
+/**
+* Show the "logged out" modal when an ajax call fails because the user is logged out.
+* The admin controllers answer such calls with HTTP 401 and the
+* JsonOutputNotLoggedIn JSON (containing the modal content).
+* Bound only once per page load.
+* @return {void}
+*/
+const bindNotLoggedInHandler = () => {
+    if (window.LS && LS._notLoggedInHandlerBound) {
+        return;
+    }
+    LS._notLoggedInHandlerBound = true;
+    $(document).ajaxError((event, jqXHR) => {
+        if (jqXHR.status !== 401 || !jqXHR.responseJSON || jqXHR.responseJSON.loggedIn !== false) {
+            return;
+        }
+        $('#ls-loading').hide();
+        // Several calls can fail at once: Show the modal only once
+        if ($('#ajax-helper-modal').hasClass('show')) {
+            return;
+        }
+        onSuccess(jqXHR.responseJSON);
+    });
+};
+
+export {ajax, onSuccess, bindNotLoggedInHandler};

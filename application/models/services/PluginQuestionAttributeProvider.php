@@ -1,0 +1,52 @@
+<?php
+
+namespace LimeSurvey\Models\Services;
+
+/**
+ * Provides question attribute definitions from plugins
+ */
+
+class PluginQuestionAttributeProvider extends QuestionAttributeProvider
+{
+    /** @inheritdoc */
+    #[\Override]
+    public function getDefinitions($options = [])
+    {
+        /** @var string question type */
+        $questionType = self::getQuestionType($options);
+        if (empty($questionType)) {
+            return [];
+        }
+
+        return $this->getAttributesFromPlugin($questionType);
+    }
+
+    /**
+     * Returns the question attributes added by plugins ('newQuestionAttributes' event) for
+     * the specified question type.
+     *
+     * @param string $questionType     the question type to retrieve the attributes for.
+     *
+     * @return array<string,array>    the question attributes added by plugins
+     */
+    protected function getAttributesFromPlugin($questionType)
+    {
+        $allPluginAttributes = \QuestionAttribute::getOwnQuestionAttributesViaPlugin();
+        if (empty($allPluginAttributes)) {
+            return [];
+        }
+
+        $questionAttributeHelper = new QuestionAttributeHelper();
+
+        // Filter to get this question type attributes
+        $questionTypeAttributes = $questionAttributeHelper->filterAttributesByQuestionType($allPluginAttributes, $questionType);
+
+        // Complete category if missing
+        $questionTypeAttributes = $questionAttributeHelper->fillMissingCategory($questionTypeAttributes, gT('Plugin'));
+
+        // Plugins may give the category translated (ex: gT('Logic')), but core categories are untranslated
+        $questionTypeAttributes = $questionAttributeHelper->untranslateCoreCategories($questionTypeAttributes);
+
+        return $questionTypeAttributes;
+    }
+}

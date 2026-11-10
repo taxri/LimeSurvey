@@ -1,11 +1,13 @@
  {% extends "./subviews/printanswers/printanswers_question.twig" %}
  {% block question_answer %}
- <div class="col-md-8">
+ <div class="col-lg-8">
     <div class="row">
-        <div class="col-md-4 text-right">
+        <div class="col-lg-4 text-end">
         </div>
-        <div class="col-md-8 text-left">
-            {{question.answervalue|date(question.dateformat.phpdate)}}
+        <div class="col-lg-8 text-start">
+            {% if question.answervalue %}
+                {{question.answervalue|date(question.dateformat.phpdate)}}
+            {% endif %}
         </div>
     </div>
 </div>

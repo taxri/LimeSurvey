@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'lv', {
 	border: 'Rāmja izmērs',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'lv', {
 		borderColor: 'Rāmja krāsa',
 		data: 'Dati',
 		header: 'Virsraksts',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Jā',
 		no: 'Nē',
 		invalidWidth: 'Šūnas platumam jābūt skaitlim',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'lv', {
 	headersColumn: 'Pirmā kolona',
 	headersNone: 'Nekas',
 	headersRow: 'Pirmā rinda',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'Rāmju izmēram jābūt skaitlim',
 	invalidCellPadding: 'Šūnu atkāpēm jābūt pozitīvam skaitlim',
 	invalidCellSpacing: 'Šūnu atstarpēm jābūt pozitīvam skaitlim',

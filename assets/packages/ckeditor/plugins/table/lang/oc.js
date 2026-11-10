@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'oc', {
 	border: 'Talha de la bordadura',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'oc', {
 		borderColor: 'Color de bordadura',
 		data: 'Donadas',
 		header: 'Entèsta',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Òc',
 		no: 'Non',
 		invalidWidth: 'La largor de la cellula deu èsser un nombre.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'oc', {
 	headersColumn: 'Primièra colomna',
 	headersNone: 'Pas cap',
 	headersRow: 'Primièra linha',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'La talha de la bordadura deu èsser un nombre.',
 	invalidCellPadding: 'Lo marge intèrne de las cellulas deu èsser un nombre positiu.',
 	invalidCellSpacing: 'L\'espaçament entre las cellulas deu èsser un nombre positiu.',

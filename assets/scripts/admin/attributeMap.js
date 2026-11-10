@@ -4,26 +4,33 @@ var LS = LS || {  onDocumentReady: {} };
 
 $(document).on('ready  pjax:scriptcomplete', function(){
 
-    var height = $(document).height();
-    var width = $(document).width();
+    var windowHeight = $(window).height();
     var tokencurrentarray = {};
     var newcurrentarray = {};
-    
+
+    var centralattribute = $('#centralattribute');
+    var newcreated = $('#newcreated');
+    var tokenattribute = $('#tokenattribute');
+
     if($("#overwrite").is(':checked')) {var attoverwrite=true;} else {var attoverwrite=false;}
     if($("#overwriteman").is(':checked')) {var attoverwriteman=true;} else {var attoverwriteman=false;}
     if($("#createautomap").is(':checked')) {var attcreateautomap=true;} else {var attcreateautomap=false;}
     if($("#overwritest").is(':checked')) {var attoverwritest=true;} else {var attoverwritest=false;}
 
-    $('#tokenattribute').css({'height' : height-200});
-    $('#centralattribute').css({'height' : height-200});
-    $('#newcreated').css({'height' : height-200});
-	var ncHeadingHeight = $('#newcreated .heading').outerHeight();
-	$('.newcreate').css({
-		'padding-bottom':0,
-		'min-height':$('#newcreated').height()-ncHeadingHeight-5
-	});
-	
-    $("#overwrite").click(function(){
+    centralattribute.css({'min-height': windowHeight * 0.5});
+    newcreated.css({'min-height': windowHeight * 0.5});
+    tokenattribute.css({'min-height': windowHeight * 0.5});
+    var ncHeadingHeight = $('#newcreated .card-header').outerHeight();
+    $('.newcreate').css({
+        'padding-bottom': 0,
+        'min-height': (windowHeight * 0.5) - ncHeadingHeight - 30
+    });
+    $('#cpdbatt').css({
+        'padding-bottom': 0,
+        'min-height': (windowHeight * 0.5) - ncHeadingHeight - 30
+    });
+
+    $("#overwrite").click(function (){
         if($("#overwrite").is(':checked')) {attoverwrite=true;} else {attoverwrite=false;}
     });
     $("#overwriteman").click(function(){
@@ -100,15 +107,15 @@ $(document).on('ready  pjax:scriptcomplete', function(){
             }
             else {
                 // Change CSS
-                $(ui.item).removeClass('col-sm-12');
+                $(ui.item).removeClass('col-12');
                 $(ui.item).addClass('cpdb-attribute');
-                $(ui.item).wrap('<div class="col-sm-6"></div>');
+                $(ui.item).wrap('<div class="col-md-6"></div>');
 
                 // Insert nice arrows
                 //var t = $(ui.item).parent('.tokenatt-container');  // Does not work.
                 var t = $(ui.item).parent('div').parent('div');  // TODO: Bad, should not rely on DOM structure
-                t = t.find('.token-attribute .panel-body');
-                t.append('<span class="fa fa-arrows-h tokenatt-arrow"></span>');
+                t = t.find('.token-attribute .card-body');
+                t.append('<span class="ri-arrow-left-right-fill tokenatt-arrow"></span>');
             }
         }
     });
@@ -146,7 +153,7 @@ $(document).on('ready  pjax:scriptcomplete', function(){
         });
 
         newcurrentarray = {};
-        $('.newcreate .panel-default').each(function(index, value) {
+        $('.newcreate .card').each(function(index, value) {
             var id = $(value).attr('id').substring(2);
             newcurrentarray[index] = id;
         });
@@ -165,9 +172,10 @@ $(document).on('ready  pjax:scriptcomplete', function(){
                 $('#attribute-map-participant-modal').on('hide.bs.modal' , function (e) {
                     $(location).attr('href',redUrl);
                 });
-                $('#attribute-map-participant-modal').modal();
+                const modal = new bootstrap.Modal(document.getElementById('attribute-map-participant-modal'), {});
+                modal.show();
         });
     });
 
-    $('.tokenatt .panel-default .tokenAttributeId').disableSelection();
+    $('.tokenatt .card-default .tokenAttributeId').disableSelection();
 });

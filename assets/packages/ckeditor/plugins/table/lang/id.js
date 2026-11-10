@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'id', {
 	border: 'Ukuran batas',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'id', {
 		borderColor: 'Warna Batasan',
 		data: 'Data',
 		header: 'Header',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Ya',
 		no: 'Tidak',
 		invalidWidth: 'Lebar sel harus sebuah angka.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'id', {
 	headersColumn: 'Kolom pertama',
 	headersNone: 'Tidak ada',
 	headersRow: 'Baris Pertama',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'Ukuran batasan harus sebuah angka',
 	invalidCellPadding: '\'Spasi dalam\' sel harus angka positif.',
 	invalidCellSpacing: 'Spasi antar sel harus angka positif.',

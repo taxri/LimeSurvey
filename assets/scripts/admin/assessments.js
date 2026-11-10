@@ -26,28 +26,35 @@ function jquery_goodchars(e, goods)
    return false;
 }
 
+/* todo: is this used somewhere??
 var assessmentTable = '#selector__assessment-table',
     $assessmentTable = $(assessmentTable);
+
+ */
+
 var bindAction = function(){
 
     $('.action_assessments_deleteModal').on('click.assessments', function(){
-        $('#assessmentsdeleteform').find('input[name=id]').val($(this).closest('tr').data('assessment-id'));
+        $('#assessmentsdeleteform').find('input[name=id]').val($(this).data('assessment-id'));
         $('#assesements-delete').modal('show');
     });
 
     $('.action_assessments_editModal').on('click.assessments', function(){
         $('input[name=action]').val('assessmentupdate');
+        var linkLoadEditUrl = document.getElementById('loadEditUrl_forModalView');
+        var loadEditUrl = linkLoadEditUrl.dataset.editurl;
         $.ajax({
             url: loadEditUrl,
-            data: {id: $(this).closest('tr').data('assessment-id')},// crsf is already in ajaxsetup
+            data: {id: $(this).data('assessment-id')},// crsf is already in ajaxsetup
             method: 'GET',
             success: function(responseData){
                 $("#in_survey_common").css({cursor: ""});
                 $.each(responseData.editData, function(key, value){
                     var itemToChange = $('#assessmentsform').find('[name='+key+']');
                     if(!itemToChange.is('input[type=checkbox]') && !itemToChange.is('input[type=radio]')) {
-                        if (CKEDITOR.instances[key]) {
-                            CKEDITOR.instances[key].setData(value);
+                        const oCKeditor_itemToChange = CKEDITOR.instances[key];
+                        if (oCKeditor_itemToChange) {
+                            oCKeditor_itemToChange.setData(value);
                         } else {
                             itemToChange.val(value).trigger('change');
                         }
@@ -64,17 +71,19 @@ var bindAction = function(){
     });
 
     $('#selector__assessment-add-new').on('click.assessments', function(){
+        var editAddForm = $('#assesements-edit-add');
 
-        // Clear all fields.
-        $.each(CKEDITOR.instances, function(name, instance) {
-            instance.setData('');
+        $('input[name=action]').val('assessmentadd');
+
+        editAddForm.modal('show');
+        editAddForm.on('shown.bs.modal',  function removeValues(){
+            // We clear only visible input to keep the CSRF token
+            $('#assessmentsform input:visible:not([type=radio]):not([type=checkbox])').val('');
+            $('#assessmentsform textarea:visible').val('');
+            $(this).off('shown.bs.modal', removeValues);
         });
-
-        // We clear only visible input to keep the CSRF token
-        $('#assessmentsform input:visible').val('');
         // TODO: Clear <select> and radio buttons?
 
-        $('#assesements-edit-add').modal('show');
     });
 
     $('#assessmentsdeleteform').on('submit', function(e){
@@ -85,7 +94,14 @@ var bindAction = function(){
             url : url,
             method: 'post',
             data: params,
-            success : function(){
+            success : function(result) {
+                if (result.success) {
+                    window.LS.ajaxAlerts(result.success, 'success');
+                } else {
+                    var errorMsg = result.error.message ? result.error.message : result.error;
+                    if (!errorMsg) errorMsg = "Unexpected error";
+                    window.LS.ajaxAlerts(errorMsg, 'danger');
+                }
                 $('#assessmentsdeleteform').find('input[name=id]').val(' ');
                 $('#assesements-delete').modal('hide');
                 $.fn.yiiGridView.update('assessments-grid');
@@ -93,7 +109,7 @@ var bindAction = function(){
             error: function(err){
                 console.ls.error(err);
             }
-        })
+        });
     });
 
     $('#selector__assessements-delete-modal').on('click.assessments', function(){
@@ -137,5 +153,5 @@ $(document).on('ready  pjax:scriptcomplete', function(){
         function(e){
             return jquery_goodchars(e,'1234567890-');
         }
-    )
+    );
 });

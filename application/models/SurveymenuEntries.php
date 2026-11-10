@@ -3,7 +3,7 @@
 /**
  * This is the model class for table "{{surveymenu_entries}}".
  *
- * The followings are the available columns in table '{{surveymenu_entries}}':
+ * The following are the available columns in table '{{surveymenu_entries}}':
  * @property integer $id
  * @property integer $menu_id
  * @property integer $user_id
@@ -30,7 +30,7 @@
  * @property integer $created_by
  * @property integer $active
  *
- * The followings are the available model relations:
+ * The following are the available model relations:
  * @property Surveymenu $menu
  */
 class SurveymenuEntries extends LSActiveRecord
@@ -51,14 +51,16 @@ class SurveymenuEntries extends LSActiveRecord
         // NOTE: you should only define rules for those attributes that
         // will receive user inputs.
         return array(
-            array('changed_at', 'required'),
-            array('menu_id, user_id, ordering, changed_by, created_by', 'numerical', 'integerOnly'=>true),
-            array('title, menu_title, menu_icon, menu_icon_type, menu_class, menu_link, action, template, partial, permission, permission_grade, classes, getdatamethod', 'length', 'max'=>255),
+            array('title, menu_title, changed_at', 'required'),
+            array('menu_id', 'required'),
+            array('menu_id, user_id, ordering, changed_by, created_by', 'numerical', 'integerOnly' => true),
+            array('menu_icon_type', 'in', 'range' => array_keys($this->getMenuIconTypeOptions()), 'allowEmpty' => true),
+            array('title, menu_title, menu_icon,  menu_class, menu_link, action, template, partial, permission, permission_grade, classes, getdatamethod', 'length', 'max' => 255),
             array('name', 'unique'),
             array('name, menu_description, language, data, created_at', 'safe'),
             // The following rule is used by search().
             // @todo Please remove those attributes that should not be searched.
-            array('id, menu_id, user_id, ordering, title, name, menu_title, menu_description, menu_icon, menu_icon_type, menu_class, menu_link, action, template, partial, language, permission, permission_grade, classes, data, getdatamethod, changed_at, changed_by, created_at, created_by', 'safe', 'on'=>'search'),
+            array('id, menu_id, user_id, ordering, title, name, menu_title, menu_description, menu_icon, menu_icon_type, menu_class, menu_link, action, template, partial, language, permission, permission_grade, classes, data, getdatamethod, changed_at, changed_by, created_at, created_by', 'safe', 'on' => 'search'),
         );
     }
 
@@ -90,8 +92,8 @@ class SurveymenuEntries extends LSActiveRecord
         $oSurveymenuEntries->menu_link = $menuEntryArray['menu_link'];
 
         //permissions [optional]
-        $oSurveymenuEntries->permission = isset($menuEntryArray['permission']) ? $menuEntryArray['permission'] : '';
-        $oSurveymenuEntries->permission_grade = isset($menuEntryArray['permission_grade']) ? $menuEntryArray['permission_grade'] : '';
+        $oSurveymenuEntries->permission = $menuEntryArray['permission'] ?? '';
+        $oSurveymenuEntries->permission_grade = $menuEntryArray['permission_grade'] ?? '';
 
 
 
@@ -103,12 +105,12 @@ class SurveymenuEntries extends LSActiveRecord
 
         if (is_array($menuEntryArray['manualParams'])) {
             $oMenuEntryData->linkData = $menuEntryArray['manualParams'];
-        } else if ($menuEntryArray['manualParams'] != '') {
-            $oMenuEntryData->linkData = json_decode($menuEntryArray['manualParams'], true);
+        } elseif ($menuEntryArray['manualParams'] != '') {
+            $oMenuEntryData->linkData = json_decode((string) $menuEntryArray['manualParams'], true);
         }
 
         //pjax optional
-        $oMenuEntryData->pjaxed = isset($menuEntryArray['pjaxed']) ? $menuEntryArray['pjaxed'] : true;
+        $oMenuEntryData->pjaxed = $menuEntryArray['pjaxed'] ?? true;
         $oSurveymenuEntries->data = $oMenuEntryData->createOptionJson($menuEntryArray['addSurveyId'], $menuEntryArray['addQuestionGroupId'], $menuEntryArray['addQuestionId']);
 
         $oSurveymenuEntries->changed_at = date('Y-m-d H:i:s');
@@ -120,14 +122,36 @@ class SurveymenuEntries extends LSActiveRecord
         return $oSurveymenuEntries->getPrimaryKey();
     }
 
+    /**
+     * Checks whether the current user has the permission required by this menu entry.
+     * A global permission is checked globally, any other one on the given survey.
+     * Entries without a permission are always allowed.
+     *
+     * @param int|null $iSurveyId Survey to check a survey permission on; without it, survey permissions are not checked
+     * @return bool
+     */
+    public function userHasPermission($iSurveyId = null)
+    {
+        if (empty($this->permission) || empty($this->permission_grade)) {
+            return true;
+        }
+        if (array_key_exists($this->permission, Permission::getGlobalBasePermissions())) {
+            return Permission::model()->hasGlobalPermission($this->permission, $this->permission_grade);
+        }
+        if ($iSurveyId !== null) {
+            return Permission::model()->hasSurveyPermission($iSurveyId, $this->permission, $this->permission_grade);
+        }
+        return true;
+    }
+
     public function reorder()
     {
 
         $menusWithEntries = SurveymenuEntries::model()->findAll(array(
-            'select'=>'t.menu_id',
-            'distinct'=>true,
+            'select' => 't.menu_id',
+            'distinct' => true,
         ));
-        foreach ($menusWithEntries as $key=>$menuWithEntry) {
+        foreach ($menusWithEntries as $key => $menuWithEntry) {
             self::reorderMenu($menuWithEntry->menu_id);
         }
     }
@@ -142,7 +166,7 @@ class SurveymenuEntries extends LSActiveRecord
         $statistics =
         Yii::app()->db->createCommand()->select('MIN(ordering) as loworder, MAX(ordering) as highorder, COUNT(id) as count')
                 ->from('{{surveymenu_entries}}')
-                ->where(['menu_id = :menu_id'], ['menu_id' => (int) $menuId])
+                ->where('menu_id = :menu_id', ['menu_id' => (int) $menuId])
                 ->queryRow();
         if (($statistics['loworder'] != 1) || ($statistics['highorder'] != $statistics['count'])) {
             $current = 1;
@@ -161,19 +185,19 @@ class SurveymenuEntries extends LSActiveRecord
         $criteria->addCondition(['menu_id = :menu_id']);
         $criteria->addCondition(['ordering = :ordering']);
         $criteria->addCondition(['id!=:id']);
-        $criteria->params = ['menu_id' => (int) $this->menu_id, 'ordering' => (int) $this->ordering, 'id'=>(int) $this->id];
+        $criteria->params = ['menu_id' => (int) $this->menu_id, 'ordering' => (int) $this->ordering, 'id' => (int) $this->id];
         $criteria->limit = 1;
 
         $collidingMenuEntry = SurveymenuEntries::model()->find($criteria);
         if ($collidingMenuEntry != null) {
             $collidingMenuEntry->ordering = (((int) $collidingMenuEntry->ordering) + 1);
             $collidingMenuEntry->save();
-
         }
         return parent::onAfterSave($event);
     }
 
     /**
+     * Return attribute labels.
      * @return array customized attribute labels (name=>label)
      */
     public function attributeLabels()
@@ -205,34 +229,52 @@ class SurveymenuEntries extends LSActiveRecord
             'created_at' => gT('Created on'),
             'created_by' => gT('Created by'),
             'buttons' => gT('Action'),
+            'showincollapse' => gT('Show in collapse'),
         );
     }
 
+    /**
+     * Return combined menu link.
+     * @param $data
+     **/
     public static function returnCombinedMenuLink($data)
     {
         if ($data->menu_link) {
             return $data->menu_link;
         } else {
-            return gt('Action: ').$data->action.', <br/>'
-            .gt('Template: ').$data->template.', <br/>'
-            .gt('Partial: ').$data->partial;
+            return gT('Action: ') . $data->action . ', <br/>'
+            . gT('Template: ') . $data->template . ', <br/>'
+            . gT('Partial: ') . $data->partial;
         }
     }
 
+    /**
+     * Return menu icon
+     * @param $data
+     **/
     public static function returnMenuIcon($data)
     {
-        if ($data->menu_icon_type == 'fontawesome') {
-            return "<i class='fa fa-".$data->menu_icon."'></i>";
-        } else if ($data->menu_icon_type == 'image') {
-            return '<img width="60px" src="'.$data->menu_icon.'" />';
-        } else {
-            return $data->menu_icon_type.'|'.$data->menu_icon;
+        switch ($data->menu_icon_type) {
+            case 'fontawesome':
+                return "<i class='fa fa-" . CHtml::encode($data->menu_icon) . "'></i>";
+            case 'image':
+                return '<img width="60px" src="' . CHtml::encode($data->menu_icon) . '" />';
+            case 'remix':
+                return "<i class='icon " . CHtml::encode($data->menu_icon) . "'></i>";
+            case '':
+                return "";
+            default:
+                /* No way except old issue or DB update manually since menu_icon_type is restricted */
+                return CHtml::encode($data->menu_icon_type) . '|' . CHtml::encode($data->menu_icon);
         }
     }
 
+    /**
+     * Get menu id options
+     **/
     public function getMenuIdOptions()
     {
-        $criteria = new CDbCriteria;
+        $criteria = new CDbCriteria();
         if (Yii::app()->getConfig('demoMode') || !Permission::model()->hasGlobalPermission('superadmin', 'read')) {
             $criteria->compare('id', '<> 0');
             $criteria->compare('id', '<> 1');
@@ -240,11 +282,14 @@ class SurveymenuEntries extends LSActiveRecord
         $oSurveymenus = Surveymenu::model()->findAll($criteria);
         $options = [];
         foreach ($oSurveymenus as $oSurveymenu) {
-            $options["".$oSurveymenu->id] = $oSurveymenu->title;
+            $options["" . $oSurveymenu->id] = $oSurveymenu->title;
         }
         return $options;
     }
 
+    /**
+     * Get user id options
+     **/
     public function getUserIdOptions()
     {
         $oUsers = User::model()->findAll();
@@ -259,9 +304,12 @@ class SurveymenuEntries extends LSActiveRecord
         return $options;
     }
 
+    /**
+     * Get user options
+     * @return array
+     **/
     public function getUserOptions()
     {
-
         $oUsers = User::model()->findAll();
         $options = [];
         foreach ($oUsers as $oUser) {
@@ -270,128 +318,125 @@ class SurveymenuEntries extends LSActiveRecord
         return $options;
     }
 
+    /**
+     * Get menu icon type options
+     * @return array
+     **/
     public function getMenuIconTypeOptions()
     {
         return [
-            'fontawesome'	=> gT('Fontawesome icon'),
-            'image'			=> gT('Image'),
+            'remix'         => gT('Remix icon'), // In fact any class name here : can be `fa fa-address-book text-danger h1` for example
+            'fontawesome'   => gT('Fontawesome icon'),
+            'image'         => gT('Image'),
         ];
-        // return "<option value='fontawesome'>".gT("FontAwesome icon")."</option>"
-        // 		."<option value='image'>".gT('Image')."</option>";
     }
 
+    /**
+     * Returns buttons for gridview
+     **/
     public function getButtons()
     {
-        $buttons = "<div style='white-space: nowrap'>";
-        $raw_button_template = ""
-            . "<button class='btn btn-default btn-xs %s %s' role='button' data-toggle='tooltip' title='%s' onclick='return false;'>" //extra class //title
-            . "<i class='fa fa-%s' ></i>" //icon class
-            . "</button>";
-
-        if (Permission::model()->hasGlobalPermission('settings', 'update')) {
-
-            $deleteData = array(
-                'action_surveymenuEntries_deleteModal',
-                'text-danger',
-                gT("Delete this survey menu entry"),
-                'trash text-danger'
-            );
-            $editData = array(
-                'action_surveymenuEntries_editModal',
-                'text-danger',
-                gT("Edit this survey menu entry"),
-                'edit'
-            );
-
-
-
-            $buttons .= vsprintf($raw_button_template, $editData);
-            $buttons .= vsprintf($raw_button_template, $deleteData);
-        }
-
-        $buttons .= '</div>';
-
-        return $buttons;
+        $permission_settings_update = Permission::model()->hasGlobalPermission('settings', 'update');
+        $dropdownItems = [];
+        $dropdownItems[] = [
+            'title'            => gT('Edit this survey menu entry'),
+            'linkClass'        => 'action_surveymenuEntries_editModal',
+            'linkAttributes'   => [
+                'data-menuentryid' => $this->id,
+            ],
+            /* @todo : allow managing via open in new tab */
+            //'url'              => App()->urlManager->createUrl('/admin/menuentries', ['sa' => 'getsurveymenuentryform', 'menuentryid' => $this->id]),
+            'iconClass'        => 'ri-pencil-fill',
+            'enabledCondition' => $permission_settings_update
+        ];
+        $dropdownItems[] = [
+            'title'            => gT('Delete this survey menu entry'),
+            'linkClass'        => 'action_surveymenuEntries_deleteModal',
+            'linkAttributes'   => [
+                'data-menuentryid' => $this->id,
+            ],
+            'iconClass'        => 'ri-delete-bin-fill text-danger',
+            'enabledCondition' => $permission_settings_update && $this->created_by != 0
+        ];
+        return App()->getController()->widget('ext.admin.grid.GridActionsWidget.GridActionsWidget', ['dropdownItems' => $dropdownItems], true);
     }
+
     /**
+     * Returns columns for gridview
      * @return array
      */
     public function getColumns()
     {
-        $cols = array(
-            array(
-            'name' => 'id',
-            'value' => '\'<input type="checkbox" name="id[]" class="action_selectthisentry" value="\'.$data->id.\'" />\'',
-            'type' => 'raw',
-            'filter' => false
-            ),
-            array(
-                "name" => 'buttons',
-                "type" => 'raw',
-                "filter" => false
-            ),
-            array(
+        $cols = [
+            [
+                'class'               => 'CCheckBoxColumn',
+                'selectableRows'      => 2,
+                'name'                => 'id',
+                'checkBoxHtmlOptions' => ['name' => 'id[]', 'class' => 'massiveActionsCheckbox action_selectthisentry'],
+                'headerHtmlOptions'   => ['class' => 'ls-sticky-column'],
+                'filterHtmlOptions'   => ['class' => 'ls-sticky-column'],
+                'htmlOptions'         => ['class' => 'ls-sticky-column'],
+            ],
+            [
                 'name' => 'title',
                 'type' => 'text'
-            ),
-            array(
+            ],
+            [
                 'name' => 'name',
-            ),
-            array(
+            ],
+            [
                 'name' => 'ordering',
-            ),
-            array(
+            ],
+            [
                 'name' => 'menu_title',
-            ),
-            array(
+            ],
+            [
                 'name' => 'menu_description',
-            ),
-            array(
-                'name' => 'menu_icon',
-                'value' => 'SurveymenuEntries::returnMenuIcon($data)',
-                'type' => 'raw',
+            ],
+            [
+                'name'   => 'menu_icon',
+                'value'  => 'SurveymenuEntries::returnMenuIcon($data)',
+                'type'   => 'raw',
                 'filter' => false,
-            ),
-            array(
-                'name' => 'menu_class',
-            ),
-            array(
-                'name' => 'menu_link',
+            ],
+            [
+                'name'  => 'menu_link',
                 'value' => 'SurveymenuEntries::returnCombinedMenuLink($data)',
-                'type' => 'text'
-            ),
-            array(
+                'type'  => 'text'
+            ],
+            [
                 'name' => 'language',
-            ),
-            array(
-                'name' => 'permission',
+            ],
+            [
+                'name'  => 'permission',
                 'value' => '$data->permission ? $data->permission."<br/> => ". $data->permission_grade : ""',
-                'type' => 'raw'
-            ),
-            array(
-                'name' => 'classes',
-                'htmlOptions'=>array('style'=>'white-space: prewrap;'),
-                'headerHtmlOptions'=>array('style'=>'white-space: prewrap;'),
-            ),
-            array(
-                'name' => 'data',
-                'value' => '$data->data ? "<i class=\'fa fa-info-circle bigIcons\' title=\'".$data->data."\'></i>"
-                : ( $data->getdatamethod ? gT("GET data method:")."<br/>".$data->getdatamethod : "")',
-                'type' => 'raw',
-                'filter' => false,
-            ),
-            array(
-                'name' => 'menu_id',
-                'value' => '$data->menu->title." (".$data->menu_id.")"',
+                'type'  => 'raw'
+            ],
+            [
+                'name'              => 'classes',
+                'htmlOptions'       => ['style' => 'white-space: prewrap;'],
+                'headerHtmlOptions' => ['style' => 'white-space: prewrap;'],
+            ],
+            [
+                'name'   => 'menu_id',
+                'value'  => '($data->menu ? $data->menu->title : "")." (".$data->menu_id.")"',
                 'filter' => $this->getMenuIdOptions()
-            ),
-            array(
-                'name' => 'user_id',
-                'value' => '$data->user_id ? $data->user->full_name : "<i class=\'fa fa-minus\'></i>"',
-                'type' => 'raw',
+            ],
+            [
+                'name'   => 'user_id',
+                'value'  => '$data->user_id ? $data->user->full_name : "<i class=\'ri-subtract-fill\'></i>"',
+                'type'   => 'raw',
                 'filter' => $this->getUserOptions()
-            )
-        );
+            ],
+            [
+                "name"              => 'buttons',
+                "type"              => 'raw',
+                "filter"            => false,
+                'headerHtmlOptions' => ['class' => 'ls-sticky-column'],
+                'filterHtmlOptions' => ['class' => 'ls-sticky-column'],
+                'htmlOptions'       => ['class' => 'ls-sticky-column']
+            ],
+        ];
 
         return $cols;
     }
@@ -418,8 +463,8 @@ class SurveymenuEntries extends LSActiveRecord
             array(
                 'header' => gT('Menu'),
                 'value' => ''
-                .'"<a class=\"".$data->menu_class."\" title=\"".$data->menu_description."\" data-toggle="tooltip" >'
-                .'".SurveymenuEntries::returnMenuIcon($data)." ".$data->menu_title."</a>"',
+                . '"<a class=\"".$data->menu_class."\" title=\"".$data->menu_description."\" data-bs-toggle="tooltip" >'
+                . '".SurveymenuEntries::returnMenuIcon($data)." ".$data->menu_title."</a>"',
                 'type' => 'raw'
             ),
             array(
@@ -437,7 +482,7 @@ class SurveymenuEntries extends LSActiveRecord
             ),
             array(
                 'name' => 'menu_id',
-                'value' => '$data->menu->title',
+                'value' => '$data->menu ? $data->menu->title : ""',
             )
         );
 
@@ -459,7 +504,7 @@ class SurveymenuEntries extends LSActiveRecord
     {
         // @todo Please modify the following code to remove attributes that should not be searched.
 
-        $criteria = new CDbCriteria;
+        $criteria = new LSDbCriteria();
 
         //Don't show main menu when not superadmin
         if (Yii::app()->getConfig('demoMode') || !Permission::model()->hasGlobalPermission('superadmin', 'read')) {
@@ -495,9 +540,9 @@ class SurveymenuEntries extends LSActiveRecord
         $pageSize = Yii::app()->user->getState('pageSize', Yii::app()->params['defaultPageSize']);
 
         return new CActiveDataProvider($this, array(
-            'criteria'=>$criteria,
-            'sort'=>array(
-                'defaultOrder'=>'t.menu_id ASC, t.ordering ASC',
+            'criteria' => $criteria,
+            'sort' => array(
+                'defaultOrder' => 't.menu_id ASC, t.ordering ASC',
             ),
             'pagination' => array(
                 'pageSize' => $pageSize
@@ -523,36 +568,35 @@ class SurveymenuEntries extends LSActiveRecord
                 $oDB->createCommand()->insert("{{surveymenu_entries}}", $basicMenu);
             }
             $oTransaction->commit();
-
         } catch (Exception $e) {
             throw $e;
-            return false;
         }
         return true;
     }
 
-    private function _parseUniqueNameFromTitle() {
+    private function parseUniqueNameFromTitle()
+    {
 
-        $name = preg_replace("/[^a-z]*/","", strtolower($this->title));
-        if(!preg_match("/^[a-z].*$/",$name)) {
-            $name = 'm'.$name;
+        $name = preg_replace("/[^a-z]*/", "", strtolower($this->title));
+        if (!preg_match("/^[a-z].*$/", $name)) {
+            $name = 'm' . $name;
         }
         $itrt = 0;
-        while(self::model()->findByAttributes(['name' => $name]) !== null){
-            $name = $name.($itrt++);
+        while (self::model()->findByAttributes(['name' => $name]) !== null) {
+            $name = $name . ($itrt++);
         }
         return $name;
     }
 
-    public function save($runValidation=true,$attributes=null)
-	{
-        if($this->getIsNewRecord()){
-            $this->name = $this->_parseUniqueNameFromTitle();
+    public function save($runValidation = true, $attributes = null)
+    {
+        if ($this->getIsNewRecord()) {
+            $this->name = $this->parseUniqueNameFromTitle();
             $this->menu_title = empty($this->menu_title) ? $this->title : $this->menu_title;
             $this->menu_description = empty($this->menu_description) ? $this->title : $this->menu_title;
         }
-		parent::save($runValidation,$attributes);
-	}
+        return parent::save($runValidation, $attributes);
+    }
 
     /**
      * Returns the static model of the specified AR class.
@@ -565,5 +609,13 @@ class SurveymenuEntries extends LSActiveRecord
         /** @var self $model */
         $model = parent::model($className);
         return $model;
+    }
+
+
+    public function delete()
+    {
+        if ($this->created_by != 0) {
+            parent::delete();
+        }
     }
 }

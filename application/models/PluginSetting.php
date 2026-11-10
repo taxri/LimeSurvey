@@ -2,7 +2,7 @@
 
 /*
  * LimeSurvey
- * Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
+ * Copyright (C) 2007-2026 The LimeSurvey Project Team
  * All rights reserved.
  * License: GNU/GPL License v2 or later, see LICENSE.php
  * LimeSurvey is free software. This version may have been modified pursuant
@@ -26,7 +26,6 @@
 
 class PluginSetting extends CActiveRecord
 {
-
     /**
      * @inheritdoc
      * @return PluginSetting
@@ -56,10 +55,10 @@ class PluginSetting extends CActiveRecord
     public function rules()
     {
         return array(
-            array('plugin_id', 'numerical', 'integerOnly'=>true), // 'allowEmpty'=>false ?
-            array('model', 'length', 'max'=>255, 'allowEmpty'=>true),
-            array('model_id', 'numerical', 'integerOnly'=>true, 'allowEmpty'=>true),
-            array('key', 'length', 'max'=>255),
+            array('plugin_id', 'numerical', 'integerOnly' => true), // 'allowEmpty'=>false ?
+            array('model', 'length', 'max' => 255, 'allowEmpty' => true),
+            array('model_id', 'numerical', 'integerOnly' => true, 'allowEmpty' => true),
+            array('key', 'length', 'max' => 255),
         );
     }
 }

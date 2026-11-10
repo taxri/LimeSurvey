@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'lt', {
 	border: 'Rėmelio dydis',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'lt', {
 		borderColor: 'Rėmelio spalva',
 		data: 'Data',
 		header: 'Antraštė',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Taip',
 		no: 'Ne',
 		invalidWidth: 'Reikšmė turi būti skaičius.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'lt', {
 	headersColumn: 'Pirmas stulpelis',
 	headersNone: 'Nėra',
 	headersRow: 'Pirma eilutė',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'Reikšmė turi būti nurodyta skaičiumi.',
 	invalidCellPadding: 'Reikšmė turi būti nurodyta skaičiumi.',
 	invalidCellSpacing: 'Reikšmė turi būti nurodyta skaičiumi.',

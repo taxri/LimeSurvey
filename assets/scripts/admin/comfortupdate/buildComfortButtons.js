@@ -5,8 +5,8 @@
 $.fn.buildComfortButtons = function(options)
 {
 	// Will be used later for animation params
-	var defauts={};  
-	var params=$.extend(defauts, options); 
+	var defaults={};  
+	var params=$.extend(defaults, options); 
 	
 	return this.each(function(){
 		$(this).on('click', function(e){
@@ -32,7 +32,7 @@ $.fn.buildComfortButtons = function(options)
 				},
 				error :  function(html, statut){
 					$("#ajaxLoading").hide();
-					$("#updatesavailable").empty().append("<span class='error'>you have an error, or a notice, inside your local installation of limesurvey. See : <br/></span>");
+					$("#updatesavailable").empty().append("<span class='error'>You have an error, or a notice, inside your local installation of limesurvey. See : <br/></span>");
 					$("#updatesavailable").append(html.responseText);
 				}
 		    });

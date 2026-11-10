@@ -10,17 +10,17 @@
 #}
 
 <!-- td_input -->
-<td class="answer_cell_{{ i }} answer-item radio-item">
+<td class="answer_cell_{{ i }}{% if i=="" %} noanswer-item{% endif %} answer-item radio-item">
     <input
         type="radio"
         name="{{ myfname }}"
         id="answer{{ myfname }}-{{ i }}"
+        aria-labelledby="answer{{ basename }}-{{ i }}"
         value="{{ value }}"
         {{ CHECKED }}
-        onclick="{{ checkconditionFunction }}(this.value, this.name, this.type)"
      />
-    <label for="answer{{ myfname }}-{{ i }}" class="ls-label-xs-visibility">
-        {{ labelText }}
+    <label for="answer{{ myfname }}-{{ i }}" class="ls-label-xs-visibility" aria-hidden="true">
+        {{ processString(labelText) }}
     </label>
 </td>
 <!-- end of td_input -->

@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'link', 'et', {
 	acccessKey: 'Juurdepääsu võti',
@@ -13,14 +13,15 @@ CKEDITOR.plugins.setLang( 'link', 'et', {
 		title: 'Ankru omadused',
 		name: 'Ankru nimi',
 		errorName: 'Palun sisesta ankru nimi',
+		errorWhitespace: 'Anchor name cannot contain space characters', // MISSING
 		remove: 'Eemalda ankur'
 	},
 	anchorId: 'Elemendi id järgi',
 	anchorName: 'Ankru nime järgi',
 	charset: 'Lingitud ressursi märgistik',
 	cssClasses: 'Stiilistiku klassid',
-	download: 'Force Download', // MISSING
-	displayText: 'Display Text', // MISSING
+	download: 'Sunni allalaadimine',
+	displayText: 'Näidatav tekst',
 	emailAddress: 'E-posti aadress',
 	emailBody: 'Sõnumi tekst',
 	emailSubject: 'Sõnumi teema',
@@ -35,7 +36,9 @@ CKEDITOR.plugins.setLang( 'link', 'et', {
 	noAnchors: '(Selles dokumendis pole ankruid)',
 	noEmail: 'Palun kirjuta e-posti aadress',
 	noUrl: 'Palun kirjuta lingi URL',
+	noTel: 'Palun sisesta telefoninumber',
 	other: '<muu>',
+	phoneNumber: 'Telefoninumber',
 	popupDependent: 'Sõltuv (Netscape)',
 	popupFeatures: 'Hüpikakna omadused',
 	popupFullScreen: 'Täisekraan (IE)',
@@ -60,6 +63,7 @@ CKEDITOR.plugins.setLang( 'link', 'et', {
 	toAnchor: 'Ankur sellel lehel',
 	toEmail: 'E-post',
 	toUrl: 'URL',
+	toPhone: 'Telefon',
 	toolbar: 'Lingi lisamine/muutmine',
 	type: 'Lingi liik',
 	unlink: 'Lingi eemaldamine',

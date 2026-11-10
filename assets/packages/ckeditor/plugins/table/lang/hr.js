@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'hr', {
 	border: 'Veličina okvira',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'hr', {
 		borderColor: 'Boja ruba',
 		data: 'Podatak',
 		header: 'Zaglavlje',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Da',
 		no: 'Ne',
 		invalidWidth: 'Širina ćelije mora biti broj.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'hr', {
 	headersColumn: 'Prva kolona',
 	headersNone: 'Ništa',
 	headersRow: 'Prvi red',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'Debljina ruba mora biti broj.',
 	invalidCellPadding: 'Razmak ćelija mora biti broj.',
 	invalidCellSpacing: 'Prostornost ćelija mora biti broj.',

@@ -1,4 +1,5 @@
 <?php
+
 class SurveyObj
 {
     /**
@@ -45,7 +46,7 @@ class SurveyObj
 
 
     /**
-     * When relevant holds the available fields from the survey participants table
+     * When relevant holds the available fields from the survey participant list
      *
      * @var array[fieldname][localised description]
      */
@@ -68,18 +69,15 @@ class SurveyObj
 
 
     /**
-     * Returns the full answer for the question that matches $fieldName
-     * and the answer that matches the $answerCode.  If a match cannot
-     * be made then false is returned.
+     * Returns the display value used by full-answer exports for a survey field.
+     * Ranking codes are resolved to subquestion text in the requested language
+     * and remain unchanged when no matching text is available.
      *
-     * The name of the variable $answerCode is not strictly an answerCode
-     * but could also be a comment entered by a participant.
-     *
-     * @param string $fieldName
-     * @param string $answerCode
-     * @param Translator $translator
-     * @param string $sLanguageCode
-     * @return string (or false)
+     * @param string $fieldName Field map key
+     * @param string|null $answerCode Stored answer code or response text
+     * @param Translator $translator Translator for built-in answer labels
+     * @param string $sLanguageCode Language used for translated labels
+     * @return string|null Display value for export
      */
     public function getFullAnswer($fieldName, $answerCode, Translator $translator, $sLanguageCode)
     {
@@ -87,20 +85,24 @@ class SurveyObj
         $fieldType = $this->fieldMap[$fieldName]['type'];
         $question = $this->fieldMap[$fieldName];
         $questionId = $question['qid'];
-        $answer = null;
-        if ($questionId) {
+        $answer = $answerCode;
+        if ($questionId && $answerCode !== "" && !is_null($answerCode)) {
             $answers = $this->getAnswers($questionId);
             if (isset($answers[$answerCode])) {
-                $answer = $answers[$answerCode]['answer'];
+                $answer = $answers[$answerCode];
             }
         }
 
         //echo "\n$fieldName: $fieldType = $answerCode";
         switch ($fieldType) {
-            case 'K':
-            case 'N':
+            case Question::QT_K_MULTIPLE_NUMERICAL:
+            case Question::QT_N_NUMERICAL:
                 $fullAnswer = $answerCode;
-                if (trim($fullAnswer) != '') {
+                if (!is_null($fullAnswer) && trim($fullAnswer) !== '') {
+                    // SQL DECIMAL
+                    if ($fullAnswer[0] === ".") {
+                        $fullAnswer = "0" . $fullAnswer;
+                    }
                     if (strpos($fullAnswer, ".") !== false) {
                         $fullAnswer = rtrim(rtrim($fullAnswer, "0"), ".");
                     }
@@ -111,25 +113,25 @@ class SurveyObj
                 }
                 break;
 
-            case 'R':   //RANKING TYPE
+            case Question::QT_R_RANKING:   // Ranking TYPE
                 $fullAnswer = $answer;
                 break;
 
-            case '1':   //Array dual scale
+            case Question::QT_1_ARRAY_DUAL:   // Array dual scale
                 if (mb_substr($fieldName, -1) == 0) {
                     $answers = $this->getAnswers($questionId, 0);
                 } else {
                     $answers = $this->getAnswers($questionId, 1);
                 }
                 if (array_key_exists($answerCode, $answers)) {
-                    $fullAnswer = $answers[$answerCode]['answer'];
+                    $fullAnswer = $answers[$answerCode];
                 } else {
-                    $fullAnswer = null;
+                    $fullAnswer = '';
                 }
                 break;
 
-            case 'L':   //DROPDOWN LIST
-            case '!':
+            case Question::QT_L_LIST:   //DROPDOWN LIST
+            case Question::QT_EXCLAMATION_LIST_DROPDOWN:
                 if (mb_substr($fieldName, -5, 5) == 'other') {
                     $fullAnswer = $answerCode;
                 } else {
@@ -141,8 +143,8 @@ class SurveyObj
                 }
                 break;
 
-            case 'O':   //DROPDOWN LIST WITH COMMENT
-                if (isset($answer)) {
+            case Question::QT_O_LIST_WITH_COMMENT:   //DROPDOWN LIST WITH COMMENT
+                if (!empty($answer)) {
                     //This is one of the dropdown list options.
                     $fullAnswer = $answer;
                 } else {
@@ -151,38 +153,38 @@ class SurveyObj
                 }
                 break;
 
-            case 'Y':   //YES/NO
-            switch ($answerCode) {
-                case 'Y':
-                    $fullAnswer = $translator->translate('Yes', $sLanguageCode);
-                    break;
+            case Question::QT_Y_YES_NO_RADIO:   //YES/NO
+                switch ($answerCode) {
+                    case 'Y':
+                        $fullAnswer = $translator->translate('Yes', $sLanguageCode);
+                        break;
 
-                case 'N':
-                    $fullAnswer = $translator->translate('No', $sLanguageCode);
-                    break;
+                    case 'N':
+                        $fullAnswer = $translator->translate('No', $sLanguageCode);
+                        break;
 
-                default:
-                    $fullAnswer = $translator->translate('N/A', $sLanguageCode);
-            }
-            break;
+                    default:
+                        $fullAnswer = $translator->translate('N/A', $sLanguageCode);
+                }
+                break;
 
-            case 'G':
-            switch ($answerCode) {
-                case 'M':
-                    $fullAnswer = $translator->translate('Male', $sLanguageCode);
-                    break;
+            case Question::QT_G_GENDER:
+                switch ($answerCode) {
+                    case 'M':
+                        $fullAnswer = $translator->translate('Male', $sLanguageCode);
+                        break;
 
-                case 'F':
-                    $fullAnswer = $translator->translate('Female', $sLanguageCode);
-                    break;
+                    case 'F':
+                        $fullAnswer = $translator->translate('Female', $sLanguageCode);
+                        break;
 
-                default:
-                    $fullAnswer = $translator->translate('N/A', $sLanguageCode);
-            }
-            break;
+                    default:
+                        $fullAnswer = $translator->translate('N/A', $sLanguageCode);
+                }
+                break;
 
-            case 'M':   //MULTIOPTION
-            case 'P':
+            case Question::QT_M_MULTIPLE_CHOICE:   //MULTIOPTION
+            case Question::QT_P_MULTIPLE_CHOICE_WITH_COMMENTS:
                 if (mb_substr($fieldName, -5, 5) == 'other' || mb_substr($fieldName, -7, 7) == 'comment') {
                     //echo "\n -- Branch 1 --";
                     $fullAnswer = $answerCode;
@@ -190,7 +192,7 @@ class SurveyObj
                     if ($answerCode == 'Y') {
                         $fullAnswer = $translator->translate('Yes', $sLanguageCode);
                     } elseif ($answerCode == 'N' || $answerCode === '') {
-// Strict check for empty string to find null values
+                        // Strict check for empty string to find null values
                         $fullAnswer = $translator->translate('No', $sLanguageCode);
                     } else {
                         $fullAnswer = $translator->translate('N/A', $sLanguageCode);
@@ -198,47 +200,46 @@ class SurveyObj
                 }
                 break;
 
-            case 'C':
-            switch ($answerCode) {
-                case 'Y':
-                    $fullAnswer = $translator->translate('Yes', $sLanguageCode);
-                    break;
+            case Question::QT_C_ARRAY_YES_UNCERTAIN_NO:
+                switch ($answerCode) {
+                    case 'Y':
+                        $fullAnswer = $translator->translate('Yes', $sLanguageCode);
+                        break;
 
-                case 'N':
-                    $fullAnswer = $translator->translate('No', $sLanguageCode);
-                    break;
+                    case 'N':
+                        $fullAnswer = $translator->translate('No', $sLanguageCode);
+                        break;
 
-                case 'U':
-                    $fullAnswer = $translator->translate('Uncertain', $sLanguageCode);
-                    break;
-            }
-            break;
+                    case 'U':
+                        $fullAnswer = $translator->translate('Uncertain', $sLanguageCode);
+                        break;
+                }
+                break;
 
-            case 'E':
-            switch ($answerCode) {
-                case 'I':
-                    $fullAnswer = $translator->translate('Increase', $sLanguageCode);
-                    break;
+            case Question::QT_E_ARRAY_INC_SAME_DEC:
+                switch ($answerCode) {
+                    case 'I':
+                        $fullAnswer = $translator->translate('Increase', $sLanguageCode);
+                        break;
 
-                case 'S':
-                    $fullAnswer = $translator->translate('Same', $sLanguageCode);
-                    break;
+                    case 'S':
+                        $fullAnswer = $translator->translate('Same', $sLanguageCode);
+                        break;
 
-                case 'D':
-                    $fullAnswer = $translator->translate('Decrease', $sLanguageCode);
-                    break;
-            }
-            break;
+                    case 'D':
+                        $fullAnswer = $translator->translate('Decrease', $sLanguageCode);
+                        break;
+                }
+                break;
 
-            case 'F':
-            case 'H':
+            case Question::QT_F_ARRAY:
+            case Question::QT_H_ARRAY_COLUMN:
                 $answers = $this->getAnswers($questionId, 0);
-                $fullAnswer = (isset($answers[$answerCode])) ? $answers[$answerCode]['answer'] : "";
+                $fullAnswer = $answers[$answerCode] ?? "";
                 break;
 
             default:
-
-                $fullAnswer .= $answerCode;
+                $fullAnswer = $answerCode;
         }
 
         return $fullAnswer;
@@ -248,17 +249,20 @@ class SurveyObj
      * Returns the short answer for the question.
      *
      * @param string $sFieldName
-     * @param string $sValue
-     * @return string
+     * @param string|null $sValue
+     * @return string|null
      */
     public function getShortAnswer($sFieldName, $sValue)
     {
+        if (is_null($sValue)) {
+            return null;
+        }
         $aQuestion = $this->fieldMap[$sFieldName];
         $sFieldType = $aQuestion['type'];
 
         switch ($sFieldType) {
-            case 'K':
-            case 'N':
+            case Question::QT_K_MULTIPLE_NUMERICAL:
+            case Question::QT_N_NUMERICAL:
                 if (trim($sValue) != '') {
                     if (strpos($sValue, ".") !== false) {
                         $sValue = rtrim(rtrim($sValue, "0"), ".");

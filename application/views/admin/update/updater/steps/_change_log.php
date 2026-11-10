@@ -14,36 +14,30 @@
 
 
 <div class="row">
-    <div class="col-lg-12">
-<?php if($html_from_server!=""):?>
+    <div class="col-12">
+<?php if ($html_from_server != "") :?>
     <div>
         <?php echo $html_from_server;?>
     </div>
 <?php endif;?>
 
 <?php
-    $changelog = "";
-    if($changelogs->changingBranch)
-    {
-        $changelog.= gT("Note: Because you are updating from a stable to an unstable version or vice versa a change log might not be available or incomplete.")."\n\n";
+$changelog = "";
+$currentVersion = Yii::app()->getConfig("versionnumber") . " Build " . Yii::app()->getConfig("buildnumber");
+foreach (array_reverse($changelogs->changelogentries) as $changelogentry) {
+    if (trim((string) $changelogentry->changelog) != '') {
+          $tempfromversion = $changelogentry->versionnumber;
+          $tempfrombuild = $changelogentry->build;
+
+          $changelog .= "Changes in {$changelogentry->versionnumber} Build {$changelogentry->build} from {$currentVersion} --- Legend: + New feature, # Updated feature, - Bug fix\n";
+          $changelog .= $changelogentry->changelog . "\n";
+          $currentVersion = "{$changelogentry->versionnumber} Build {$changelogentry->build}";
     }
-
-   foreach  ($changelogs->changelogentries as $changelogentry)
-   {
-        if (trim($changelogentry->changelog !=''))
-        {
-
-            $tempfromversion=$changelogentry->versionnumber;
-            $tempfrombuild=$changelogentry->build;
-
-            $changelog.="Changes from ".Yii::app()->getConfig("versionnumber")." Build ".Yii::app()->getConfig("buildnumber")." to {$changelogentry->versionnumber} Build {$changelogentry->build} --- Legend: + New feature, # Updated feature, - Bug fix\n";
-            $changelog.=$changelogentry->changelog;
-        }
-   }
+}
 
 ?>
 
-<textarea class="updater-changelog form-control" readonly="readonly" style="background-color: #FFF" rows="20">
+<textarea class="updater-changelog form-control" readonly="readonly" rows="20">
 <?php
 echo $changelog;
 ?>
@@ -52,22 +46,25 @@ echo $changelog;
     </div>
 </div>
 <div class="row">
-    <div class="col-lg-12" style="margin-top : 1em">
+    <div class="col-12 mt-2">
 
         <?php
             $formUrl = Yii::app()->getController()->createUrl("admin/update/sa/filesystem/");
-            echo CHtml::beginForm($formUrl, 'post', array("id"=>"launchFileSystemForm"));
-            echo CHtml::hiddenField('destinationBuild' , $destinationBuild);
-            echo CHtml::hiddenField('access_token' , $access_token);
+            echo CHtml::beginForm($formUrl, 'post', array("id" => "launchFileSystemForm"));
+            echo CHtml::hiddenField('destinationBuild', $destinationBuild);
+            echo CHtml::hiddenField('access_token', $access_token);
         ?>
 
-        <a class="btn btn-default" href="<?php echo Yii::app()->createUrl("admin/update"); ?>" role="button" aria-disabled="false">
+        <a class="btn btn-cancel me-1"
+           href="<?= Yii::app()->createUrl("admin/update"); ?>"
+           role="button"
+           aria-disabled="false">
             <?php eT("Cancel"); ?>
         </a>
 
 
     <?php
-        echo CHtml::submitButton(gT('Continue','unescaped'), array('id'=>'step2launch', "class"=>"btn btn-default ajax_button launch_update"));
+        echo CHtml::submitButton(gT('Continue', 'unescaped'), array('id' => 'step2launch', "class" => "btn btn-primary ajax_button launch_update"));
         echo CHtml::endForm();
     ?>
 

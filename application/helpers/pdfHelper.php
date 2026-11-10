@@ -1,9 +1,11 @@
-<?php if (!defined('BASEPATH')) {
+<?php
+
+if (!defined('BASEPATH')) {
     exit('No direct script access allowed');
 }
 /*
 * LimeSurvey
-* Copyright (C) 2007-2013 The LimeSurvey Project Team / Carsten Schmitz
+* Copyright (C) 2007-2026 The LimeSurvey Project Team
 * All rights reserved.
 * License: GNU/GPL License v2 or later, see LICENSE.php
 * LimeSurvey is free software. This version may have been modified pursuant
@@ -19,7 +21,6 @@
  */
 class pdfHelper
 {
-
     /**
      * getPdfLanguageSettings
      *
@@ -56,9 +57,8 @@ class pdfHelper
             $lg['a_meta_dir'] = 'ltr';
         }
         $lg['a_meta_language'] = $language;
-        $lg['w_page'] = gT("page");
+        $lg['w_page'] = gT("Page");
 
-        return array('pdffont'=>$pdffont, 'pdffontsize'=>$pdffontsize, 'lg'=>$lg);
+        return array('pdffont' => $pdffont, 'pdffontsize' => $pdffontsize, 'lg' => $lg);
     }
-
 }

@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'link', 'af', {
 	acccessKey: 'Toegangsleutel',
@@ -13,6 +13,7 @@ CKEDITOR.plugins.setLang( 'link', 'af', {
 		title: 'Anker-eienskappe',
 		name: 'Ankernaam',
 		errorName: 'Voltooi die ankernaam asseblief',
+		errorWhitespace: 'Anchor name cannot contain space characters', // MISSING
 		remove: 'Remove Anchor'
 	},
 	anchorId: 'Op element Id',
@@ -35,7 +36,9 @@ CKEDITOR.plugins.setLang( 'link', 'af', {
 	noAnchors: '(Geen ankers beskikbaar in dokument)',
 	noEmail: 'Gee die e-posadres',
 	noUrl: 'Gee die skakel se URL',
+	noTel: 'Please type the phone number', // MISSING
 	other: '<ander>',
+	phoneNumber: 'Phone number', // MISSING
 	popupDependent: 'Afhanklik (Netscape)',
 	popupFeatures: 'Eienskappe van opspringvenster',
 	popupFullScreen: 'Volskerm (IE)',
@@ -60,6 +63,7 @@ CKEDITOR.plugins.setLang( 'link', 'af', {
 	toAnchor: 'Anker in bladsy',
 	toEmail: 'E-pos',
 	toUrl: 'URL',
+	toPhone: 'Phone', // MISSING
 	toolbar: 'Skakel invoeg/wysig',
 	type: 'Skakelsoort',
 	unlink: 'Verwyder skakel',

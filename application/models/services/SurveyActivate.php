@@ -1,0 +1,193 @@
+<?php
+
+namespace LimeSurvey\Models\Services;
+
+use CException;
+use LimeSurvey\Models\Services\Exception\PermissionDeniedException;
+use LSYii_Application;
+use Permission;
+use Survey;
+use SurveyActivator;
+use LimeSurvey\Models\Services\SurveyAccessModeService;
+
+class SurveyActivate
+{
+    private Survey $survey;
+    private Permission $permission;
+    private SurveyActivator $surveyActivator;
+    private LSYii_Application $app;
+
+    private SurveyAccessModeService $surveyAccessModeService;
+
+    public function __construct(
+        Survey $survey,
+        Permission $permission,
+        SurveyActivator $surveyActivator,
+        LSYii_Application $app,
+        SurveyAccessModeService $surveyAccessModeService
+    ) {
+        $this->survey = $survey;
+        $this->permission = $permission;
+        $this->surveyActivator = $surveyActivator;
+        $this->app = $app;
+        $this->surveyAccessModeService = $surveyAccessModeService;
+    }
+
+    /**
+     * @param int $surveyId
+     * @param array $params
+     * @param bool $force
+     * @return array
+     * @throws PermissionDeniedException
+     * @throws CException
+     */
+    public function activate(int $surveyId, array $params = [], bool $force = false): array
+    {
+        if ((!$force) && (!$this->permission->hasSurveyPermission($surveyId, 'surveyactivation', 'update'))) {
+            throw new PermissionDeniedException(
+                'Access denied'
+            );
+        }
+
+        if (!is_array($params)) {
+            $params = [];
+        }
+
+        $survey = $this->survey->findByPk($surveyId);
+        $aData['oSurvey'] = $survey;
+        $aData['sidemenu']['state'] = false;
+        $aData['aSurveysettings'] = getSurveyInfo($surveyId);
+        $aData['surveyid'] = $surveyId;
+
+        if (!is_null($survey)) {
+            $fields = [
+                'anonymized',
+                'datestamp',
+                'ipaddr',
+                'ipanonymize',
+                'refurl',
+                'savetimings',
+                'savequotaexit'
+            ];
+            foreach ($fields as $field) {
+                if (array_key_exists($field, $survey->aOptions)) {
+                    $survey->{$field} = $survey->aOptions[$field];
+                }
+                $postfieldvalue = $this->app->request->getPost($field, null);
+                if ($postfieldvalue !== null) {
+                    $survey->{$field} = $this->app->request->getPost($field, $params[$field] ?? null);
+                }
+            }
+            $survey->save();
+
+            // Make sure the saved values will be picked up
+            $this->survey->resetCache();
+            $survey->setOptions();
+        }
+
+        $result = $this->surveyActivator->setSurvey($survey)->activate();
+        if (!empty($result['error'])) {
+            return $result;
+        }
+        if ($params['restore'] ?? false) {
+            $result['restored'] = $this->restoreData($surveyId);
+        }
+
+        $publicRegistrationAllowed = $survey->getIsAllowRegister();
+        $isOpenAccessMode = $survey->access_mode === SurveyAccessModeService::$ACCESS_TYPE_OPEN;
+        $shouldEnsureTokensTable = $publicRegistrationAllowed || !$isOpenAccessMode;
+
+        if ($shouldEnsureTokensTable && !$survey->hasTokensTable) {
+            $this->surveyAccessModeService->newParticipantTable($survey, true);
+        }
+        return $result;
+    }
+
+    /**
+     * Restore archived responses and any archived participants into the survey.
+     * Archived timings are copied only when the survey's savetimings setting is
+     * 'Y' and its timings table exists.
+     *
+     * @param int $surveyId
+     * @param int|null $timestamp Archive suffix in YmdHis format, not Unix time.
+     *     Each table type falls back to its latest archive if no match is found or no suffix is supplied.
+     * @param bool $preserveIDs Whether to retain archived IDs; forced to true for SQL Server drivers.
+     * @return bool False if response or question archives are missing; true after restoration runs.
+     * @throws CException If restoration fails. Database errors propagate, except errors
+     *     creating the participant table, which are ignored before attempting the copy.
+     */
+    public function restoreData(int $surveyId, $timestamp = null, $preserveIDs = false): bool
+    {
+        if (in_array(\Yii::app()->db->getDriverName(), ['mssql', 'sqlsrv', 'dblib'])) {
+            $preserveIDs = true;
+        }
+        require_once "application/helpers/admin/import_helper.php";
+        $archives = $this->getArchivesToRestore($surveyId, $timestamp);
+        if (is_array($archives) && isset($archives['responses']) && isset($archives['questions'])) {
+            //Recover survey
+            $qParts = explode("_", $archives['questions']);
+            $qTimestamp = $qParts[count($qParts) - 1];
+            $sParts = explode("_", $archives['responses']);
+            $sTimestamp = $sParts[count($sParts) - 1];
+            $dynamicColumns = getUnchangedColumns($surveyId, $sTimestamp, $qTimestamp);
+            recoverSurveyResponses($surveyId, $archives["responses"], $preserveIDs, $dynamicColumns);
+            //If it's not open access mode, then we import the surveys from the archive if they exist
+            if (isset($archives["tokens"])) {
+                $tokenTable = $this->app->db->tablePrefix . "tokens_" . $surveyId;
+                try {
+                    createTableFromPattern($tokenTable, $archives["tokens"]);
+                } catch (\CDbException $ex) {
+                }
+                copyFromOneTableToTheOther($archives["tokens"], $tokenTable, $preserveIDs);
+            }
+            $survey = $this->survey->findByPk($surveyId);
+            $this->app->db->schema->refresh();
+            if (
+                isset($archives["timings"])
+                && $survey !== null
+                && $survey->isSaveTimings
+                && $survey->hasTimingsTable
+            ) {
+                $timingsTable = $this->app->db->tablePrefix . "timings_" . $surveyId;
+                copyFromOneTableToTheOther($archives["timings"], $timingsTable, $preserveIDs);
+            }
+            return true;
+        } else {
+            return false; //not recoverable
+        }
+    }
+
+    /**
+     * Picks the archive table to restore for each archived table type (responses, questions, tokens, timings ...)
+     *
+     * @param int $surveyId
+     * @param int|null $timestamp Archive suffix in YmdHis format, not Unix time.
+     *     Each table type falls back to its latest archive if no match is found or no suffix is supplied.
+     * @return array<string,string> archive table name indexed by table type
+     */
+    private function getArchivesToRestore(int $surveyId, $timestamp = null): array
+    {
+        $deactivatedArchives = getDeactivatedArchives($surveyId);
+        $archives = [];
+        foreach ($deactivatedArchives as $key => $deactivatedArchive) {
+            $candidates = explode(",", $deactivatedArchive);
+            sort($candidates);
+            $found = false;
+            if ($timestamp) {
+                foreach ($candidates as $candidate) {
+                    if (!$found) {
+                        $exploded = explode("_", $candidate);
+                        if ($exploded[count($exploded) - 1] == $timestamp) {
+                            $found = true;
+                            $archives[$key] = $candidate;
+                        }
+                    }
+                }
+            }
+            if (!$found) {
+                $archives[$key] = $candidates[count($candidates) - 1];
+            }
+        }
+        return $archives;
+    }
+}

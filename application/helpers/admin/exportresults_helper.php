@@ -1,7 +1,8 @@
 <?php
+
 /*
 * LimeSurvey
-* Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
+* Copyright (C) 2007-2026 The LimeSurvey Project Team
 * All rights reserved.
 * License: GNU/GPL License v2 or later, see LICENSE.php
 * LimeSurvey is free software. This version may have been modified pursuant
@@ -27,7 +28,7 @@
 * format.
 *
 * Data formatting operations that may be specific to the data export routines
-* are relegated to the Writer class hierarcy and work with the Survey object
+* are relegated to the Writer class hierarchy and work with the Survey object
 * and FormattingOptions objects to provide proper style/content when exporting
 * survey information.
 *
@@ -39,12 +40,13 @@
 *
 * - elameno
 */
+
 Yii::import('application.helpers.admin.export.*');
 class ExportSurveyResultsService
 {
     /**
      * Hold the available export types
-     * 
+     *
      * @var array
      */
     protected $_exports;
@@ -60,7 +62,7 @@ class ExportSurveyResultsService
      * @return
      * @throws Exception
      */
-    function exportSurvey($iSurveyId, $sLanguageCode, $sExportPlugin, FormattingOptions $oOptions, $sFilter = '')
+    function exportResponses($iSurveyId, $sLanguageCode, $sExportPlugin, FormattingOptions $oOptions, $sFilter = '')
     {
         //Do some input validation.
         if (empty($iSurveyId)) {
@@ -80,12 +82,11 @@ class ExportSurveyResultsService
 
         $iSurveyId = sanitize_int($iSurveyId);
         if ($oOptions->output == 'display') {
-            header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-            header("Pragma: public");
+            header("Cache-Control: must-revalidate, no-store, no-cache");
         }
-        
+
         $exports = $this->getExports();
-        
+
         if (array_key_exists($sExportPlugin, $exports) && !empty($exports[$sExportPlugin])) {
             // This must be a plugin, now use plugin to load the right class
             $event = new PluginEvent('newExport');
@@ -94,34 +95,74 @@ class ExportSurveyResultsService
             $oPluginManager->dispatchEvent($event, $exports[$sExportPlugin]);
             $writer = $event->get('writer');
         }
-        
+
         if (!($writer instanceof IWriter)) {
             throw new Exception(sprintf('Writer for %s should implement IWriter', $sExportPlugin));
         }
 
         $surveyDao = new SurveyDao();
         $survey = $surveyDao->loadSurveyById($iSurveyId, $sLanguageCode, $oOptions);
+        $oOptions->selectedColumns = $this->expandRankingColumns($survey, $oOptions->selectedColumns);
         $writer->init($survey, $sLanguageCode, $oOptions);
-        
-        $surveyDao->loadSurveyResults($survey, $oOptions->responseMinRecord, $oOptions->responseMaxRecord, $sFilter, $oOptions->responseCompletionState, $oOptions->selectedColumns, $oOptions->aResponses);
-        $writer->write($survey, $sLanguageCode, $oOptions, true);
-        $result = $writer->close();
-        
-        // Close resultset if needed
-        if ($survey->responses instanceof CDbDataReader) {
-            $survey->responses->close();
+
+        $countResponsesCommand = $surveyDao->loadSurveyResults($survey, $oOptions->responseMinRecord, $oOptions->responseMaxRecord, $sFilter, $oOptions->responseCompletionState, $oOptions->selectedColumns, $oOptions->aResponses);
+        $countResponsesCommand->order = false;
+        $countResponsesCommand->select('count(*)');
+        $responseCount = $countResponsesCommand->queryScalar();
+        $maxRows = 100;
+        $maxPages = ceil($responseCount / $maxRows);
+        for ($i = 0; $i < $maxPages; $i++) {
+            $offset = $i * $maxRows;
+            $responsesQuery = $surveyDao->loadSurveyResults($survey, $oOptions->responseMinRecord, $oOptions->responseMaxRecord, $sFilter, $oOptions->responseCompletionState, $oOptions->selectedColumns, $oOptions->aResponses);
+            $responsesQuery->offset($offset);
+            $responsesQuery->limit($maxRows);
+            $survey->responses = $surveyDao->addJoinedResults($survey, $responsesQuery->queryAll(), $oOptions->selectedColumns);
+            $writer->write($survey, $sLanguageCode, $oOptions, true);
         }
-        
+        $result = $writer->close();
+
         if ($oOptions->output == 'file') {
             return $writer->filename;
         } else {
             return $result;
         }
     }
-    
+
+    /**
+     * Replaces a ranking question's base column ("Q{qid}", the JSON array of
+     * ranked subquestion codes and the only ranking field the export column
+     * picker offers) with the question's per-rank fieldmap entries
+     * ("Q{qid}_S{sqid}", one per rank in rank order), so the output has one
+     * column per rank like in LimeSurvey 6.
+     *
+     * A rank entry that is also selected on its own (e.g. the remote-control
+     * export_responses() defaults to every fieldmap key) is only output once.
+     *
+     * @param SurveyObj $survey
+     * @param string[] $selectedColumns
+     * @return string[]
+     */
+    private function expandRankingColumns(SurveyObj $survey, array $selectedColumns)
+    {
+        $expanded = [];
+        foreach ($selectedColumns as $column) {
+            $field = $survey->fieldMap[$column] ?? null;
+            if ($field === null || $field['type'] !== Question::QT_R_RANKING || $field['suffix'] !== '') {
+                $expanded[] = $column;
+                continue;
+            }
+            foreach ($survey->fieldMap as $rankFieldName => $rankField) {
+                if ($rankField['type'] === Question::QT_R_RANKING && $rankField['qid'] == $field['qid'] && $rankField['suffix'] !== '') {
+                    $expanded[] = $rankFieldName;
+                }
+            }
+        }
+        return array_values(array_unique($expanded));
+    }
+
     /**
      * Get an array of available export types
-     * 
+     *
      * @return array
      */
     public function getExports()
@@ -132,10 +173,10 @@ class ExportSurveyResultsService
             $oPluginManager->dispatchEvent($event);
 
             $exports = $event->get('exportplugins', array());
-            
+
             $this->_exports = $exports;
         }
-        
+
         return $this->_exports;
     }
 }

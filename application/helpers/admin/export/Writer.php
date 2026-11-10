@@ -1,4 +1,5 @@
 <?php
+
 /**
 * Contains functions and properties that are common to all writers.
 * All extending classes must implement the internalWrite(...) method and
@@ -12,6 +13,7 @@ abstract class Writer implements IWriter
     /** @var Translator $translator */
     protected $translator;
     public $filename;
+    public $languageCode;
     public $webfilename;
 
     protected function translate($key, $sLanguageCode)
@@ -32,8 +34,8 @@ abstract class Writer implements IWriter
     {
         $this->languageCode = $sLanguageCode;
         $this->translator = new Translator();
-        $this->filename = Yii::app()->getConfig("tempdir").DIRECTORY_SEPARATOR.randomChars(40);
-        $this->webfilename = 'results-survey'.$oSurvey->id;
+        $this->filename = Yii::app()->getConfig("tempdir") . DIRECTORY_SEPARATOR . randomChars(40);
+        $this->webfilename = 'results-survey' . $oSurvey->id;
     }
 
     /**
@@ -52,7 +54,7 @@ abstract class Writer implements IWriter
                 $question = $survey->fieldMap[$column];
             } else {
                 // Token field
-                $question = array('gid'=>0, 'qid'=>'');
+                $question = array('gid' => 0, 'qid' => '');
             }
             $question['index'] = $index;
             $aGroupMap[intval($question['gid'])][] = $question;
@@ -104,7 +106,7 @@ abstract class Writer implements IWriter
         if (isset($oSurvey->fieldMap[$fieldName])) {
             $aField = $oSurvey->fieldMap[$fieldName];
             $aField['question'] = '';
-            $subHeading = trim(viewHelper::getFieldText($aField, array('separator'=>array('[', ']'), 'abbreviated'=>$oOptions->headingTextLength, 'ellipsis'=>".. ")));
+            $subHeading = trim(viewHelper::getFieldText($aField, array('separator' => array('[', ']'), 'abbreviated' => $oOptions->headingTextLength, 'ellipsis' => ".. ")));
             if ($subHeading) {
                             return " {$subHeading}";
             }
@@ -140,7 +142,7 @@ abstract class Writer implements IWriter
     public function getHeadingCode(SurveyObj $oSurvey, FormattingOptions $oOptions, $fieldName)
     {
         if (isset($oSurvey->fieldMap[$fieldName])) {
-            return viewHelper::getFieldCode($oSurvey->fieldMap[$fieldName], array('separator'=>array('[', ']'), 'LEMcompat'=>$oOptions->useEMCode));
+            return viewHelper::getFieldCode($oSurvey->fieldMap[$fieldName], array('separator' => array('[', ']'), 'LEMcompat' => $oOptions->useEMCode));
         } else {
             return $fieldName;
         }
@@ -157,14 +159,14 @@ abstract class Writer implements IWriter
     public function getHeadingText(SurveyObj $oSurvey, FormattingOptions $oOptions, $fieldName)
     {
         if (isset($oSurvey->fieldMap[$fieldName])) {
-            $textHead = $this->getFullQuestionHeading($oSurvey, $oOptions, $fieldName).$this->getFullFieldSubHeading($oSurvey, $oOptions, $fieldName);
+            $textHead = $this->getFullQuestionHeading($oSurvey, $oOptions, $fieldName) . $this->getFullFieldSubHeading($oSurvey, $oOptions, $fieldName);
         } elseif (isset($oSurvey->tokenFields[$fieldName])) {
             $textHead = $oSurvey->tokenFields[$fieldName]['description'];
         } else {
             $textHead = $fieldName;
         }
         if ($oOptions->headerSpacesToUnderscores) {
-            $textHead = str_replace(' ', '_', $textHead);
+            $textHead = str_replace(' ', '_', (string) $textHead);
         }
         return $textHead;
     }
@@ -181,11 +183,11 @@ abstract class Writer implements IWriter
     public function getLongAnswer(SurveyObj $oSurvey, FormattingOptions $oOptions, $fieldName, $sValue)
     {
         return $this->transformResponseValue(
-                $oSurvey->getFullAnswer($fieldName, $sValue, $this->translator, $this->languageCode),
-                $oSurvey->fieldMap[$fieldName]['type'],
-                $oOptions,
-                $fieldName
-                );
+            $oSurvey->getFullAnswer($fieldName, $sValue, $this->translator, $this->languageCode),
+            $oSurvey->fieldMap[$fieldName]['type'],
+            $oOptions,
+            $fieldName
+        );
     }
 
     /**
@@ -200,11 +202,11 @@ abstract class Writer implements IWriter
     public function getShortAnswer(SurveyObj $oSurvey, FormattingOptions $oOptions, $fieldName, $sValue)
     {
         return $this->transformResponseValue(
-                $oSurvey->getShortAnswer($fieldName, $sValue),
-                $oSurvey->fieldMap[$fieldName]['type'],
-                $oOptions,
-                $fieldName
-                );
+            $oSurvey->getShortAnswer($fieldName, $sValue),
+            $oSurvey->fieldMap[$fieldName]['type'],
+            $oOptions,
+            $fieldName
+        );
     }
 
     /**
@@ -224,18 +226,46 @@ abstract class Writer implements IWriter
     protected function transformResponseValue($value, $fieldType, FormattingOptions $oOptions, $column = null)
     {
         //The following if block handles transforms of Ys and Ns.
-        if (($oOptions->convertN || $oOptions->convertY) &&
-        isset($fieldType) &&
-        ($fieldType == 'M' || $fieldType == 'P' || $fieldType == 'Y')) {
+        if (
+            ($oOptions->convertN || $oOptions->convertY) &&
+            isset($fieldType) &&
+            ($fieldType == Question::QT_M_MULTIPLE_CHOICE || $fieldType == Question::QT_P_MULTIPLE_CHOICE_WITH_COMMENTS || $fieldType == Question::QT_Y_YES_NO_RADIO)
+        ) {
             if (($value == 'N' || ($value == '' && !is_null($value))) && $oOptions->convertN) {
-                return $oOptions->nValue;
-            } else if ($value == 'Y' && $oOptions->convertY) {
-                    return $oOptions->yValue;
-                }
+                $value = $oOptions->nValue;
+            } elseif ($value == 'Y' && $oOptions->convertY) {
+                $value = $oOptions->yValue;
+            }
         }
-
-        //This spot should only be reached if no transformation occurs.
+        // Quote equal signs to prevent CSV injection attacks
+        if ($oOptions->csvMaskEquations && isset($value[0]) && $value[0] == '=') {
+            $value = "'" . $value;
+        }
         return $value;
+    }
+
+    /**
+     * Extracts the raw value for a single export column from a response row.
+     *
+     * A ranking question's per-rank fieldmap entries ("Q{qid}_S{sqid}") have no
+     * column of their own: the response row only carries the base "Q{qid}"
+     * JSON column (the ranked list of subquestion codes, ordered by rank). For
+     * those fields, this decodes that JSON and returns the code at the field's
+     * rank position ('aid', 1-based) instead.
+     *
+     * @param SurveyObj $oSurvey
+     * @param array $aResponse
+     * @param string $column
+     * @return mixed
+     */
+    protected function extractColumnValue(SurveyObj $oSurvey, array $aResponse, $column)
+    {
+        $field = $oSurvey->fieldMap[$column] ?? null;
+        if ($field !== null && $field['type'] === Question::QT_R_RANKING && $field['suffix'] !== '') {
+            $rankedCodes = Question::decodeRankedCodes($aResponse['Q' . $field['qid']] ?? null);
+            return ($rankedCodes !== null && isset($rankedCodes[$field['aid'] - 1])) ? $rankedCodes[$field['aid'] - 1] : null;
+        }
+        return $aResponse[$column];
     }
 
     /**
@@ -243,7 +273,7 @@ abstract class Writer implements IWriter
      * initialization process that must take place prior to any of the translation
      * infrastructure to work.
      *
-     * The inialization process is dependent upon the survey being passed into the
+     * The initialization process is dependent upon the survey being passed into the
      * write function and so must be performed when the method is called and not
      * prior to (such as in a constructor).
      *
@@ -259,7 +289,8 @@ abstract class Writer implements IWriter
     {
 
         //Output the survey.
-        $headers = array();
+        $headers = [];
+        $fieldNames = [];
         if ($bOutputHeaders) {
             foreach ($oOptions->selectedColumns as $sColumn) {
                 //Survey question field, $column value is a field name from the getFieldMap function.
@@ -271,7 +302,7 @@ abstract class Writer implements IWriter
                         $value = $this->getFullHeading($oSurvey, $oOptions, $sColumn);
                         break;
                     case 'codetext':
-                        $value = $this->getHeadingCode($oSurvey, $oOptions, $sColumn).$oOptions->headCodeTextSeparator.$this->getHeadingText($oSurvey, $oOptions, $sColumn);
+                        $value = $this->getHeadingCode($oSurvey, $oOptions, $sColumn) . $oOptions->headCodeTextSeparator . $this->getHeadingText($oSurvey, $oOptions, $sColumn);
                         break;
                     case 'code':
                     default:
@@ -279,25 +310,40 @@ abstract class Writer implements IWriter
                         break;
                 }
                 $headers[] = $value;
+                $fieldNames[] = $sColumn;
             }
         }
         //Output the results.
         $sFile = '';
 
         // If empty survey, prepare an empty responses array, and output just 1 empty record with header.
-        if ($oSurvey->responses->rowCount == 0) {
-                foreach ($oOptions->selectedColumns as $column) {
-                    $elementArray[] = "";
-                }
+        if (count($oSurvey->responses) == 0) {
+            foreach ($oOptions->selectedColumns as $column) {
+                $elementArray[] = "";
+            }
             $this->outputRecord($headers, $elementArray, $oOptions);
         }
 
         // If no empty survey, render/export responses array.
         foreach ($oSurvey->responses as $response) {
-            $elementArray = array();
+            // prepare the data for decryption
+            $sTokenTableName = 'tokens_' . $oSurvey->id;
+            $aResponse = $response;
+            if (tableExists($sTokenTableName)) {
+                $oToken = Token::model($oSurvey->id);
+                $oToken->setAttributes($response, false);
+                $oToken->decrypt();
+                $aResponse = array_merge($aResponse, $oToken->attributes);
+            }
+            $oResponse = Response::model($oSurvey->id);
+            $oResponse->setAttributes($response, false);
+            $oResponse->decrypt();
+            $aResponse = array_merge($aResponse, $oResponse->attributes);
+
+            $elementArray = [];
 
             foreach ($oOptions->selectedColumns as $column) {
-                $value = $response[$column];
+                $value = $this->extractColumnValue($oSurvey, $aResponse, $column);
                 if (isset($oSurvey->fieldMap[$column]) && $oSurvey->fieldMap[$column]['type'] != 'answer_time' && $oSurvey->fieldMap[$column]['type'] != 'page_time' && $oSurvey->fieldMap[$column]['type'] != 'interview_time') {
                     switch ($oOptions->answerFormat) {
                         case 'long':
@@ -309,23 +355,23 @@ abstract class Writer implements IWriter
                             break;
                     }
                 } else {
-//Survey participants table value
+//Survey participant list value
                     $elementArray[] = $value;
                 }
             }
             if ($oOptions->output == 'display') {
-                $this->outputRecord($headers, $elementArray, $oOptions);
+                $this->outputRecord($headers, $elementArray, $oOptions, $fieldNames);
             } else {
-                $sFile .= $this->outputRecord($headers, $elementArray, $oOptions);
+                $sFile .= $this->outputRecord($headers, $elementArray, $oOptions, $fieldNames);
             }
         }
         return $sFile;
     }
 
-    protected function stripTagsFull($string)
+    protected function stripTagsFull(string $string)
     {
         $string = str_replace('-oth-', '', $string);
-        return flattenText($string, false, true, 'UTF-8', false);
+        return (string) flattenText($string, false, true, 'UTF-8', false);
     }
 
 
@@ -340,6 +386,7 @@ abstract class Writer implements IWriter
      * @param array $headers
      * @param array $values
      * @param FormattingOptions $oOptions
+     * @param array $fieldNames
      */
-    abstract protected function outputRecord($headers, $values, FormattingOptions $oOptions);
+    abstract protected function outputRecord($headers, $values, FormattingOptions $oOptions, $fieldNames = []);
 }

@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'sk', {
 	border: 'Šírka orámovania',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'sk', {
 		borderColor: 'Farba orámovania',
 		data: 'Dáta',
 		header: 'Hlavička',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Áno',
 		no: 'Nie',
 		invalidWidth: 'Šírka bunky musí byť číslo.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'sk', {
 	headersColumn: 'Prvý stĺpec',
 	headersNone: 'Žiadne',
 	headersRow: 'Prvý riadok',
+	heightUnit: 'jednotka výšky',
 	invalidBorder: 'Šírka orámovania musí byť číslo.',
 	invalidCellPadding: 'Odsadenie v bunkách (cell padding) musí byť kladné číslo.',
 	invalidCellSpacing: 'Medzera mädzi bunkami (cell spacing) musí byť kladné číslo.',

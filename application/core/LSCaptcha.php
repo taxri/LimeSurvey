@@ -1,8 +1,9 @@
 <?php
+
 /**
  * CCaptcha class file.
  *
- * @author Markus Flür <markus.fluer@limesurvey.org>
+ * @author LimeSurvey GmbH <info@limesurvey.org>
  * @link http://www.limesurvey.org/
  * @copyright 2008-2018 LimeSurvey GmbH
  * @license GPLv3
@@ -10,8 +11,8 @@
 
 class LSCaptcha extends CCaptcha
 {
-
-    public function renderOut() {
+    public function renderOut()
+    {
         $html = $this->renderImage();
         return $html;
     }
@@ -21,11 +22,13 @@ class LSCaptcha extends CCaptcha
      */
     protected function renderImage()
     {
-        if(!isset($this->imageOptions['id']))
-            $this->imageOptions['id']=$this->getId();
+        if (!isset($this->imageOptions['id'])) {
+                    $this->imageOptions['id'] = $this->getId();
+        }
+        $this->imageOptions['class'] = "img-fluid";
 
-        $url=$this->getController()->createUrl($this->captchaAction,array('v'=>uniqid()));
-        $alt=isset($this->imageOptions['alt'])?$this->imageOptions['alt']:'';
-        return CHtml::image($url,$alt,$this->imageOptions);
+        $url = $this->getController()->createUrl($this->captchaAction, array('v' => uniqid()));
+        $alt = $this->imageOptions['alt'] ?? gT('Image showing the equation to solve', 'unescaped');
+        return CHtml::image($url, $alt, $this->imageOptions);
     }
 }

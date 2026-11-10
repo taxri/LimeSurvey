@@ -1,13 +1,13 @@
 
-function toggleSection(chevron, section) {
-    section.toggle();
-    chevron.toggleClass('fa-chevron-up').toggleClass('fa-chevron-down');
-}
-
-function hideSection(chevron, section) {
-    section.hide();
-    chevron.removeClass('fa-chevron-up');
-    chevron.addClass('fa-chevron-down');
+function hideSection(section) {
+    var collapsible = document.getElementById(section);
+    // Try to get the bootstrap collapse instance
+    var bsCollapse = bootstrap.Collapse.getInstance(collapsible);
+    // If there is no previous instance, create a new one
+    if (!bsCollapse) {
+        bsCollapse = new bootstrap.Collapse(collapsible);
+    }
+    bsCollapse.hide();
 }
 
 /**
@@ -18,7 +18,7 @@ var COLORS_FOR_SURVEY = new Array('20,130,200', '232,95,51', '34,205,33', '210,2
 var initChartGraph = function (element, type, qid) {
     if (typeof chartjs[qid] == "undefined" || typeof chartjs == "undefined") // typeof chartjs[$qid] == "undefined" || typeof chartjs == "undefined"
     {
-        if (type == 'Bar' || type == 'Radar' || type == 'Line') {
+        if (type === 'Bar' || type === 'Radar' || type === 'Line' || type === 'Doughnut' || type === 'Pie' || type === 'PolarArea') {
             init_chart_js_graph_with_datasets(type, qid);
         } else {
             init_chart_js_graph_with_datas(type, qid);
@@ -66,6 +66,35 @@ var initChartGraph = function (element, type, qid) {
     };
 })(jQuery);
 
+function parseType(typeDef) {
+    switch(typeDef) {
+        case "Bar":
+        case "bar":
+            return "bar";
+        
+        case "Pie":
+        case "pie":
+            return "pie";
+
+        case "Radar":
+        case "radar":
+            return "radar";
+        
+        case "Line":
+        case "line":
+            return "line";
+        
+        case "PolarArea":
+        case "polarArea":
+        case "polararea":
+            return "polarArea";
+        
+        case "Doughnut":
+        case "doughnut":
+            return "doughnut";
+
+    }
+}
 
 /**
  * This function load the graph needing datasets (bars, etc.)
@@ -80,41 +109,54 @@ function init_chart_js_graph_with_datasets($type, $qid) {
     var $grawdata = $statistics.grawdata
     var $color = $canva.data('color');
 
-    $('#legend-no-percent-' + $qid).show();
-    $('#legend-percent-' + $qid).hide();
-    $('#stat-no-answer-' + $qid).hide();
-
     if (typeof chartjs != "undefined") {
         if (typeof chartjs[$qid] != "undefined") {
             window.chartjs[$qid].destroy();
         }
     }
 
-    window.chartjs[$qid] = new Chart($canvas)[$type]({
+    var dataDefinition = {
         labels: $labels,
-        datasets: [{
-            label: $qid,
-            data: $grawdata,
-            fillColor: "rgba(" + COLORS_FOR_SURVEY[$color] + ",0.2)",
-            strokeColor: "rgba(" + COLORS_FOR_SURVEY[$color] + ",1)",
-            pointColor: "rgba(" + COLORS_FOR_SURVEY[$color] + ",1)",
-            pointStrokeColor: "#fff",
-            pointHighlightFill: "#fff",
-            pointHighlightStroke: "rgba(" + COLORS_FOR_SURVEY[$color] + ",1)",
+    };
 
-        }],
+    dataDefinition.datasets = [{
+        label: $qid,
+        data: $grawdata,
+        backgroundColor: [],
+        borderColor: [],
+        hoverBackgroundColor: [],
+        pointBackgroundColor: "#fff",
+        pointHoverBackgroundColor: "#fff",
+        pointHoverBorderColor: []
+    }];
+
+    // different color for each bar
+    LS.ld.forEach($labels, function (label, key) {
+        var colorIndex = (parseInt(key) + $color);
+        dataDefinition.datasets[0].backgroundColor.push("rgba(" + COLORS_FOR_SURVEY[colorIndex] + ",0.6)");
+        dataDefinition.datasets[0].borderColor.push("rgba(" + COLORS_FOR_SURVEY[colorIndex] + ",1)");
+        dataDefinition.datasets[0].hoverBackgroundColor.push("rgba(" + COLORS_FOR_SURVEY[colorIndex] + ",0.9)");
+        dataDefinition.datasets[0].pointHoverBorderColor.push("rgba(" + COLORS_FOR_SURVEY[colorIndex] + ",1)");
     });
 
-    // We need to give a different color to each bar
-    if ($type == 'Bar') {
-        for (var key in $labels) {
-            $index = (parseInt(key) + $color);
-            window.chartjs[$qid].datasets[0].bars[key].fillColor = "rgba(" + COLORS_FOR_SURVEY[$index] + ",0.6)";
-            window.chartjs[$qid].datasets[0].bars[key].strokeColor = "rgba(" + COLORS_FOR_SURVEY[$index] + ",1)";
-            window.chartjs[$qid].datasets[0].bars[key].highlightFill = "rgba(" + COLORS_FOR_SURVEY[$index] + ",0.9)";
-        }
-        chartjs[$qid].update();
+    var parsedType = parseType($type);
+    var options = {};
+
+    if (parsedType == 'bar' || parsedType == 'line') {
+        options.scales = {
+            y: {
+                suggestedMin: 0,
+            }
+        };
     }
+
+    console.ls.log("Creating chart with definition: ", dataDefinition);
+
+    window.chartjs[$qid] = new Chart($canvas, {
+        type: parsedType,
+        data: dataDefinition,
+        options: options,
+    });
 }
 
 /**
@@ -129,44 +171,58 @@ function init_chart_js_graph_with_datas($type, $qid) {
     if ($statistics == undefined) return;
     var $labels = $statistics.labels
     var $grawdata = $statistics.grawdata
-    var $chartDef = new Array();
+    var $chartDef = {
+        labels: $labels,
+        datasets: [{
+            data: [],
+            backgroundColor: [],
+            hoverBackgroundColor: [],
+        }],
+    };
     var $max = 0;
-
-    $('#legend-no-percent-' + $qid).hide();
-    $('#legend-percent-' + $qid).show();
-    $('#stat-no-answer-' + $qid).show();
 
     $.each($labels, function($i, $label) {
         $max = $max + parseInt($grawdata[$i]);
     });
 
     $.each($labels, function ($i, $label) {
-        $colori = (parseInt($i) + $color);
-        $chartDef[$i] = {
-            value: Math.round($grawdata[$i]/$max * 100 * 100) / 100,
-            color: "rgba(" + COLORS_FOR_SURVEY[$colori] + ",0.6)",
-            highlight: "rgba(" + COLORS_FOR_SURVEY[$colori] + ",0.9)",
-            label: $label,
-        };
+        var colorIndex = (parseInt($i) + $color);
+        $chartDef.datasets[0].data.push(Math.round($grawdata[$i]/$max * 100 * 100) / 100);
+        $chartDef.datasets[0].backgroundColor.push("rgba(" + COLORS_FOR_SURVEY[colorIndex] + ",0.6)");
+        $chartDef.datasets[0].hoverBackgroundColor.push("rgba(" + COLORS_FOR_SURVEY[colorIndex] + ",0.9)");
     });
 
+    var parsedType = parseType($type);
     var $options = {
         tooltipTemplate: "<%if (label){%><%=label %>: <%}%><%= value + '%' %>",
     };
+
+    if (parsedType == 'bar' || parsedType == 'line') {
+        options.scales = {
+            y: {
+                suggestedMin: 0,
+            }
+        };
+    }
 
     if (typeof chartjs != "undefined") {
         if (typeof chartjs[$qid] != "undefined") {
             window.chartjs[$qid].destroy();
         }
     }
+    
+    console.ls.log("Creating chart with definition: ", $chartDef);
 
-    window.chartjs[$qid] = new Chart($canvas)[$type](
-        $chartDef,
-        $options
-    );
+    window.chartjs[$qid] = new Chart($canvas, {
+        type: parsedType,
+        data: $chartDef,
+        options: $options
+    });
 }
 
 LS.Statistics2 = function () {
+
+    Chart.defaults.plugins.legend.display = false;
 
     if ($('#completionstateSimpleStat').length > 0) {
         $actionUrl = $('#completionstateSimpleStat').data('grid-display-url');
@@ -204,35 +260,19 @@ LS.Statistics2 = function () {
         $('#statisticsoutput .row').first().find('.chartjs-container').loadGraph();
     }
 
-    $('#generalfilters-chevron').click(function () {
-        toggleSection($('#generalfilters-chevron'), $('#statisticsgeneralfilters'));
-    });
-
-    $('#responsefilters-chevron').click(function () {
-        toggleSection($('#responsefilters-chevron'), $('#filterchoices'));
-    });
-
-    $('#statistics-render-chevron').click(function () {
-        toggleSection($('#statistics-render-chevron'), $('#statisticsoutput'));
-    });
-
     $('#generate-statistics').submit(function () {
-
-        hideSection($('#generalfilters-chevron'), $('#statisticsgeneralfilters'));
-        hideSection($('#responsefilters-chevron'), $('#filterchoices'))
+        hideSection('general-filters-item-body');
+        hideSection('response-filters-item-body');
         $('#statisticsoutput').show();
-        $('#statistics-render-chevron').removeClass('fa-chevron-up');
-        $('#statistics-render-chevron').addClass('fa-chevron-down');
         $('#view-stats-alert-info').hide();
         $('#statsContainerLoading').show();
+        if ($('input[name=outputtype]:checked').val() != 'html') {
+            var data = new FormData($(this).get(0));
+            var url = $(this).attr('action');
+            ajaxDownloadStats(url, data);
+            return false;
+        }
         //alert('ok');
-    });
-
-    $('.group-question-chevron').click(function () {
-        //alert('ok');
-        $group_to_hide = $('#' + $(this).data('grouptohide'));
-        toggleSection($(this), $group_to_hide)
-        //$('#'+group_to_hide).hide();
     });
 
     // If the graph are displayed
@@ -248,7 +288,7 @@ LS.Statistics2 = function () {
             $qid = $(this).data('qid');
 
             // chartjs
-            if ($type == 'Bar' || $type == 'Radar' || $type == 'Line') {
+            if ($type === 'Bar' || $type === 'Radar' || $type === 'Line' || $type === 'Doughnut' || $type === 'Pie' || $type === 'PolarArea') {
                 init_chart_js_graph_with_datasets($type, $qid);
             } else {
                 init_chart_js_graph_with_datas($type, $qid);
@@ -263,7 +303,7 @@ LS.Statistics2 = function () {
      */
     var loadBrowse = (function () {
 
-        // Static variable for function loadBrowse, catched through closure
+        // Static variable for function loadBrowse, caught through closure
         // Use this to track if we should hide/show responses
         var toggle = {};
 
@@ -289,7 +329,7 @@ LS.Statistics2 = function () {
             }
 
             if (destinationdiv.parents("td:first").css("display") != "none") {
-                $.post(listColumnUrl + '/' + id + '/' + extra, function (data) {
+                $.get(listColumnUrl + '/' + id + '/' + extra, function (data) {
                     $('#' + id).parent().append(data);
                 });
             }
@@ -329,22 +369,29 @@ LS.Statistics2 = function () {
     $('#usegraph').click(function () {
         if ($('#grapherror').length > 0) {
             $('#grapherror').show();
-            $('#usegraph').prop('checked', false);
+            $('#usegraph_2').prop('checked', true);
         }
     });
 
     /***
      * Select all questions
      */
-    $("[name='viewsummaryall']").on('switchChange.bootstrapSwitch', function (event, state) {
-
-        if (state == true) {
-            $('#filterchoices input[type=checkbox]').prop('checked', true);
-        } else {
-            $('#filterchoices input[type=checkbox]').prop('checked', false);
-
-        }
-    });
+    let viewsummaryallbuttons = document.querySelectorAll('input[name="viewsummaryall"]');
+    for (let viewsummaryallbutton of viewsummaryallbuttons) {
+        viewsummaryallbutton.addEventListener("change", () => {
+            if (viewsummaryallbutton.value === '1') {
+                let filterchoices = document.querySelectorAll('#filterchoices input[type=checkbox]');
+                filterchoices.forEach((filterchoice) => {
+                    filterchoice.checked = true;
+                });
+            } else {
+                let filterchoices = document.querySelectorAll('#filterchoices input[type=checkbox]');
+                filterchoices.forEach((filterchoice) => {
+                    filterchoice.checked = false;
+                });
+            }
+        });
+    }
 
     /* Show and hide the three major sections of the statistics page */
     /* The response filters */
@@ -531,6 +578,37 @@ LS.Statistics2 = function () {
     $(".stats-showpie").click(function () {
         changeGraphType('showpie', this.parentNode);
     });
+
+    var ajaxDownloadStats = function (url, data) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+        xhr.responseType = 'blob';
+        xhr.onload = () => {
+            const contentDisposition = xhr.getResponseHeader('Content-Disposition');
+            const fileName = contentDisposition ? contentDisposition.match(/filename[^;=\n]*=['"](.*?|[^;\n]*)['"]/)[1] : '';
+            if (fileName.length > 0) {
+                // saveAs is implemented by jszip/fileSaver.js
+                saveAs(xhr.response, fileName);
+            } else {
+                ajaxError();
+            }
+            $('#statsContainerLoading').hide();
+        };
+        xhr.onerror = () => {
+            ajaxError();
+            $('#statsContainerLoading').hide();
+        };
+        xhr.send(data);
+    };
+
+    $('input[name=outputtype]').off('change').on('change', function () {
+        if ($('input[name=outputtype]:checked').val() != 'html') {
+            $('#charttype').prop('disabled', true);
+        } else {
+            $('#charttype').prop('disabled', false);
+        }
+    });
+    $('input[name=outputtype]').trigger('change');
 };
 
 var isWaiting = {};
@@ -556,7 +634,8 @@ function graphQuery(id, cmd, success) {
 }
 
 function ajaxError() {
-    alert("An error occured! Please reload the page!");
+    // TODO: Use NotifyFader?
+    alert("An error occurred! Please reload the page!");
 }
 
 function selectCheckboxes(Div, CheckBoxName, Button) {
@@ -572,7 +651,7 @@ function selectCheckboxes(Div, CheckBoxName, Button) {
 }
 
 function nographs() {
-    document.getElementById('usegraph').checked = false;
+    document.getElementById('usegraph_2').checked = false;
 }
 
 function gMapInit(id, data) {
@@ -737,6 +816,55 @@ var createOverlay = function () {
     return overlay;
 };
 
+/**
+ * Returns a copy of the chart canvas with the question title drawn above the chart
+ * @param {HTMLCanvasElement} chartCanvas
+ * @param {string} title
+ * @return {HTMLCanvasElement}
+ */
+var addTitleToChartImage = function (chartCanvas, title) {
+    if (!title) {
+        return chartCanvas;
+    }
+    // The canvas is scaled up on high-DPI screens, so scale the title with it
+    var scale = chartCanvas.clientWidth ? chartCanvas.width / chartCanvas.clientWidth : 1,
+        fontSize = Math.round(16 * scale),
+        lineHeight = Math.round(fontSize * 1.3),
+        padding = Math.round(10 * scale),
+        font = 'bold ' + fontSize + 'px ' + window.getComputedStyle(document.body).fontFamily,
+        imageCanvas = document.createElement('canvas'),
+        context = imageCanvas.getContext('2d'),
+        lines = [],
+        line = '';
+
+    // Wrap the title to the width of the chart
+    context.font = font;
+    title.split(/\s+/).forEach(function (word) {
+        var testLine = line ? line + ' ' + word : word;
+        if (line && context.measureText(testLine).width > chartCanvas.width - 2 * padding) {
+            lines.push(line);
+            line = word;
+        } else {
+            line = testLine;
+        }
+    });
+    lines.push(line);
+
+    imageCanvas.width = chartCanvas.width;
+    imageCanvas.height = chartCanvas.height + lines.length * lineHeight + 2 * padding;
+    // Resizing the canvas resets the context settings
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, imageCanvas.width, imageCanvas.height);
+    context.font = font;
+    context.fillStyle = '#000000';
+    context.textBaseline = 'top';
+    lines.forEach(function (text, index) {
+        context.fillText(text, padding, padding + index * lineHeight);
+    });
+    context.drawImage(chartCanvas, 0, lines.length * lineHeight + 2 * padding);
+    return imageCanvas;
+};
+
 var exportImages = function () {
     var zip = new JSZip(),
         overlay = createOverlay();
@@ -745,7 +873,8 @@ var exportImages = function () {
     $('.chartjs-container').each(function (i, container) {
         var canvasElements = $(container).find('canvas');
         if (canvasElements.length > 0) {
-            var canvas = canvasElements.get(0);
+            // attr() instead of data(): data() would turn a numeric title into a number
+            var canvas = addTitleToChartImage(canvasElements.get(0), $(container).attr('data-title'));
             var imgData = canvas.toDataURL();
             imgData = imgData.replace(/^data:image\/(png|jpg);base64,/, "");
             zip.file($(container).data('qid') + '.png', imgData, { base64: true });
@@ -764,7 +893,7 @@ $(document).on('ready  pjax:scriptcomplete', function () {
     $('body').addClass('onStatistics');
     var exportImagesButton = $('#statisticsExportImages');
     exportImagesButton.on('click', exportImages);
-    exportImagesButton.wrap('<div class="col-md-12 text-center"></div>')
+    exportImagesButton.wrap('<div class="col-12 text-center"></div>')
     $('#statisticsview').children('div.row').last().append(exportImagesButton);
     $('body').on('click', '.action_js_export_to_pdf', function () {
 
@@ -780,15 +909,26 @@ $(document).on('ready  pjax:scriptcomplete', function () {
 
         var $self = $(this),
             overlay = createOverlay(),
-            thisTable = $('#' + $self.data('questionId'));
+            // Subquestions of a question share the same table id, so use the table the button is in
+            thisTable = $self.closest('table'),
+            // Buttons are left out of the PDF; the chart and numerical browse buttons have a row of their own
+            hiddenElements = $self
+                .add(thisTable.find('.chartjs-buttons, .numericalbrowse').closest('tr'))
+                .add(thisTable.find('.statisticsbrowsebutton').not('.numericalbrowse'));
 
-        $self.css({ display: 'none' });
-        thisTable.find('.chartjs-buttons').closest('tr').css({ display: 'none' });
+        hiddenElements.css({ display: 'none' });
+        // Charts are only drawn once scrolled into view, so draw it now and skip the animation to capture it complete
+        thisTable.find('.chartjs-container').loadGraph().each(function () {
+            var chart = chartjs[$(this).data('qid')];
+            if (chart) {
+                chart.stop();
+                chart.update('none');
+            }
+        });
         createPDFworker.call(null, thisTable).then(
             function (success) {
                 overlay.remove();
-                thisTable.find('.chartjs-buttons').closest('tr').css({ display: '' });
-                $self.css({ display: '' });
+                hiddenElements.css({ display: '' });
             },
             function () { console.ls.error(arguments); }
         )

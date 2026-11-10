@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'de-ch', {
 	border: 'Rahmengrösse',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'de-ch', {
 		borderColor: 'Rahmenfarbe',
 		data: 'Daten',
 		header: 'Überschrift',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Ja',
 		no: 'Nein',
 		invalidWidth: 'Zellenbreite muss eine Zahl sein.',
@@ -50,12 +52,13 @@ CKEDITOR.plugins.setLang( 'table', 'de-ch', {
 	headersColumn: 'Erste Spalte',
 	headersNone: 'Keine',
 	headersRow: 'Erste Zeile',
+	heightUnit: 'Höheneinheit',
 	invalidBorder: 'Die Rahmenbreite muss eine Zahl sein.',
 	invalidCellPadding: 'Der Zellenabstand innen muss eine positive Zahl sein.',
 	invalidCellSpacing: 'Der Zellenabstand aussen muss eine positive Zahl sein.',
-	invalidCols: 'Die Anzahl der Spalten muß grösser als 0 sein..',
+	invalidCols: 'Die Anzahl der Spalten muss grösser als 0 sein..',
 	invalidHeight: 'Die Tabellenbreite muss eine Zahl sein.',
-	invalidRows: 'Die Anzahl der Zeilen muß grösser als 0 sein.',
+	invalidRows: 'Die Anzahl der Zeilen muss grösser als 0 sein.',
 	invalidWidth: 'Die Tabellenbreite muss eine Zahl sein.',
 	menu: 'Tabellen-Eigenschaften',
 	row: {
@@ -70,5 +73,5 @@ CKEDITOR.plugins.setLang( 'table', 'de-ch', {
 	toolbar: 'Tabelle',
 	widthPc: '%',
 	widthPx: 'Pixel',
-	widthUnit: 'Breite Einheit'
+	widthUnit: 'Breiteneinheit'
 } );

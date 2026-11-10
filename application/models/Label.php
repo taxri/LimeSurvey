@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    die('No direct script access allowed');
-}
+<?php
+
 /*
  * LimeSurvey (tm)
- * Copyright (C) 2011 The LimeSurvey Project Team / Carsten Schmitz
+ * Copyright (C) 2011-2026 The LimeSurvey Project Team
  * All rights reserved.
  * License: GNU/GPL License v2 or later, see LICENSE.php
  * LimeSurvey is free software. This version may have been modified pursuant
@@ -23,7 +22,6 @@
  * @property string $code
  * @property string $title
  * @property integer $sortorder
- * @property string $language
  * @property integer $assessment_value
  */
 class Label extends LSActiveRecord
@@ -43,16 +41,17 @@ class Label extends LSActiveRecord
     /** @inheritdoc */
     public function primaryKey()
     {
-        return array('id');
+        return 'id';
     }
+
     /**
      * @inheritdoc
      * @return Label
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
         /** @var self $model */
-        $model = parent::model($class);
+        $model = parent::model($className);
         return $model;
     }
 
@@ -60,16 +59,21 @@ class Label extends LSActiveRecord
     public function rules()
     {
         return array(
-            array('lid', 'numerical', 'integerOnly'=>true),
-            array('code', 'unique', 'caseSensitive'=>true, 'criteria'=>array(
-                            'condition'=>'lid = :lid AND language=:language',
-                            'params'=>array(':lid'=>$this->lid, ':language'=>$this->language)
+            array('lid', 'numerical', 'integerOnly' => true),
+            array('code', 'unique', 'caseSensitive' => true, 'criteria' => array(
+                            'condition' => 'lid = :lid',
+                            'params' => array(':lid' => $this->lid)
                     ),
-                    'message'=>'{attribute} "{value}" is already in use.'),
-            array('title', 'LSYii_Validators'),
-            array('sortorder', 'numerical', 'integerOnly'=>true, 'allowEmpty'=>true),
-            array('language', 'length', 'min' => 2, 'max'=>20), // in array languages ?
-            array('assessment_value', 'numerical', 'integerOnly'=>true, 'allowEmpty'=>true),
+                    'message' => '{attribute} "{value}" is already in use.'),
+            // Only alphanumeric
+            array(
+                'code',
+                'match',
+                'pattern' => '/^[[:alnum:]]*$/',
+                'message' => gT('Label codes may only contain alphanumeric characters.'),
+            ),
+            array('sortorder', 'numerical', 'integerOnly' => true, 'allowEmpty' => true),
+            array('assessment_value', 'numerical', 'integerOnly' => true, 'allowEmpty' => true),
         );
     }
 
@@ -79,24 +83,19 @@ class Label extends LSActiveRecord
         // NOTE: you may need to adjust the relation name and the related
         // class name for the relations automatically generated below.
         return array(
-            'labelset' => array(self::HAS_ONE, 'LabelSet', 'lid')
+            'labelset' => array(self::BELONGS_TO, 'LabelSet', 'lid'),
+            'labell10ns' => array(self::HAS_MANY, 'LabelL10n', 'label_id')
         );
     }
 
-    /**
-     * @param mixed|bool $condition
-     * @return static[]
-     */
-    public function getAllRecords($condition = false)
+    public function getTranslated($sLanguage)
     {
-        $criteria = new CDbCriteria;
-        if ($condition != false) {
-            foreach ($condition as $item => $value) {
-                $criteria->addCondition($item.'="'.$value.'"');
-            }
+        $ol10N = $this->labell10ns;
+        if (isset($ol10N[$sLanguage])) {
+            return array_merge($this->attributes, $ol10N[$sLanguage]->attributes);
         }
 
-        return $this->findAll($criteria);
+        return [];
     }
 
     /**
@@ -107,14 +106,4 @@ class Label extends LSActiveRecord
     {
         return Yii::app()->db->createCommand()->select('code, title, sortorder, language, assessment_value')->order('language, sortorder, code')->where('lid=:lid')->from($this->tableName())->bindParam(":lid", $lid, PDO::PARAM_INT)->query()->readAll();
     }
-
-    public function insertRecords($data)
-    {
-        $lbls = new self;
-        foreach ($data as $k => $v) {
-                    $lbls->$k = $v;
-        }
-        $lbls->save();
-    }
-
 }

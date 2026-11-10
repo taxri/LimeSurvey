@@ -1,9 +1,8 @@
-<?php if (!defined('BASEPATH')) {
-    exit('No direct script access allowed');
-}
+<?php
+
 /*
    * LimeSurvey
-   * Copyright (C) 2013 The LimeSurvey Project Team / Carsten Schmitz
+   * Copyright (C) 2013-2026 The LimeSurvey Project Team
    * All rights reserved.
    * License: GNU/GPL License v2 or later, see LICENSE.php
    * LimeSurvey is free software. This version may have been modified pursuant
@@ -12,7 +11,7 @@
    * other free or open source software licenses.
    * See COPYRIGHT.php for copyright notices and details.
    *
-     *	Files Purpose: lots of common functions
+     *  Files Purpose: lots of common functions
 */
 
 /**
@@ -32,10 +31,10 @@ class QuotaLanguageSetting extends LSActiveRecord
      * @inheritdoc
      * @return QuotaLanguageSetting
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
         /** @var QuotaLanguageSetting $model */
-        $model = parent::model($class);
+        $model = parent::model($className);
         return $model;
     }
 
@@ -71,38 +70,23 @@ class QuotaLanguageSetting extends LSActiveRecord
             array('quotals_message', 'required'),
             array('quotals_name', 'LSYii_Validators'), // No access in quota editor, set to quota.name
             array('quotals_message', 'LSYii_Validators'),
-            array('quotals_url', 'LSYii_Validators', 'isUrl'=>true),
+            array('quotals_url', 'LSYii_Validators', 'isUrl' => true),
             array('quotals_urldescrip', 'LSYii_Validators'),
-            array('quotals_url', 'filter', 'filter'=>'trim'),
-            array('quotals_url', 'urlValidator'),
+            array('quotals_url', 'LSYii_FilterValidator', 'filter' => 'trim', 'skipOnEmpty' => true),
+            // URL field is optional and can be left empty even when autoload_url is enabled
+            // (e.g., for multi-language surveys where only some languages have redirect URLs)
+            array('quotals_name', 'length', 'min' => 0, 'max' => 255),
+            array('quotals_url', 'length', 'min' => 0, 'max' => 255),
+            array('quotals_urldescrip', 'length', 'min' => 0, 'max' => 255),
         );
-    }
-    public function urlValidator()
-    {
-        if ($this->quota->autoload_url == 1 && !$this->quotals_url) {
-            $this->addError('quotals_url', gT('URL must be set if autoload URL is turned on!'));
-        }
     }
 
     public function attributeLabels()
     {
         return array(
-            'quotals_message'=> gT("Quota message:"),
-            'quotals_url'=> gT("URL:"),
-            'quotals_urldescrip'=> gT("URL Description:"),
+            'quotals_message' => gT("Quota message:"),
+            'quotals_url' => gT("URL:"),
+            'quotals_urldescrip' => gT("URL Description:"),
         );
-    }
-
-    public function insertRecords($data)
-    {
-        $settings = new self;
-        foreach ($data as $k => $v) {
-            if ($k === 'autoload_url'){
-                $settings->quota->autoload_url = $v;
-            } else {
-                $settings->$k = $v;
-            }
-        }
-        return $settings->save();
     }
 }

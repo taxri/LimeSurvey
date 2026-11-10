@@ -6,7 +6,7 @@ namespace ls\ajax;
  * Ajax helper
  * This class will help to standardize the Ajax communication
  * between server and client.
- * See the manual page for more info: https://manual.limesurvey.org/Backend_Ajax_protocol
+ * See the manual page for more info: https://www.limesurvey.org/manual/Backend_Ajax_protocol
  *
  * @since 2016-09-27
  * @author Olle Härstedt
@@ -147,7 +147,7 @@ class JsonOutput
     public $noPermissionText;
 
     /**
-     * 
+     *
      * @param string|null $result
      */
     public function __construct($result)
@@ -235,18 +235,17 @@ class JsonOutputSuccess extends JsonOutput
 }
 
 /**
- * 
+ *
  */
 class JsonOutputModal extends JsonOutput
 {
-
     /**
      * @var string
      */
     public $html;
 
     /**
-     * 
+     *
      */
     public function __construct($html)
     {
@@ -255,8 +254,8 @@ class JsonOutputModal extends JsonOutput
     }
 
     /**
-     * 
-     * @return 
+     *
+     * @return
      */
     public function __toString()
     {
@@ -269,33 +268,20 @@ class JsonOutputModal extends JsonOutput
 }
 
 /**
- * Echo html for log in form modal body
+ * Echo html for the "logged out" modal
  * This is a special case of JsonOutputModal, but with fixed html
- * Only used through JsonOutputNotLoggedIn in AdminController::run.
+ * Only used through AjaxHelper::outputNotLoggedIn() in AdminController::run and LSBaseController::run.
  */
 class JsonOutputNotLoggedIn extends JsonOutputModal
 {
     /**
-     * 
+     * Renders the "logged out" modal content
      */
     public function __construct()
     {
         parent::__construct(null);
 
-        \Yii::import('application.controllers.admin.authentication', true);
-
-        // Return success, failure or template data
-        $result = \Authentication::prepareLogin();
-
-        // This should not be possible here
-        if (isset($result[0]) && $result[0] == 'success') {
-            throw new \CException('Internal error: login form submitted');
-        } else if (isset($result[0]) && $result[0] == 'failed') {
-            throw new \CException('Internal error: login form submitted');
-        }
-
-        $data = $result;
-        $this->html = \Yii::app()->getController()->renderPartial('/admin/authentication/ajaxLogin', $data, true);
+        $this->html = \Yii::app()->getController()->renderPartial('/admin/authentication/ajaxLoggedOut', [], true);
 
         $this->hasPermission = true;
         $this->loggedIn = false;
@@ -307,7 +293,6 @@ class JsonOutputNotLoggedIn extends JsonOutputModal
  */
 class JsonOutputHtml extends JsonOutput
 {
-
     /**
      * Content.
      * @var string

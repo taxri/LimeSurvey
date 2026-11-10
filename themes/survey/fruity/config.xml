@@ -10,20 +10,26 @@
 <config>
     <!-- Those metadata are displayed in the theme configuration page.  -->
     <metadata>
-        <name>Fruity</name>
-        <title>Fruity Theme</title>
+        <name>fruity</name>
+        <title>Fruity</title>
+        <type>theme</type>
         <creationDate>08/01/2016</creationDate>
-        <author>Louis-Sébastien Gac Artigas</author>
-        <authorEmail>louis.gac@limesurvey.org</authorEmail>
+        <author>LimeSurvey GmbH</author>
+        <authorEmail>info@limesurvey.org</authorEmail>
         <authorUrl>http://www.limesurvey.org</authorUrl>
-        <copyright>Copyright (C) 2005 - 2016 LimeSurvey Gmbh, Inc. All rights reserved.</copyright>
+        <copyright>Copyright (C) 2005 - 2019 LimeSurvey Gmbh, Inc. All rights reserved.</copyright>
         <license>GNU General Public License version 2 or later</license>
         <version>3.0.1</version>
         <apiVersion>3</apiVersion>
-        <description><![CDATA[<strong>LimeSurvey Fruity Theme</strong><br>A fruity theme for a flexible use. This theme offers monochromes variations and many options for easy customizations.]]></description>
-        <last_update>2018-06-12 16:26:42</last_update>
+        <description twig="on"><![CDATA[{{gT("A fruity theme for a flexible use. This theme offers monochromes variations and many options for easy customizations.")}}]]></description>
+        <lastUpdate>2019-10-24 12:00:00</lastUpdate>
         <extends>vanilla</extends>
     </metadata>
+
+    <compatibility>
+        <version>7.0</version>
+        <version>6.0</version>
+    </compatibility>
 
     <!--
         Here the list of the css/js files to add to the template package.
@@ -31,7 +37,7 @@
         "css/variations/sea_green.css" will be updated via the theme variation options
 
         NOTE: The "add" tag also count as a "replace" tag.
-              Eg: You can't add a file with the same name as a file in the mother theme. It will always replace it. You must use a diffrent file name.
+              Eg: You can't add a file with the same name as a file in the mother theme. It will always replace it. You must use a different file name.
               Eg: Vanilla manifest already has "<add>css/theme.css</add>". So here, if you use "<add>css/theme.css</add>" it will replace the vanilla css/theme.css
 
         NOTE: If a file in a mother theme, you don't need to add it here again.
@@ -42,18 +48,18 @@
               'force_xmlsettings_for_survey_rendering' => true,
 
               Then, you will not need anymore to reset your theme each time you change the config file.
-              But, once turning the setting off, You will still must reset the theme to the changes are pushed to DB 
+              But, once turning the setting off, You will still must reset the theme to the changes are pushed to DB
     -->
     <files>
         <css>
             <add>css/variations/sea_green.css</add>
+            <remove>css/noTablesOnMobile.css</remove>
             <replace>css/animate.css</replace>
             <replace>css/theme.css</replace>
             <replace>css/custom.css</replace>
         </css>
         <js>
             <replace>scripts/theme.js</replace>
-            <replace>scripts/ajaxify.js</replace>
             <replace>scripts/custom.js</replace>
         </js>
         <print_css>
@@ -62,48 +68,645 @@
     </files>
 
     <!-- You can add here any option you want. It will be available in twig file via aSurveyInfo.options.youroptionname -->
-    <!-- eg: Ajaxmode: will be available with aSurveyInfo.options.ajaxmode -->
     <!-- for animations, see https://daneden.github.io/animate.css/ -->
-    <!-- for checkbox icons, use the Unicode of the charcter (eg: http://fontawesome.io/icon/check/ is f00c ) -->
+    <!-- for checkbox icons, use the Unicode of the character (eg: http://fontawesome.io/icon/check/ is f00c ) -->
     <options>
-        <ajaxmode>off</ajaxmode>
-        <brandlogo>on</brandlogo>
-        <brandlogofile>./files/logo.png</brandlogofile>
-        <container>on</container>
-        <backgroundimage>off</backgroundimage>
-        <backgroundimagefile>./files/pattern.png</backgroundimagefile>
-        <animatebody>off</animatebody>
-        <bodyanimation>fadeInRight</bodyanimation>
-        <bodyanimationduration>500</bodyanimationduration>
-        <animatequestion>off</animatequestion>
-        <questionanimation>flipInX</questionanimation>
-        <questionanimationduration>500</questionanimationduration>
-        <animatealert>off</animatealert>
-        <alertanimation>shake</alertanimation>
-        <alertanimationduration>500</alertanimationduration>
-        <font>noto</font>
-        <bodybackgroundcolor>#ffffff</bodybackgroundcolor>
-        <fontcolor>#444444</fontcolor>
-        <questionbackgroundcolor>#ffffff</questionbackgroundcolor>
-        <questionborder>on</questionborder>
-        <questioncontainershadow>on</questioncontainershadow>
-        <checkicon>f00c</checkicon>
-        <animatecheckbox>on</animatecheckbox>
-        <checkboxanimation>rubberBand</checkboxanimation>
-        <checkboxanimationduration>500</checkboxanimationduration>
-        <animateradio>on</animateradio>
-        <radioanimation>zoomIn</radioanimation>
-        <radioanimationduration>500</radioanimationduration>
-        <zebrastriping>off</zebrastriping>
-        <stickymatrixheaders>off</stickymatrixheaders>
-        <greyoutselected>off</greyoutselected>
-        <hideprivacyinfo>off</hideprivacyinfo>
-        <crosshover>off</crosshover>
-        <showpopups>1</showpopups>
-        <fixnumauto>off</fixnumauto>
+        <!-- simple options -->
+        <container type="buttons" category="Simple options" width="4" title="Survey container" options="on|off" optionlabels="Yes|No">on</container>
+        <zebrastriping type="buttons" category="Simple options" width="4" title="Zebra-striped questions" options="on|off" optionlabels="Yes|No">off</zebrastriping>
+        <stickymatrixheaders type="buttons" category="Simple options" width="4" title="Sticky array headers" options="on|off" optionlabels="Yes|No">off</stickymatrixheaders>
+        <greyoutselected type="buttons" category="Simple options" width="4" title="Dim answered array rows" options="on|off" optionlabels="Yes|No">off</greyoutselected>
+        <hideprivacyinfo type="buttons" category="Simple options" width="4" title="Hide privacy info" options="on|off" optionlabels="Yes|No">off</hideprivacyinfo>
+        <crosshover type="buttons" category="Simple options" width="4" title="Cross-hover in matrix questions" options="on|off" optionlabels="Yes|No">off</crosshover>
+        <showpopups type="buttons" category="Simple options" width="4" title="Show popups" options="1|0|-1" optionlabels="Popup|On page|No">1</showpopups>
+        <notables type="buttons" category="Simple options" width="4" title="Wrap tables" options="2|1|0" optionlabels="Always on|Small screens|Off">1</notables>
+        <showclearall type="buttons" category="Simple options" width="4" title="Show 'Clear all' button" options="on|off" optionlabels="Yes|No">off</showclearall>
+        <questionhelptextposition type="buttons" category="Simple options" width="4" title="Question help text position" options="top|bottom" optionlabels="Top|Bottom">top</questionhelptextposition>
+        <fixnumauto type="buttons" category="Simple options" width="4" title="Fix automatically numeric value" options="enable|partial|disable" optionlabels="Yes|For expression|No">enable</fixnumauto>
+        <questionborder type="buttons" category="Simple options" width="4" title="Question borders" options="on|off" optionlabels="Yes|No">on</questionborder>
+        <questioncontainershadow type="buttons" category="Simple options" width="4" title="Question shadow" options="on|off" optionlabels="Yes|No">on</questioncontainershadow>
+        <!-- colors -->
+        <bodybackgroundcolor type="colorpicker" category="Colors" width="4" title="Background color" options="on|off" optionlabels="Yes|No">#ffffff</bodybackgroundcolor>
+        <fontcolor type="colorpicker" category="Colors" width="4" title="Font color" options="on|off" optionlabels="Yes|No">#444444</fontcolor>
+        <questionbackgroundcolor type="colorpicker" category="Colors" width="4" title="Question background color" options="on|off" optionlabels="Yes|No">#ffffff</questionbackgroundcolor>
+        <checkicon type="icon" category="Colors" width="4" title="Check icon">f00c
+            <!--  When adding new items, please keep them ordered alphabetically -->
+            <dropdownoptions>
+                <option value="f061">Arrow right</option>
+                <option value="f069">Asterisk</option>
+                <option value="f00c">Checkmark</option>
+                <option value="f058">Checkmark in circle</option>
+                <option value="f14a">Checkmark in square</option>
+                <option value="f138">Chevron circle right</option>
+                <option value="f111">Circle</option>
+                <option value="f00d">Cross</option>
+                <option value="f067">Plus</option>
+                <option value="f1d0">Resistance</option>
+                <option value="f0c8">Square</option>
+                <option value="f005">Star</option>
+            </dropdownoptions>
+        </checkicon>
+        <!-- images -->
+        <backgroundimage type="buttons" category="Images" width="4" title="Background image" options="on|off" optionlabels="Yes|No">off</backgroundimage>
+        <backgroundimagefile type="dropdown" category="Images" width="6" title="Background image file" parent="backgroundimage">./files/pattern.png</backgroundimagefile>
+        <brandlogo type="buttons" category="Images" width="4" title="Logo" options="on|off" optionlabels="Yes|No">on</brandlogo>
+        <brandlogofile type="dropdown" category="Images" width="6" title="Logo file" parent="brandlogo">./files/logo.png</brandlogofile>
+        <!-- animations -->
+        <animatebody type="buttons" category="Animations" width="4" title="Animate body" options="on|off" optionlabels="Yes|No">off</animatebody>
+        <bodyanimation type="dropdown" category="Animations" width="6" title="Body animation" parent="animatebody">fadeInRight
+            <dropdownoptions>
+                <optgroup label="Attention seekers">
+                    <option value="bounce">Bounce</option>
+                    <option value="flash">Flash</option>
+                    <option value="pulse">Pulse</option>
+                    <option value="rubberBand">Rubber band</option>
+                    <option value="shake">Shake</option>
+                    <option value="swing">Swing</option>
+                    <option value="tada">Tada</option>
+                    <option value="wobble">Wobble</option>
+                    <option value="jello">Jello</option>
+                </optgroup>
+                <optgroup label="Bouncing entrances">
+                    <option value="bounceIn">Bounce in</option>
+                    <option value="bounceInDown">Bounce in down</option>
+                    <option value="bounceInLeft">Bounce in left</option>
+                    <option value="bounceInRight">Bounce in right</option>
+                    <option value="bounceInUp">Bounce in up</option>
+                </optgroup>
+                <optgroup label="Bouncing exits">
+                    <option value="bounceOut">Bounce out</option>
+                    <option value="bounceOutDown">Bounce out down</option>
+                    <option value="bounceOutLeft">Bounce out left</option>
+                    <option value="bounceOutRight">Bounce out right</option>
+                    <option value="bounceOutUp">Bounce out up</option>
+                </optgroup>
+                <optgroup label="Fading entrances">
+                    <option value="fadeIn">Fade in</option>
+                    <option value="fadeInDown">Fade in down</option>
+                    <option value="fadeInDownBig">Fade in down big</option>
+                    <option value="fadeInLeft">Fade in left</option>
+                    <option value="fadeInLeftBig">Fade in left big</option>
+                    <option value="fadeInRight">Fade in right</option>
+                    <option value="fadeInRightBig">Fade in right big</option>
+                    <option value="fadeInUp">Fade in up</option>
+                    <option value="fadeInUpBig">Fade in up big</option>
+                </optgroup>
+                <optgroup label="Fading exits">
+                    <option value="fadeOut">Fade out</option>
+                    <option value="fadeOutDown">Fade out down</option>
+                    <option value="fadeOutDownBig">Fade out down big</option>
+                    <option value="fadeOutLeft">Fade out left</option>
+                    <option value="fadeOutLeftBig">Fade out left big</option>
+                    <option value="fadeOutRight">Fade out right</option>
+                    <option value="fadeOutRightBig">Fade out right big</option>
+                    <option value="fadeOutUp">Fade out up</option>
+                    <option value="fadeOutUpBig">Fade out up big</option>
+                </optgroup>
+                <optgroup label="Flippers">
+                    <option value="flip">Flip</option>
+                    <option value="flipInX">Flip in X</option>
+                    <option value="flipInY">Flip in Y</option>
+                    <option value="flipOutX">Flip out X</option>
+                    <option value="flipOutY">Flip out Y</option>
+                </optgroup>
+                <optgroup label="Lightspeed">
+                    <option value="lightSpeedIn">Light speed in</option>
+                    <option value="lightSpeedOut">Light speed out</option>
+                </optgroup>
+                <optgroup label="Rotating entrances">
+                    <option value="rotateIn">Rotate in</option>
+                    <option value="rotateInDownLeft">Rotate in down left</option>
+                    <option value="rotateInDownRight">Rotate in down right</option>
+                    <option value="rotateInUpLeft">Rotate in up left</option>
+                    <option value="rotateInUpRight">Rotate in up right</option>
+                </optgroup>
+                <optgroup label="Rotating exits">
+                    <option value="rotateOut">Rotate out</option>
+                    <option value="rotateOutDownLeft">Rotate out down left</option>
+                    <option value="rotateOutDownRight">Rotate out down right</option>
+                    <option value="rotateOutUpLeft">Rotate out up left</option>
+                    <option value="rotateOutUpRight">Rotate out up right</option>
+                </optgroup>
+                <optgroup label="Sliding entrances">
+                    <option value="slideInUp">Slide in up</option>
+                    <option value="slideInDown">Slide in down</option>
+                    <option value="slideInLeft">Slide in left</option>
+                    <option value="slideInRight">Slide in right</option>
+                </optgroup>
+                <optgroup label="Sliding exits">
+                    <option value="slideOutUp">Slide out up</option>
+                    <option value="slideOutDown">Slide out down</option>
+                    <option value="slideOutLeft">Slide out left</option>
+                    <option value="slideOutRight">Slide out right</option>
+                </optgroup>
+                <optgroup label="Zoom entrances">
+                    <option value="zoomIn">Zoom in</option>
+                    <option value="zoomInDown">Zoom in down</option>
+                    <option value="zoomInLeft">Zoom in left</option>
+                    <option value="zoomInRight">Zoom in right</option>
+                    <option value="zoomInUp">Zoom in up</option>
+                </optgroup>
+                <optgroup label="Zoom exits">
+                    <option value="zoomOut">Zoom out</option>
+                    <option value="zoomOutDown">Zoom out down</option>
+                    <option value="zoomOutLeft">Zoom out left</option>
+                    <option value="zoomOutRight">Zoom out right</option>
+                    <option value="zoomOutUp">Zoom out up</option>
+                </optgroup>
+                <optgroup label="Specials">
+                    <option value="hinge">Hinge</option>
+                    <option value="jackInTheBox">Jack in the box</option>
+                    <option value="rollIn">Roll in</option>
+                    <option value="rollOut">Roll out</option>
+                </optgroup>
+            </dropdownoptions>
+        </bodyanimation>
+        <bodyanimationduration type="duration" category="Animations" width="2" title="Duration" parent="animatebody">500</bodyanimationduration>
+        <animatequestion type="buttons" category="Animations" width="4" title="Animate question" options="on|off" optionlabels="Yes|No">off</animatequestion>
+        <questionanimation type="dropdown" category="Animations" width="6" title="Question animation" parent="animatequestion">flipInX
+            <dropdownoptions>
+                <optgroup label="Attention seekers">
+                    <option value="bounce">Bounce</option>
+                    <option value="flash">Flash</option>
+                    <option value="pulse">Pulse</option>
+                    <option value="rubberBand">Rubber band</option>
+                    <option value="shake">Shake</option>
+                    <option value="swing">Swing</option>
+                    <option value="tada">Tada</option>
+                    <option value="wobble">Wobble</option>
+                    <option value="jello">Jello</option>
+                </optgroup>
+                <optgroup label="Bouncing entrances">
+                    <option value="bounceIn">Bounce in</option>
+                    <option value="bounceInDown">Bounce in down</option>
+                    <option value="bounceInLeft">Bounce in left</option>
+                    <option value="bounceInRight">Bounce in right</option>
+                    <option value="bounceInUp">Bounce in up</option>
+                </optgroup>
+                <optgroup label="Bouncing exits">
+                    <option value="bounceOut">Bounce out</option>
+                    <option value="bounceOutDown">Bounce out down</option>
+                    <option value="bounceOutLeft">Bounce out left</option>
+                    <option value="bounceOutRight">Bounce out right</option>
+                    <option value="bounceOutUp">Bounce out up</option>
+                </optgroup>
+                <optgroup label="Fading entrances">
+                    <option value="fadeIn">Fade in</option>
+                    <option value="fadeInDown">Fade in down</option>
+                    <option value="fadeInDownBig">Fade in down big</option>
+                    <option value="fadeInLeft">Fade in left</option>
+                    <option value="fadeInLeftBig">Fade in left big</option>
+                    <option value="fadeInRight">Fade in right</option>
+                    <option value="fadeInRightBig">Fade in right big</option>
+                    <option value="fadeInUp">Fade in up</option>
+                    <option value="fadeInUpBig">Fade in up big</option>
+                </optgroup>
+                <optgroup label="Fading exits">
+                    <option value="fadeOut">Fade out</option>
+                    <option value="fadeOutDown">Fade out down</option>
+                    <option value="fadeOutDownBig">Fade out down big</option>
+                    <option value="fadeOutLeft">Fade out left</option>
+                    <option value="fadeOutLeftBig">Fade out left big</option>
+                    <option value="fadeOutRight">Fade out right</option>
+                    <option value="fadeOutRightBig">Fade out right big</option>
+                    <option value="fadeOutUp">Fade out up</option>
+                    <option value="fadeOutUpBig">Fade out up big</option>
+                </optgroup>
+                <optgroup label="Flippers">
+                    <option value="flip">Flip</option>
+                    <option value="flipInX">Flip in X</option>
+                    <option value="flipInY">Flip in Y</option>
+                    <option value="flipOutX">Flip out X</option>
+                    <option value="flipOutY">Flip out Y</option>
+                </optgroup>
+                <optgroup label="Lightspeed">
+                    <option value="lightSpeedIn">Light speed in</option>
+                    <option value="lightSpeedOut">Light speed out</option>
+                </optgroup>
+                <optgroup label="Rotating entrances">
+                    <option value="rotateIn">Rotate in</option>
+                    <option value="rotateInDownLeft">Rotate in down left</option>
+                    <option value="rotateInDownRight">Rotate in down right</option>
+                    <option value="rotateInUpLeft">Rotate in up left</option>
+                    <option value="rotateInUpRight">Rotate in up right</option>
+                </optgroup>
+                <optgroup label="Rotating exits">
+                    <option value="rotateOut">Rotate out</option>
+                    <option value="rotateOutDownLeft">Rotate out down left</option>
+                    <option value="rotateOutDownRight">Rotate out down right</option>
+                    <option value="rotateOutUpLeft">Rotate out up left</option>
+                    <option value="rotateOutUpRight">Rotate out up right</option>
+                </optgroup>
+                <optgroup label="Sliding entrances">
+                    <option value="slideInUp">Slide in up</option>
+                    <option value="slideInDown">Slide in down</option>
+                    <option value="slideInLeft">Slide in left</option>
+                    <option value="slideInRight">Slide in right</option>
+                </optgroup>
+                <optgroup label="Sliding exits">
+                    <option value="slideOutUp">Slide out up</option>
+                    <option value="slideOutDown">Slide out down</option>
+                    <option value="slideOutLeft">Slide out left</option>
+                    <option value="slideOutRight">Slide out right</option>
+                </optgroup>
+                <optgroup label="Zoom entrances">
+                    <option value="zoomIn">Zoom in</option>
+                    <option value="zoomInDown">Zoom in down</option>
+                    <option value="zoomInLeft">Zoom in left</option>
+                    <option value="zoomInRight">Zoom in right</option>
+                    <option value="zoomInUp">Zoom in up</option>
+                </optgroup>
+                <optgroup label="Zoom exits">
+                    <option value="zoomOut">Zoom out</option>
+                    <option value="zoomOutDown">Zoom out down</option>
+                    <option value="zoomOutLeft">Zoom out left</option>
+                    <option value="zoomOutRight">Zoom out right</option>
+                    <option value="zoomOutUp">Zoom out up</option>
+                </optgroup>
+                <optgroup label="Specials">
+                    <option value="hinge">Hinge</option>
+                    <option value="jackInTheBox">Jack in the box</option>
+                    <option value="rollIn">Roll in</option>
+                    <option value="rollOut">Roll out</option>
+                </optgroup>
+            </dropdownoptions>
+        </questionanimation>
+        <questionanimationduration type="duration" category="Animations" width="2" title="Duration" parent="animatequestion">500</questionanimationduration>
+        <animatealert type="buttons" category="Animations" width="4" title="Animate alert" options="on|off" optionlabels="Yes|No">off</animatealert>
+        <alertanimation type="dropdown" category="Animations" width="6" title="Alert animation" parent="animatealert">shake
+            <dropdownoptions>
+                <optgroup label="Attention seekers">
+                    <option value="bounce">Bounce</option>
+                    <option value="flash">Flash</option>
+                    <option value="pulse">Pulse</option>
+                    <option value="rubberBand">Rubber band</option>
+                    <option value="shake">Shake</option>
+                    <option value="swing">Swing</option>
+                    <option value="tada">Tada</option>
+                    <option value="wobble">Wobble</option>
+                    <option value="jello">Jello</option>
+                </optgroup>
+                <optgroup label="Bouncing entrances">
+                    <option value="bounceIn">Bounce in</option>
+                    <option value="bounceInDown">Bounce in down</option>
+                    <option value="bounceInLeft">Bounce in left</option>
+                    <option value="bounceInRight">Bounce in right</option>
+                    <option value="bounceInUp">Bounce in up</option>
+                </optgroup>
+                <optgroup label="Bouncing exits">
+                    <option value="bounceOut">Bounce out</option>
+                    <option value="bounceOutDown">Bounce out down</option>
+                    <option value="bounceOutLeft">Bounce out left</option>
+                    <option value="bounceOutRight">Bounce out right</option>
+                    <option value="bounceOutUp">Bounce out up</option>
+                </optgroup>
+                <optgroup label="Fading entrances">
+                    <option value="fadeIn">Fade in</option>
+                    <option value="fadeInDown">Fade in down</option>
+                    <option value="fadeInDownBig">Fade in down big</option>
+                    <option value="fadeInLeft">Fade in left</option>
+                    <option value="fadeInLeftBig">Fade in left big</option>
+                    <option value="fadeInRight">Fade in right</option>
+                    <option value="fadeInRightBig">Fade in right big</option>
+                    <option value="fadeInUp">Fade in up</option>
+                    <option value="fadeInUpBig">Fade in up big</option>
+                </optgroup>
+                <optgroup label="Fading exits">
+                    <option value="fadeOut">Fade out</option>
+                    <option value="fadeOutDown">Fade out down</option>
+                    <option value="fadeOutDownBig">Fade out down big</option>
+                    <option value="fadeOutLeft">Fade out left</option>
+                    <option value="fadeOutLeftBig">Fade out left big</option>
+                    <option value="fadeOutRight">Fade out right</option>
+                    <option value="fadeOutRightBig">Fade out right big</option>
+                    <option value="fadeOutUp">Fade out up</option>
+                    <option value="fadeOutUpBig">Fade out up big</option>
+                </optgroup>
+                <optgroup label="Flippers">
+                    <option value="flip">Flip</option>
+                    <option value="flipInX">Flip in X</option>
+                    <option value="flipInY">Flip in Y</option>
+                    <option value="flipOutX">Flip out X</option>
+                    <option value="flipOutY">Flip out Y</option>
+                </optgroup>
+                <optgroup label="Lightspeed">
+                    <option value="lightSpeedIn">Light speed in</option>
+                    <option value="lightSpeedOut">Light speed out</option>
+                </optgroup>
+                <optgroup label="Rotating entrances">
+                    <option value="rotateIn">Rotate in</option>
+                    <option value="rotateInDownLeft">Rotate in down left</option>
+                    <option value="rotateInDownRight">Rotate in down right</option>
+                    <option value="rotateInUpLeft">Rotate in up left</option>
+                    <option value="rotateInUpRight">Rotate in up right</option>
+                </optgroup>
+                <optgroup label="Rotating exits">
+                    <option value="rotateOut">Rotate out</option>
+                    <option value="rotateOutDownLeft">Rotate out down left</option>
+                    <option value="rotateOutDownRight">Rotate out down right</option>
+                    <option value="rotateOutUpLeft">Rotate out up left</option>
+                    <option value="rotateOutUpRight">Rotate out up right</option>
+                </optgroup>
+                <optgroup label="Sliding entrances">
+                    <option value="slideInUp">Slide in up</option>
+                    <option value="slideInDown">Slide in down</option>
+                    <option value="slideInLeft">Slide in left</option>
+                    <option value="slideInRight">Slide in right</option>
+                </optgroup>
+                <optgroup label="Sliding exits">
+                    <option value="slideOutUp">Slide out up</option>
+                    <option value="slideOutDown">Slide out down</option>
+                    <option value="slideOutLeft">Slide out left</option>
+                    <option value="slideOutRight">Slide out right</option>
+                </optgroup>
+                <optgroup label="Zoom entrances">
+                    <option value="zoomIn">Zoom in</option>
+                    <option value="zoomInDown">Zoom in down</option>
+                    <option value="zoomInLeft">Zoom in left</option>
+                    <option value="zoomInRight">Zoom in right</option>
+                    <option value="zoomInUp">Zoom in up</option>
+                </optgroup>
+                <optgroup label="Zoom exits">
+                    <option value="zoomOut">Zoom out</option>
+                    <option value="zoomOutDown">Zoom out down</option>
+                    <option value="zoomOutLeft">Zoom out left</option>
+                    <option value="zoomOutRight">Zoom out right</option>
+                    <option value="zoomOutUp">Zoom out up</option>
+                </optgroup>
+                <optgroup label="Specials">
+                    <option value="hinge">Hinge</option>
+                    <option value="jackInTheBox">Jack in the box</option>
+                    <option value="rollIn">Roll in</option>
+                    <option value="rollOut">Roll out</option>
+                </optgroup>
+            </dropdownoptions>
+        </alertanimation>
+        <alertanimationduration type="duration" category="Animations" width="2" title="Duration" parent="animatealert">500</alertanimationduration>
+        <animatecheckbox type="buttons" category="Animations" width="4" title="Animate checkbox" options="on|off" optionlabels="Yes|No">on</animatecheckbox>
+        <checkboxanimation type="dropdown" category="Animations" width="6" title="Alert animation" parent="animatecheckbox">rubberBand
+            <dropdownoptions>
+                <optgroup label="Attention seekers">
+                    <option value="bounce">Bounce</option>
+                    <option value="flash">Flash</option>
+                    <option value="pulse">Pulse</option>
+                    <option value="rubberBand">Rubber band</option>
+                    <option value="shake">Shake</option>
+                    <option value="swing">Swing</option>
+                    <option value="tada">Tada</option>
+                    <option value="wobble">Wobble</option>
+                    <option value="jello">Jello</option>
+                </optgroup>
+                <optgroup label="Bouncing entrances">
+                    <option value="bounceIn">Bounce in</option>
+                    <option value="bounceInDown">Bounce in down</option>
+                    <option value="bounceInLeft">Bounce in left</option>
+                    <option value="bounceInRight">Bounce in right</option>
+                    <option value="bounceInUp">Bounce in up</option>
+                </optgroup>
+                <optgroup label="Bouncing exits">
+                    <option value="bounceOut">Bounce out</option>
+                    <option value="bounceOutDown">Bounce out down</option>
+                    <option value="bounceOutLeft">Bounce out left</option>
+                    <option value="bounceOutRight">Bounce out right</option>
+                    <option value="bounceOutUp">Bounce out up</option>
+                </optgroup>
+                <optgroup label="Fading entrances">
+                    <option value="fadeIn">Fade in</option>
+                    <option value="fadeInDown">Fade in down</option>
+                    <option value="fadeInDownBig">Fade in down big</option>
+                    <option value="fadeInLeft">Fade in left</option>
+                    <option value="fadeInLeftBig">Fade in left big</option>
+                    <option value="fadeInRight">Fade in right</option>
+                    <option value="fadeInRightBig">Fade in right big</option>
+                    <option value="fadeInUp">Fade in up</option>
+                    <option value="fadeInUpBig">Fade in up big</option>
+                </optgroup>
+                <optgroup label="Fading exits">
+                    <option value="fadeOut">Fade out</option>
+                    <option value="fadeOutDown">Fade out down</option>
+                    <option value="fadeOutDownBig">Fade out down big</option>
+                    <option value="fadeOutLeft">Fade out left</option>
+                    <option value="fadeOutLeftBig">Fade out left big</option>
+                    <option value="fadeOutRight">Fade out right</option>
+                    <option value="fadeOutRightBig">Fade out right big</option>
+                    <option value="fadeOutUp">Fade out up</option>
+                    <option value="fadeOutUpBig">Fade out up big</option>
+                </optgroup>
+                <optgroup label="Flippers">
+                    <option value="flip">Flip</option>
+                    <option value="flipInX">Flip in X</option>
+                    <option value="flipInY">Flip in Y</option>
+                    <option value="flipOutX">Flip out X</option>
+                    <option value="flipOutY">Flip out Y</option>
+                </optgroup>
+                <optgroup label="Lightspeed">
+                    <option value="lightSpeedIn">Light speed in</option>
+                    <option value="lightSpeedOut">Light speed out</option>
+                </optgroup>
+                <optgroup label="Rotating entrances">
+                    <option value="rotateIn">Rotate in</option>
+                    <option value="rotateInDownLeft">Rotate in down left</option>
+                    <option value="rotateInDownRight">Rotate in down right</option>
+                    <option value="rotateInUpLeft">Rotate in up left</option>
+                    <option value="rotateInUpRight">Rotate in up right</option>
+                </optgroup>
+                <optgroup label="Rotating exits">
+                    <option value="rotateOut">Rotate out</option>
+                    <option value="rotateOutDownLeft">Rotate out down left</option>
+                    <option value="rotateOutDownRight">Rotate out down right</option>
+                    <option value="rotateOutUpLeft">Rotate out up left</option>
+                    <option value="rotateOutUpRight">Rotate out up right</option>
+                </optgroup>
+                <optgroup label="Sliding entrances">
+                    <option value="slideInUp">Slide in up</option>
+                    <option value="slideInDown">Slide in down</option>
+                    <option value="slideInLeft">Slide in left</option>
+                    <option value="slideInRight">Slide in right</option>
+                </optgroup>
+                <optgroup label="Sliding exits">
+                    <option value="slideOutUp">Slide out up</option>
+                    <option value="slideOutDown">Slide out down</option>
+                    <option value="slideOutLeft">Slide out left</option>
+                    <option value="slideOutRight">Slide out right</option>
+                </optgroup>
+                <optgroup label="Zoom entrances">
+                    <option value="zoomIn">Zoom in</option>
+                    <option value="zoomInDown">Zoom in down</option>
+                    <option value="zoomInLeft">Zoom in left</option>
+                    <option value="zoomInRight">Zoom in right</option>
+                    <option value="zoomInUp">Zoom in up</option>
+                </optgroup>
+                <optgroup label="Zoom exits">
+                    <option value="zoomOut">Zoom out</option>
+                    <option value="zoomOutDown">Zoom out down</option>
+                    <option value="zoomOutLeft">Zoom out left</option>
+                    <option value="zoomOutRight">Zoom out right</option>
+                    <option value="zoomOutUp">Zoom out up</option>
+                </optgroup>
+                <optgroup label="Specials">
+                    <option value="hinge">Hinge</option>
+                    <option value="jackInTheBox">Jack in the box</option>
+                    <option value="rollIn">Roll in</option>
+                    <option value="rollOut">Roll out</option>
+                </optgroup>
+            </dropdownoptions>
+        </checkboxanimation>
+        <checkboxanimationduration type="duration" category="Animations" width="2" title="Duration" parent="animatecheckbox">500</checkboxanimationduration>
+        <animateradio type="buttons" category="Animations" width="4" title="Animate radio buttons" options="on|off" optionlabels="Yes|No">on</animateradio>
+        <radioanimation type="dropdown" category="Animations" width="6" title="Radio button animation" parent="animateradio">zoomIn
+            <dropdownoptions>
+                <optgroup label="Attention seekers">
+                    <option value="bounce">Bounce</option>
+                    <option value="flash">Flash</option>
+                    <option value="pulse">Pulse</option>
+                    <option value="rubberBand">Rubber band</option>
+                    <option value="shake">Shake</option>
+                    <option value="swing">Swing</option>
+                    <option value="tada">Tada</option>
+                    <option value="wobble">Wobble</option>
+                    <option value="jello">Jello</option>
+                </optgroup>
+                <optgroup label="Bouncing entrances">
+                    <option value="bounceIn">Bounce in</option>
+                    <option value="bounceInDown">Bounce in down</option>
+                    <option value="bounceInLeft">Bounce in left</option>
+                    <option value="bounceInRight">Bounce in right</option>
+                    <option value="bounceInUp">Bounce in up</option>
+                </optgroup>
+                <optgroup label="Bouncing exits">
+                    <option value="bounceOut">Bounce out</option>
+                    <option value="bounceOutDown">Bounce out down</option>
+                    <option value="bounceOutLeft">Bounce out left</option>
+                    <option value="bounceOutRight">Bounce out right</option>
+                    <option value="bounceOutUp">Bounce out up</option>
+                </optgroup>
+                <optgroup label="Fading entrances">
+                    <option value="fadeIn">Fade in</option>
+                    <option value="fadeInDown">Fade in down</option>
+                    <option value="fadeInDownBig">Fade in down big</option>
+                    <option value="fadeInLeft">Fade in left</option>
+                    <option value="fadeInLeftBig">Fade in left big</option>
+                    <option value="fadeInRight">Fade in right</option>
+                    <option value="fadeInRightBig">Fade in right big</option>
+                    <option value="fadeInUp">Fade in up</option>
+                    <option value="fadeInUpBig">Fade in up big</option>
+                </optgroup>
+                <optgroup label="Fading exits">
+                    <option value="fadeOut">Fade out</option>
+                    <option value="fadeOutDown">Fade out down</option>
+                    <option value="fadeOutDownBig">Fade out down big</option>
+                    <option value="fadeOutLeft">Fade out left</option>
+                    <option value="fadeOutLeftBig">Fade out left big</option>
+                    <option value="fadeOutRight">Fade out right</option>
+                    <option value="fadeOutRightBig">Fade out right big</option>
+                    <option value="fadeOutUp">Fade out up</option>
+                    <option value="fadeOutUpBig">Fade out up big</option>
+                </optgroup>
+                <optgroup label="Flippers">
+                    <option value="flip">Flip</option>
+                    <option value="flipInX">Flip in X</option>
+                    <option value="flipInY">Flip in Y</option>
+                    <option value="flipOutX">Flip out X</option>
+                    <option value="flipOutY">Flip out Y</option>
+                </optgroup>
+                <optgroup label="Lightspeed">
+                    <option value="lightSpeedIn">Light speed in</option>
+                    <option value="lightSpeedOut">Light speed out</option>
+                </optgroup>
+                <optgroup label="Rotating entrances">
+                    <option value="rotateIn">Rotate in</option>
+                    <option value="rotateInDownLeft">Rotate in down left</option>
+                    <option value="rotateInDownRight">Rotate in down right</option>
+                    <option value="rotateInUpLeft">Rotate in up left</option>
+                    <option value="rotateInUpRight">Rotate in up right</option>
+                </optgroup>
+                <optgroup label="Rotating exits">
+                    <option value="rotateOut">Rotate out</option>
+                    <option value="rotateOutDownLeft">Rotate out down left</option>
+                    <option value="rotateOutDownRight">Rotate out down right</option>
+                    <option value="rotateOutUpLeft">Rotate out up left</option>
+                    <option value="rotateOutUpRight">Rotate out up right</option>
+                </optgroup>
+                <optgroup label="Sliding entrances">
+                    <option value="slideInUp">Slide in up</option>
+                    <option value="slideInDown">Slide in down</option>
+                    <option value="slideInLeft">Slide in left</option>
+                    <option value="slideInRight">Slide in right</option>
+                </optgroup>
+                <optgroup label="Sliding exits">
+                    <option value="slideOutUp">Slide out up</option>
+                    <option value="slideOutDown">Slide out down</option>
+                    <option value="slideOutLeft">Slide out left</option>
+                    <option value="slideOutRight">Slide out right</option>
+                </optgroup>
+                <optgroup label="Zoom entrances">
+                    <option value="zoomIn">Zoom in</option>
+                    <option value="zoomInDown">Zoom in down</option>
+                    <option value="zoomInLeft">Zoom in left</option>
+                    <option value="zoomInRight">Zoom in right</option>
+                    <option value="zoomInUp">Zoom in up</option>
+                </optgroup>
+                <optgroup label="Zoom exits">
+                    <option value="zoomOut">Zoom out</option>
+                    <option value="zoomOutDown">Zoom out down</option>
+                    <option value="zoomOutLeft">Zoom out left</option>
+                    <option value="zoomOutRight">Zoom out right</option>
+                    <option value="zoomOutUp">Zoom out up</option>
+                </optgroup>
+                <optgroup label="Specials">
+                    <option value="hinge">Hinge</option>
+                    <option value="jackInTheBox">Jack in the box</option>
+                    <option value="rollIn">Roll in</option>
+                    <option value="rollOut">Roll out</option>
+                </optgroup>
+            </dropdownoptions>
+        </radioanimation>
+        <radioanimationduration type="duration" category="Animations" width="2" title="Duration" parent="animateradio">500</radioanimationduration>
+        <!-- fonts -->
+        <!--  When adding new items, please keep them ordered alphabetically -->
+         <font type="dropdown" category="Fonts" width="12" title="Fonts">noto
+            <dropdownoptions>
+                <optgroup  label="User browser">
+                <option class="font-arial           " value="arial"           data-font-package="websafe" >Arial</option>
+                <option class="font-arial_black     " value="arial_black"     data-font-package="websafe" >Arial Black</option>
+                <option class="font-comic_sans      " value="comic_sans"      data-font-package="websafe" >Comic Sans</option>
+                <option class="font-courier         " value="courier"         data-font-package="websafe" >Courier New</option>
+                <option class="font-georgia         " value="georgia"         data-font-package="websafe" >Georgia</option>
+                <option class="font-impact          " value="impact"          data-font-package="websafe" >Impact</option>
+                <option class="font-lucida_console  " value="lucida_console"  data-font-package="websafe" >Lucida Console</option>
+                <option class="font-lucida_sans     " value="lucida_sans"     data-font-package="websafe" >Lucida Sans</option>
+                <option class="font-palatino        " value="palatino"        data-font-package="websafe" >Palatino Linotype</option>
+                <option class="font-times_new_roman " value="times_new_roman" data-font-package="websafe" >Times New Roman</option>
+                <option class="font-trebuchet       " value="trebuchet"       data-font-package="websafe" >Trebuchet</option>
+            </optgroup>
+            </dropdownoptions>
+        </font>
+        <cssframework type="dropdown" category="Simple options" width="12" title="Variations">Sea Green
+            <dropdownoptions>
+                <optgroup>
+                    <option value="css/variations/sea_green.css">Sea Green</option>
+                    <option value="css/variations/apple_blossom.css">Apple Blossom</option>
+                    <option value="css/variations/bay_of_many.css">Bay of Many</option>
+                    <option value="css/variations/black_pearl.css">Black Pearl</option>
+                    <option value="css/variations/free_magenta.css">Free Magenta</option>
+                    <option value="css/variations/purple_tentacle.css">Purple Tentacle</option>
+                    <option value="css/variations/sunset_orange.css">Sunset Orange</option>
+                    <option value="css/variations/skyline_blue.css">Skyline Blue</option>
+                </optgroup>
+            </dropdownoptions>
+        </cssframework>
     </options>
+
+    <engine>
+        <!-- core: use core options view file, custom: use customized options.twig view file -->
+        <optionspage>core</optionspage>
+    </engine>
+
 
     <!-- Engine configuration is the very same as vanilla  -->
 
+    <!-- Disable the updater system for core themes. -->
+    <updaters disabled="disabled">
+    </updaters>
 
 </config>

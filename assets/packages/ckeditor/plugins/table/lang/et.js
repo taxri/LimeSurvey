@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'et', {
 	border: 'Joone suurus',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'et', {
 		borderColor: 'Äärise värv',
 		data: 'Andmed',
 		header: 'Päis',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Jah',
 		no: 'Ei',
 		invalidWidth: 'Lahtri laius peab olema number.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'et', {
 	headersColumn: 'Esimene tulp',
 	headersNone: 'Puudub',
 	headersRow: 'Esimene rida',
+	heightUnit: 'kõrgusühik',
 	invalidBorder: 'Äärise suurus peab olema number.',
 	invalidCellPadding: 'Lahtrite polsterdus (padding) peab olema positiivne arv.',
 	invalidCellSpacing: 'Lahtrite vahe peab olema positiivne arv.',

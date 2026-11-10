@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'link', 'hi', {
 	acccessKey: 'ऍक्सॅस की',
@@ -13,6 +13,7 @@ CKEDITOR.plugins.setLang( 'link', 'hi', {
 		title: 'ऐंकर प्रॉपर्टीज़',
 		name: 'ऐंकर का नाम',
 		errorName: 'ऐंकर का नाम टाइप करें',
+		errorWhitespace: 'Anchor name cannot contain space characters', // MISSING
 		remove: 'Remove Anchor'
 	},
 	anchorId: 'ऍलीमॅन्ट Id से',
@@ -35,7 +36,9 @@ CKEDITOR.plugins.setLang( 'link', 'hi', {
 	noAnchors: '(डॉक्यूमॅन्ट में ऐंकर्स की संख्या)',
 	noEmail: 'ई-मेल पता टाइप करें',
 	noUrl: 'लिंक URL टाइप करें',
+	noTel: 'Please type the phone number', // MISSING
 	other: '<अन्य>',
+	phoneNumber: 'Phone number', // MISSING
 	popupDependent: 'डिपेन्डॅन्ट (Netscape)',
 	popupFeatures: 'पॉप-अप विन्डो फ़ीचर्स',
 	popupFullScreen: 'फ़ुल स्क्रीन (IE)',
@@ -60,6 +63,7 @@ CKEDITOR.plugins.setLang( 'link', 'hi', {
 	toAnchor: 'इस पेज का ऐंकर',
 	toEmail: 'ई-मेल',
 	toUrl: 'URL',
+	toPhone: 'Phone', // MISSING
 	toolbar: 'लिंक इन्सर्ट/संपादन',
 	type: 'लिंक प्रकार',
 	unlink: 'लिंक हटायें',

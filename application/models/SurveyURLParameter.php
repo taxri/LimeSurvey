@@ -1,7 +1,8 @@
 <?php
+
 /*
 * LimeSurvey
-* Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
+* Copyright (C) 2007-2026 The LimeSurvey Project Team
 * All rights reserved.
 * License: GNU/GPL License v2 or later, see LICENSE.php
 * LimeSurvey is free software. This version may have been modified pursuant
@@ -23,15 +24,48 @@
  */
 class SurveyURLParameter extends LSActiveRecord
 {
+    public $searched_value = null;
+
+    /**
+     * @return array validation rules for model attributes.
+     */
+    public function rules()
+    {
+        return  [
+            ['sid', 'required'],
+            ['sid', 'numerical', 'integerOnly' => true],
+            ['parameter', 'required'],
+            ['targetqid', 'numerical', 'integerOnly' => true],
+            ['targetsqid', 'numerical', 'integerOnly' => true, 'allowEmpty' => true],
+        ];
+    }
+
     /**
      * @inheritdoc
      * @return SurveyURLParameter
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
         /** @var self $model */
-        $model = parent::model($class);
+        $model = parent::model($className);
         return $model;
+    }
+
+    /**
+     * Check whether a string may be used as a panel integration URL parameter name.
+     *
+     * The name must start with a letter or underscore and may then contain letters,
+     * digits, underscores and hyphens. Dots and spaces are rejected because PHP
+     * converts them to underscores in $_GET keys. Names reserved by LimeSurvey
+     * itself (sid, newtest, token, lang) are rejected as well.
+     *
+     * @param string $parameterName The trimmed parameter name to check
+     * @return bool True if the name is valid
+     */
+    public static function isValidParameterName(string $parameterName): bool
+    {
+        return preg_match('/^[a-zA-Z_][a-zA-Z0-9_-]*$/', $parameterName) === 1
+            && !in_array($parameterName, ['sid', 'newtest', 'token', 'lang'], true);
     }
 
     /** @inheritdoc */
@@ -60,7 +94,7 @@ class SurveyURLParameter extends LSActiveRecord
      */
     public function getParametersForSurvey($iSurveyID)
     {
-        return Yii::app()->db->createCommand("select '' as act, up.*,q.title, sq.title as sqtitle, q.question, sq.question as sqquestion from {{survey_url_parameters}} up
+        return Yii::app()->db->createCommand("select '' as act, up.*,q.title, sq.title as sqtitle from {{survey_url_parameters}} up
             left join {{questions}} q on q.qid=up.targetqid
             left join {{questions}} sq on q.qid=up.targetsqid
             where up.sid=:surveyid")
@@ -74,10 +108,30 @@ class SurveyURLParameter extends LSActiveRecord
      */
     public function deleteRecords($aConditions)
     {
-        foreach ($aConditions as $sFieldname=>$sFieldvalue) {
+        foreach ($aConditions as $sFieldname => $sFieldvalue) {
             Yii::app()->db->createCommand()->where($sFieldname, $sFieldvalue);
         }
         return Yii::app()->db->delete('survey_url_parameters'); // Deletes from token
+    }
+
+    /**
+     * Remove the target question from all URL parameters that point to one of the given questions.
+     *
+     * The parameters themselves are kept, because they can still be used without a target
+     * question (e.g. passed through to the end URL).
+     *
+     * @param int[] $questionIds IDs of the deleted questions and/or subquestions
+     * @return int The number of updated URL parameters
+     */
+    public static function removeTargetQuestions(array $questionIds): int
+    {
+        if (empty($questionIds)) {
+            return 0;
+        }
+        $criteria = new CDbCriteria();
+        $criteria->addInCondition('targetqid', $questionIds);
+        $criteria->addInCondition('targetsqid', $questionIds, 'OR');
+        return self::model()->updateAll(['targetqid' => null, 'targetsqid' => null], $criteria);
     }
 
     /**
@@ -89,4 +143,123 @@ class SurveyURLParameter extends LSActiveRecord
         return Yii::app()->db->createCommand()->insert('{{survey_url_parameters}}', $aData);
     }
 
+    /**
+     * @return CActiveDataProvider
+     */
+    public function search()
+    {
+        $pageSize = Yii::app()->user->getState('pageSize', Yii::app()->params['defaultPageSize']);
+
+        $survey = Survey::model()->findByPk($this->sid);
+        $language = $survey->language;
+
+        $criteria = new CDbCriteria();
+        $criteria->with = ['question', 'question.questionl10ns', 'subquestion', 'subquestion.questionl10ns' => ['alias' => 'subquestionl10ns']];
+        $criteria->together = true;
+        $criteria->compare('t.parameter', $this->searched_value, true);
+        $criteria->compare('question.title', $this->searched_value, true, 'OR');
+        $criteria->compare('questionl10ns.question', $this->searched_value, true, 'OR');
+        $criteria->compare('question.title', $this->searched_value, true, 'OR');
+        $criteria->compare('subquestionl10ns.question', $this->searched_value, true, 'OR');
+        $criteria->addCondition('t.sid=:surveyid');
+        $criteria->addCondition('questionl10ns.language=:language OR questionl10ns.language IS NULL');
+        $criteria->addCondition('subquestionl10ns.language=:language2 OR subquestionl10ns.language IS NULL');
+        $criteria->params[':surveyid'] = $this->sid;
+        $criteria->params[':language'] = $language;
+        $criteria->params[':language2'] = $language;    // For some reason MS SQL fails if we use the same parameter twice
+
+        $sort = new CSort();
+        $sort->defaultOrder = array('parameter' => false, 'target_question' => false);
+        $sort->attributes = array(
+            'parameter' => array(
+                'asc' => 'parameter',
+                'desc' => 'parameter desc',
+            ),
+            'target_question' => array(
+                'asc' => 'question.title, questionl10ns.question, subquestionl10ns.question',
+                'desc' => 'subquestionl10ns.question desc, questionl10ns.question desc, question.title desc',
+            ),
+        );
+
+        $dataProvider = new CActiveDataProvider(get_class($this), array(
+            'criteria' => $criteria,
+
+            'sort' => $sort,
+
+            'pagination' => array(
+                'pageSize' => $pageSize,
+            ),
+        ));
+
+        return $dataProvider;
+    }
+
+    /**
+     * @return string
+     */
+    public function getButtons()
+    {
+        $permissionPanelEdit = Permission::model()->hasSurveyPermission(
+            $this->sid,
+            'surveysettings',
+            'update'
+        );
+        $permissionParameterDelete = Permission::model()->hasSurveyPermission(
+            $this->sid,
+            'surveysettings',
+            'update'
+        );
+        $dropdownItems = [];
+        $dropdownItems[] = [
+            'title'            => gT('Edit parameter'),
+            'iconClass'        => 'ri-pencil-fill',
+            'linkClass'        => 'surveysettings_edit_intparameter',
+            'enabledCondition' => $permissionPanelEdit,
+            'linkAttributes'   => [
+                'data-id'        => $this->id,
+                'data-parameter' => $this->parameter,
+                'data-qid'       => $this->targetqid,
+            ],
+        ];
+        $dropdownItems[] = [
+            'title'            => gT('Delete parameter'),
+            'iconClass'        => 'ri-delete-bin-fill text-danger',
+            'linkClass'        => 'surveysettings_delete_intparameter selector--ConfirmModal',
+            'url'             => Yii::app()->createUrl("surveyAdministration/deleteUrlParam"),
+            'linkAttributes'   => [
+                'data-button-no'   => gT('Cancel'),
+                'data-button-yes'  => gT('Delete'),
+                'data-button-type' => 'btn-danger',
+                'data-post'        => json_encode(['surveyId' => $this->sid, 'urlParamId' => $this->id]),
+                'data-text'        => gT("Are you sure you want to delete this URL parameter?"),
+            ],
+            'enabledCondition' => $permissionParameterDelete
+        ];
+
+        return App()->getController()->widget(
+            'ext.admin.grid.GridActionsWidget.GridActionsWidget',
+            ['dropdownItems' => $dropdownItems],
+            true
+        );
+    }
+
+    /**
+     * Get the code and text of the target question (and subquestion) for display.
+     *
+     * @return string Empty if the parameter has no (existing) target question
+     */
+    public function getQuestionTitle()
+    {
+        $baseLanguage = Survey::model()->findByPk($this->sid)->language;
+        $title = '';
+        // The target question may not exist anymore if it was deleted before this was handled
+        if ($this->targetqid == '' || empty($this->question)) {
+            return $title;
+        }
+        $title = $this->question->title . ": " . ellipsize(flattenText($this->question->questionl10ns[$baseLanguage]->question, false, true), 43, .70);
+        if ($this->targetsqid != '' && !empty($this->subquestion)) {
+            $title .= (' - ' . ellipsize(flattenText($this->subquestion->questionl10ns[$baseLanguage]->question, false, true), 30, .75));
+        }
+        return $title;
+    }
 }

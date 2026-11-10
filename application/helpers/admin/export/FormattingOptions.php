@@ -1,4 +1,5 @@
 <?php
+
 class FormattingOptions
 {
     public $responseMinRecord;
@@ -10,7 +11,7 @@ class FormattingOptions
      * The columns that have been selected for output.  The values must be
      * in fieldMap format.
      *
-     * @var array[]string
+     * @var array
      */
     public $selectedColumns;
 
@@ -49,14 +50,14 @@ class FormattingOptions
     public $headingTextLength;
 
     /**
-     * Indicates whether to use Expression Manager code
+     * Indicates whether to use ExpressionScript Engine code
      *
      * @var boolean
      */
     public $useEMCode;
 
     /**
-     * What is the caracters to separate code and text
+     * What is the characters to separate code and text
      *
      * @var boolean
      */
@@ -65,9 +66,16 @@ class FormattingOptions
     /**
      * What is the character to separate CSV fields
      *
-     * @var boolean
+     * @var string
      */
     public $csvFieldSeparator;
+
+    /**
+     * Mask CSV/Excelt equation fields to prevent CSV injection attackts
+     *
+     * @var boolean
+     */
+    public $csvMaskEquations = false;
 
     /**
      * Valid values are:
@@ -107,23 +115,23 @@ class FormattingOptions
     public $convertN;
 
     public $nValue;
-    
+
     /**
      * Destination format - either 'display' (send to browser) or 'file' (send to file)
-     * 
+     *
      * @var string
      */
     public $output;
 
     public $format;
-    
+
     public function toString()
     {
-        return $this->format.','.$this->headingFormat.','
-        .$this->headerSpacesToUnderscores.','.$this->responseCompletionState
-        .','.$this->responseMinRecord.','.$this->responseMaxRecord.','.$this->aResponses.','
-        .$this->answerFormat.','.$this->convertY.','.$this->yValue.','
-        .$this->convertN.','.$this->nValue.','
-        .implode(',', $this->selectedColumns);
+        return $this->format . ',' . $this->headingFormat . ','
+        . $this->headerSpacesToUnderscores . ',' . $this->responseCompletionState
+        . ',' . $this->responseMinRecord . ',' . $this->responseMaxRecord . ',' . $this->aResponses . ','
+        . $this->answerFormat . ',' . $this->convertY . ',' . $this->yValue . ','
+        . $this->convertN . ',' . $this->nValue . ',' . $this->csvMaskEquations . ','
+        . implode(',', $this->selectedColumns);
     }
 }

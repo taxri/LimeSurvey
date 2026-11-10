@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'nb', {
 	border: 'Rammestørrelse',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'nb', {
 		borderColor: 'Rammefarge',
 		data: 'Data',
 		header: 'Overskrift',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Ja',
 		no: 'Nei',
 		invalidWidth: 'Cellebredde må være et tall.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'nb', {
 	headersColumn: 'Første kolonne',
 	headersNone: 'Ingen',
 	headersRow: 'Første rad',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'Rammestørrelse må være et tall.',
 	invalidCellPadding: 'Cellepolstring må være et positivt tall.',
 	invalidCellSpacing: 'Cellemarg må være et positivt tall.',

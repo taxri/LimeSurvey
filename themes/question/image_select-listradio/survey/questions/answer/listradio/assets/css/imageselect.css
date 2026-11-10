@@ -1,0 +1,78 @@
+/*
+ * Image size and fit, set by the image settings (see answer.twig):
+ * --imageselect-width / --imageselect-height on the list, plus one imageselect-fit-* class.
+ * The img has the class fixed-width, so the general ".ls-answers img" rule of the survey themes doesn't apply.
+ */
+.imageselect-answers .imageselect-img {
+    max-width: 100%;
+    width: var(--imageselect-width, auto);
+    height: var(--imageselect-height, auto);
+    object-fit: contain;
+}
+
+.imageselect-answers.imageselect-fit-cover .imageselect-img {
+    object-fit: cover;
+}
+
+.imageselect-answers.imageselect-fit-fill .imageselect-img {
+    object-fit: fill;
+}
+
+/* Display columns: don't split an answer across two columns */
+.imageselect-answers > li {
+    break-inside: avoid;
+}
+
+/* Horizontal scroll: all answers in one row that can be scrolled */
+.imageselect-answers.imageselect-horizontal {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow-x: auto;
+}
+
+.imageselect-answers.imageselect-horizontal > li {
+    flex: 0 0 auto;
+}
+
+.imageselect-list{
+    list-style: none;
+    padding: 4px;
+}
+
+.imageselect-list li.imageselect-listitem{
+    padding: 0;
+    margin: 6px 8px;
+    border: 0;
+    display: block;
+}
+
+.imageselect-container{
+    position: relative;
+    max-height: 100%;
+    max-width: 100%;
+    padding:0;
+    margin:0;
+    border: none;
+}
+
+li.imageselect-listitem .imageselect-container .imageselect-label{
+    z-index:1;
+    margin: 3px;
+    padding: 0;
+    border: 18px solid hsla(0,0%,60%,0.9);
+    border-radius: 0;
+}
+
+li.imageselect-listitem .imageselect-container .imageselect-label:before{
+    display: none;
+}
+li.imageselect-listitem .imageselect-container .imageselect-label:after{
+    display: none;
+}
+li.imageselect-listitem .imageselect-container .imageselect-checkbox{
+
+}
+li.imageselect-listitem .imageselect-container input.imageselect-checkbox:checked+label{
+    border: 18px solid hsla(198,50%,30%,0.9);
+}

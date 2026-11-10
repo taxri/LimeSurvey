@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'link', 'th', {
 	acccessKey: 'แอคเซส คีย์',
@@ -13,6 +13,7 @@ CKEDITOR.plugins.setLang( 'link', 'th', {
 		title: 'รายละเอียด Anchor',
 		name: 'ชื่อ Anchor',
 		errorName: 'กรุณาระบุชื่อของ Anchor',
+		errorWhitespace: 'Anchor name cannot contain space characters', // MISSING
 		remove: 'Remove Anchor'
 	},
 	anchorId: 'ไอดี',
@@ -35,7 +36,9 @@ CKEDITOR.plugins.setLang( 'link', 'th', {
 	noAnchors: '(ยังไม่มีจุดเชื่อมโยงภายในหน้าเอกสารนี้)',
 	noEmail: 'กรุณาระบุอีเมล์ (E-mail)',
 	noUrl: 'กรุณาระบุที่อยู่อ้างอิงออนไลน์ (URL)',
+	noTel: 'Please type the phone number', // MISSING
 	other: '<อื่น ๆ>',
+	phoneNumber: 'Phone number', // MISSING
 	popupDependent: 'แสดงเต็มหน้าจอ (Netscape)',
 	popupFeatures: 'คุณสมบัติของหน้าจอเล็ก (Pop-up)',
 	popupFullScreen: 'แสดงเต็มหน้าจอ (IE5.5++ เท่านั้น)',
@@ -60,6 +63,7 @@ CKEDITOR.plugins.setLang( 'link', 'th', {
 	toAnchor: 'จุดเชื่อมโยง (Anchor)',
 	toEmail: 'ส่งอีเมล์ (E-Mail)',
 	toUrl: 'ที่อยู่อ้างอิง URL',
+	toPhone: 'Phone', // MISSING
 	toolbar: 'แทรก/แก้ไข ลิงค์',
 	type: 'ประเภทของลิงค์',
 	unlink: 'ลบ ลิงค์',

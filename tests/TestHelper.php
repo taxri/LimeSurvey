@@ -2,6 +2,9 @@
 
 namespace ls\tests;
 
+use Survey;
+use Yii;
+use Exception;
 use Facebook\WebDriver\Exception\WebDriverException;
 use PHPUnit\Framework\TestCase;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
@@ -12,9 +15,18 @@ use Facebook\WebDriver\Firefox\FirefoxProfile;
 use Facebook\WebDriver\Firefox\FirefoxPreferences;
 use Facebook\WebDriver\Exception\WebDriverCurlException;
 use Facebook\WebDriver\Exception\NoSuchDriverException;
+use SurveyActivator;
 
 class TestHelper extends TestCase
 {
+    /* @var string keep publicurl */
+    protected static $tmpPublicUrl;
+    /* @var string keep request->baseUrl */
+    protected static $tmpBaseUrl;
+    /* @var \CUrlManager|null keep App()->urlmanager */
+    protected static $originalUrlManager;
+    /* @var string keep App()->request->hostInfo */
+    protected static $tmpHostInfo;
 
     /**
      * Import all helpers etc.
@@ -22,17 +34,30 @@ class TestHelper extends TestCase
      */
     public function importAll()
     {
-        \Yii::import('application.helpers.common_helper', true);
-        \Yii::import('application.helpers.replacements_helper', true);
-        \Yii::import('application.helpers.surveytranslator_helper', true);
-        \Yii::import('application.helpers.admin.import_helper', true);
-        \Yii::import('application.helpers.expressions.em_manager_helper', true);
-        \Yii::import('application.helpers.expressions.em_manager_helper', true);
-        \Yii::import('application.helpers.qanda_helper', true);
-        \Yii::import('application.helpers.update.updatedb_helper', true);
-        \Yii::import('application.helpers.update.update_helper', true);
-        \Yii::import('application.helpers.SurveyRuntimeHelper', true);
-        \Yii::app()->loadHelper('admin/activate');
+        Yii::import('application.helpers.common_helper', true);
+        Yii::import('application.helpers.replacements_helper', true);
+        Yii::import('application.helpers.surveytranslator_helper', true);
+        Yii::import('application.helpers.admin.import_helper', true);
+        Yii::import('application.helpers.expressions.em_manager_helper', true);
+        Yii::import('application.helpers.expressions.em_manager_helper', true);
+        Yii::import('application.helpers.qanda_helper', true);
+        Yii::import('application.helpers.update.updatedb_helper', true);
+        Yii::import('application.helpers.update.update_helper', true);
+        Yii::import('application.helpers.SurveyRuntimeHelper', true);
+        Yii::app()->loadHelper('admin.activate');
+    }
+
+    /**
+     * Reset existing cache (file by default)
+     */
+    public function resetCache()
+    {
+        if (method_exists(Yii::app()->cache, 'flush')) {
+            Yii::app()->cache->flush();
+        }
+        if (method_exists(Yii::app()->cache, 'gc')) {
+            Yii::app()->cache->gc();
+        }
     }
 
     /**
@@ -62,9 +87,7 @@ class TestHelper extends TestCase
         $this->assertNotEmpty($group);
 
         $sgqa = sprintf(
-            '%sX%sX%s',
-            $surveyId,
-            $group->gid,
+            'Q%s',
             $question->qid
         );
 
@@ -78,28 +101,37 @@ class TestHelper extends TestCase
      */
     public function getSurveyOptions($surveyId)
     {
-        $thissurvey = \getSurveyInfo($surveyId);
+        $force      = true;
+        $language   = '';
+        $thissurvey = \getSurveyInfo($surveyId, $language, $force);
+
         $radix = \getRadixPointData($thissurvey['surveyls_numberformat']);
         $radix = $radix['separator'];
         $LEMdebugLevel = 0;
+
+        // Initialize displayTimezone from config (fallback to UTC if empty)
+        $displayTimezone = Yii::app()->getConfig('displayTimezone') ?: 'UTC';
+
         $surveyOptions = array(
             'active' => ($thissurvey['active'] == 'Y'),
             'allowsave' => ($thissurvey['allowsave'] == 'Y'),
             'anonymized' => ($thissurvey['anonymized'] != 'N'),
             'assessments' => ($thissurvey['assessments'] == 'Y'),
             'datestamp' => ($thissurvey['datestamp'] == 'Y'),
-            'deletenonvalues'=>\Yii::app()->getConfig('deletenonvalues'),
+            'deletenonvalues' => Yii::app()->getConfig('deletenonvalues'),
             'hyperlinkSyntaxHighlighting' => (($LEMdebugLevel & LEM_DEBUG_VALIDATION_SUMMARY) == LEM_DEBUG_VALIDATION_SUMMARY),
             'ipaddr' => ($thissurvey['ipaddr'] == 'Y'),
-            'radix'=>$radix,
-            // FIXME !! $LEMsessid is not defined
+            'radix' => $radix,
             'refurl' => (($thissurvey['refurl'] == "Y" && isset($_SESSION[$LEMsessid]['refurl'])) ? $_SESSION[$LEMsessid]['refurl'] : null),
             'savetimings' => ($thissurvey['savetimings'] == "Y"),
+            'savequotaexit' => ($thissurvey['savequotaexit'] == "Y"),
             'surveyls_dateformat' => (isset($thissurvey['surveyls_dateformat']) ? $thissurvey['surveyls_dateformat'] : 1),
-            'startlanguage'=>(isset(App()->language) ? App()->language : $thissurvey['language']),
-            'target' => \Yii::app()->getConfig('uploaddir').DIRECTORY_SEPARATOR.'surveys'.DIRECTORY_SEPARATOR.$thissurvey['sid'].DIRECTORY_SEPARATOR.'files'.DIRECTORY_SEPARATOR,
-            'tempdir' => \Yii::app()->getConfig('tempdir').DIRECTORY_SEPARATOR,
-            'timeadjust' => (isset($timeadjust) ? $timeadjust : 0),
+            'startlanguage' => (isset(App()->language) ? App()->language : $thissurvey['language']),
+            'target' => Yii::app()->getConfig('uploaddir') . DIRECTORY_SEPARATOR . 'surveys' . DIRECTORY_SEPARATOR . $thissurvey['sid'] . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR,
+            'tempdir' => Yii::app()->getConfig('tempdir') . DIRECTORY_SEPARATOR,
+            // for backward compatibility convert timezone string to +/- hours
+            'timeadjust' => convertTimezoneDiffToHours(),
+            'displayTimezone' => (isset($displayTimezone) ? $displayTimezone : 'UTC'),
             'token' => (isset($clienttoken) ? $clienttoken : null),
         );
         return $surveyOptions;
@@ -112,23 +144,35 @@ class TestHelper extends TestCase
     public function activateSurvey($surveyId)
     {
         $survey = \Survey::model()->findByPk($surveyId);
+        if (empty($survey)) {
+            throw new Exception('Found no survey with id ' . $surveyId);
+        }
         $survey->anonymized = '';
-        $survey->datestamp = '';
+        $survey->datestamp = 'Y';
         $survey->ipaddr = '';
         $survey->refurl = '';
         $survey->savetimings = '';
         $survey->save();
-        \Survey::model()->resetCache();  // Make sure the saved values will be picked up
+        // Make sure the saved values will be picked up
+        Survey::model()->resetCache();
 
-        $result = \activateSurvey($surveyId);
-        // For Travis debugging.
+        $surveyActivator = new SurveyActivator($survey);
+        $result = $surveyActivator->activate();
         if (isset($result['error'])) {
-            var_dump($result);
+            $this->fail('Survey activation error: ' . print_r($result['error'], true));
         }
         \SurveyDynamic::sid($surveyId);
         \SurveyDynamic::model()->refreshMetaData();
 
-        $this->assertEquals(['status' => 'OK', 'pluginFeedback' => null], $result, 'Activate survey is OK');
+        $db = Yii::app()->getDb();
+        $db->schema->getTables();
+        $db->schema->refresh();
+        $db->active = true;
+        $this->assertEmpty(
+            $result['tableWarnings'],
+            'Survey activation produced table warnings: ' . print_r($result['tableWarnings'], true)
+        );
+        $this->assertEquals(['status' => 'OK', 'pluginFeedback' => null, 'isAllowRegister' => false, 'tableWarnings' => []], $result, 'Activate survey is OK');
     }
 
     /**
@@ -137,10 +181,10 @@ class TestHelper extends TestCase
      */
     public function deactivateSurvey($surveyId)
     {
-        $date     = date('YmdHis');
-        $oldSurveyTableName = \Yii::app()->db->tablePrefix."survey_{$surveyId}";
-        $newSurveyTableName = \Yii::app()->db->tablePrefix."old_survey_{$surveyId}_{$date}";
-        \Yii::app()->db->createCommand()->renameTable($oldSurveyTableName, $newSurveyTableName);
+        $date     = gmdate('YmdHis');
+        $oldSurveyTableName = Yii::app()->db->tablePrefix . "responses_{$surveyId}";
+        $newSurveyTableName = Yii::app()->db->tablePrefix . "old_responses_{$surveyId}_{$date}";
+        Yii::app()->db->createCommand()->renameTable($oldSurveyTableName, $newSurveyTableName);
         $survey = \Survey::model()->findByPk($surveyId);
         $survey->active = 'N';
         $result = $survey->save();
@@ -151,7 +195,7 @@ class TestHelper extends TestCase
      * Overwrite the db component with a new
      * configuration and database.
      * Before you run this, you might want to save
-     * the old db config in a variable, so you can 
+     * the old db config in a variable, so you can
      * reconnect to it after you're done with the new
      * database.
      *   $config = require(\Yii::app()->getBasePath() . '/config/config.php');
@@ -161,12 +205,12 @@ class TestHelper extends TestCase
      */
     public function connectToNewDatabase($databaseName)
     {
-        $db = \Yii::app()->getDb();
+        $db = Yii::app()->getDb();
 
-        $config = require(\Yii::app()->getBasePath() . '/config/config.php');
+        $config = require(Yii::app()->getBasePath() . '/config/config.php');
 
         // Check that we're using MySQL.
-        $conStr = \Yii::app()->db->connectionString;
+        $conStr = Yii::app()->db->connectionString;
         $isMysql = substr($conStr, 0, 5) === 'mysql';
         if (!$isMysql) {
             $this->markTestSkipped('Only works on MySQL');
@@ -209,11 +253,11 @@ class TestHelper extends TestCase
             'dbname=' . $databaseName,
             $config['components']['db']['connectionString']
         );
-        \Yii::app()->setComponent('db', $newConfig['components']['db'], false);
+        Yii::app()->setComponent('db', $newConfig['components']['db'], false);
         $db->setActive(true);
-        \Yii::app()->db->schema->getTables();
-        \Yii::app()->db->schema->refresh();
-        return \Yii::app()->getDb();
+        Yii::app()->db->schema->getTables();
+        Yii::app()->db->schema->refresh();
+        return Yii::app()->getDb();
     }
 
     /**
@@ -221,49 +265,53 @@ class TestHelper extends TestCase
      */
     public function connectToOriginalDatabase()
     {
-        \Yii::app()->db->setActive(false);
-        $config = require(\Yii::app()->getBasePath() . '/config/config.php');
-        \Yii::app()->setComponent('db', $config['components']['db'], false);
-        \Yii::app()->db->setActive(true);
-        \Yii::app()->db->schema->getTables();
-        \Yii::app()->db->schema->refresh();
+        Yii::app()->db->setActive(false);
+        $config = require(Yii::app()->getBasePath() . '/config/config.php');
+        Yii::app()->setComponent('db', $config['components']['db'], false);
+        Yii::app()->db->setActive(true);
+        Yii::app()->db->schema->getTables();
+        Yii::app()->db->schema->refresh();
     }
 
     /**
-     * @param int $version
+     * @param int $version Version to update FROM
      * @return \CDbConnection
      */
     public function updateDbFromVersion($version, $connection = null)
     {
+
         if (is_null($connection)) {
             $connection = $this->connectToNewDatabase('__test_update_helper_' . $version);
             $this->assertNotEmpty($connection, 'Could connect to new database');
         }
-
-        // Get InstallerController.
-        $inst = new \InstallerController('foobar');
-        $inst->connection = $connection;
 
         // Check SQL file.
         $file = __DIR__ . '/data/sql/create-mysql.' . $version . '.sql';
         $this->assertFileExists($file, 'SQL file exists: ' . $file);
 
         // Run SQL install file.
-        $result = $inst->_executeSQLFile($file, 'lime_');
-        $this->assertEquals([], $result, 'No error messages from _executeSQLFile' . print_r($result, true));
+        $result = self::executeSQLFile($file, $connection);
+        $this->assertEquals([], $result, 'No error messages from executeSQLFile' . print_r($result, true));
 
         // Run upgrade.
         $result = \db_upgrade_all($version);
 
         // Check error messages.
-        $flashes = \Yii::app()->user->getFlashes();
-        if ($flashes) {
-            print_r($flashes);
-        }
-        $this->assertEmpty($flashes, 'No flash error messages');
+        $flashes = Yii::app()->user->getFlashes();
+        $this->assertEmpty($flashes, 'No flash error messages: ' . json_encode($flashes));
         $this->assertTrue($result, 'Upgrade successful');
 
-        return $inst->connection;
+        $versionConfig = require(Yii::app()->getBasePath() . '/config/version.php');
+        $currentDbVersion = $connection
+            ->createCommand()
+            ->select('stg_value')
+            ->from('{{settings_global}}')
+            ->where("stg_name=:stg_name", ['stg_name' => 'DBVersion'])
+            ->queryScalar();
+        $this->assertEquals($versionConfig['dbversionnumber'], $currentDbVersion, 'Version in db is same as updated to');
+        $this->assertNull(\getIncompleteDatabaseUpdateMarker(), 'Incomplete update marker is removed after a successful update');
+
+        return $connection;
     }
 
     /**
@@ -297,8 +345,15 @@ class TestHelper extends TestCase
     public function teardownDatabase($databaseName, $connection = null)
     {
         if (is_null($connection)) {
-            $connection = \Yii::app()->getDb();
+            $connection = Yii::app()->getDb();
         }
+
+        $conStr = Yii::app()->db->connectionString;
+        $isMysql = substr($conStr, 0, 5) === 'mysql';
+        if (!$isMysql) {
+            return;
+        }
+
         try {
             $connection->createCommand('DROP DATABASE ' . $databaseName)->execute();
             $this->assertTrue(true);
@@ -327,8 +382,8 @@ class TestHelper extends TestCase
         $nameParts = explode('\\', $name);
         $name = $nameParts[count($nameParts) - 1];
 
-        $tempFolder = \Yii::app()->getBasePath() .'/../tests/tmp';
-        $folder     = $tempFolder.'/screenshots/';
+        $tempFolder = Yii::app()->getBasePath() . '/../tests/tmp';
+        $folder     = $tempFolder . '/screenshots/';
         $screenshot = $webDriver->takeScreenshot();
         $filename   = $folder . $name . '.png';
         $result     = file_put_contents($filename, $screenshot);
@@ -343,7 +398,7 @@ class TestHelper extends TestCase
      * @param $exception
      * @param $seen      - array passed to recursive calls to accumulate trace lines already seen
      *                     leave as NULL when calling this function
-     * @return array of strings, one entry per trace line
+     * @return string
      */
     public function javaTrace($ex, $seen = null)
     {
@@ -360,7 +415,7 @@ class TestHelper extends TestCase
         while (true) {
             $current = "$file:$line";
             if (is_array($seen) && in_array($current, $seen)) {
-                $result[] = sprintf(' ... %d more', count($trace)+1);
+                $result[] = sprintf(' ... %d more', count($trace) + 1);
                 break;
             }
             $result[] = sprintf(
@@ -401,33 +456,32 @@ class TestHelper extends TestCase
         $webDriver = null;
         do {
             try {
-                $host = 'http://localhost:'.TestBaseClassWeb::$webPort.'/wd/hub'; // this is the default
+                $address = getenv('WEBDRIVERHOST') ?: 'localhost';
+                $suffix = getenv('WEBDRIVERSUFFIX') ?: '/wd/hub';
+                if ($suffix === 'none') {
+                    $suffix = '';
+                }
+                $host = 'http://' . $address . ':' . TestBaseClassWeb::$webPort . $suffix;
+                $firefoxOptions = new \Facebook\WebDriver\Firefox\FirefoxOptions();
+                $firefoxOptions->setPreference(\Facebook\WebDriver\Firefox\FirefoxPreferences::READER_PARSE_ON_LOAD_ENABLED, false);
+                $firefoxOptions->setPreference('browser.link.open_newwindow', 3);
+                $firefoxOptions->setPreference('browser.download.folderList', 2);
+                $firefoxOptions->setPreference('browser.download.dir', ROOT . '/tmp/');
+                $firefoxOptions->setPreference('browser.download.panel.shown', false);
+                $firefoxOptions->setPreference('browser.helperApps.neverAsk.saveToDisk', 'application/force-download');
+                $firefoxOptions->setPreference('browser.download.manager.showAlertOnComplete', false);
+                $firefoxOptions->setPreference('browser.download.manager.closeWhenDone', false);
+                $firefoxOptions->setPreference('browser.download.manager.showAlertInterval', 100);
+                $firefoxOptions->setPreference('browser.download.manager.resumeOnWakeDelay', 0);
+                $firefoxOptions->setPreference('browser.tabs.remote.autostart', false);
+                $firefoxOptions->setPreference('browser.tabs.remote.autostart.2', false);
+
                 $capabilities = DesiredCapabilities::firefox();
-                $profile = new FirefoxProfile();
-                $profile->setPreference(FirefoxPreferences::READER_PARSE_ON_LOAD_ENABLED, false);
-                // Open target="_blank" in new tab.
-                $profile->setPreference('browser.link.open_newwindow', 3);
+                $capabilities->setCapability('acceptInsecureCerts', true);
+                $capabilities->setCapability(\Facebook\WebDriver\Firefox\FirefoxOptions::CAPABILITY, $firefoxOptions);
 
-                // When set to 2, the location specified for the most recent download is utilized again.
-                $profile->setPreference('browser.download.folderList', 2);
-
-                // Further settings to automatically download exported theme files.
-                // Test testExportAndImport() in ThemeControllerTest depends on these lines.
-                $profile->setPreference('browser.download.dir', BASEPATH . '../tmp/');
-                $profile->setPreference('browser.download.panel.shown', false);
-                $profile->setPreference('browser.helperApps.neverAsk.saveToDisk', 'application/force-download');
-
-                $profile->setPreference('browser.download.manager.showAlertOnComplete', false);
-                $profile->setPreference('browser.download.manager.closeWhenDone', false);
-                $profile->setPreference('browser.download.manager.showAlertInterval', 100);
-                $profile->setPreference('browser.download.manager.resumeOnWakeDelay', 0);
-
-                // This two lines are necessary to avoid issue https://github.com/SeleniumHQ/docker-selenium/issues/388.
-                $profile->setPreference('browser.tabs.remote.autostart', false);
-                $profile->setPreference('browser.tabs.remote.autostart.2', false);
-
-                $capabilities->setCapability(FirefoxDriver::PROFILE, $profile);
                 $webDriver = LimeSurveyWebDriver::create($host, $capabilities, 5000);
+
                 $success = true;
             } catch (WebDriverException $ex) {
                 $tries++;
@@ -436,5 +490,97 @@ class TestHelper extends TestCase
         } while (!$success && $tries < 5);
 
         return $webDriver;
+    }
+
+    /**
+     * Executes an SQL file
+     *
+     * @param string $sFileName
+     * @param \CDbConnection $connection
+     * @return array|bool
+     */
+    private static function executeSQLFile($sFileName, $connection)
+    {
+        $aMessages = array();
+        $sCommand = '';
+
+        if (!is_readable($sFileName)) {
+            return false;
+        } else {
+            $aLines = file($sFileName);
+        }
+        foreach ($aLines as $sLine) {
+            $sLine = rtrim($sLine);
+            $iLineLength = strlen($sLine);
+
+            if ($iLineLength && $sLine[0] != '#' && substr($sLine, 0, 2) != '--') {
+                if (substr($sLine, $iLineLength - 1, 1) == ';') {
+                    $sCommand .= $sLine;
+                    $sDatabasePrefix = Yii::app()->db->tablePrefix;
+                    $sCommand = str_replace('prefix_', $sDatabasePrefix, $sCommand); // Table prefixes
+
+                    try {
+                        $connection->createCommand($sCommand)->execute();
+                    } catch (Exception $e) {
+                        $aMessages[] = "Executing: " . $sCommand . " failed! Reason: " . $e;
+                    }
+
+                    $sCommand = '';
+                } else {
+                    $sCommand .= $sLine;
+                }
+            }
+        }
+        return $aMessages;
+    }
+
+    /**
+     * Reset the host info property of the request.
+     */
+    public function resetHostInfo()
+    {
+        // Use reflection to set the private "_hostInfo" property to null, as the public
+        // setter does not allow setting it to null.
+        $reflection = new \ReflectionClass("CHttpRequest");
+        $property = $reflection->getProperty('_hostInfo');
+        $property->setValue(Yii::app()->getRequest(), null);
+    }
+
+    /**
+     * Save url generation configuration
+     */
+    public static function saveUrlSettings()
+    {
+        self::$tmpPublicUrl = Yii::app()->getConfig('publicurl');
+        self::$tmpBaseUrl = Yii::app()->getRequest()->baseUrl;
+        self::$tmpHostInfo = Yii::app()->getRequest()->hostInfo;
+        self::$originalUrlManager = Yii::app()->getUrlManager();
+    }
+
+    /**
+     * Set config and component to expected default
+     */
+    public static function setUrlToExpectedDefault($urlFormat = \CUrlManager::PATH_FORMAT)
+    {
+        Yii::app()->setConfig('publicurl', null);
+        $urlManager = [
+            'urlFormat' => $urlFormat,
+            'rules' => require(APPPATH . 'config/routes.php'),
+            'showScriptName' => true,
+        ];
+        Yii::app()->setComponent('urlManager', null); // Be sure to reset component
+        Yii::app()->setComponent('urlManager', $urlManager);
+    }
+
+    /**
+     * Reset url generation configuration
+     */
+    public static function resetUrlSettings()
+    {
+        Yii::app()->setConfig('publicurl', self::$tmpPublicUrl);
+        Yii::app()->getRequest()->baseUrl = self::$tmpBaseUrl;
+        Yii::app()->getRequest()->hostInfo = self::$tmpHostInfo;
+        Yii::app()->setComponent('urlManager', null); // Be sure to reset component
+        Yii::app()->setComponent('urlManager', self::$originalUrlManager);
     }
 }

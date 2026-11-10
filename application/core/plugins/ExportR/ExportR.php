@@ -1,15 +1,17 @@
 <?php
+
 class ExportR extends \LimeSurvey\PluginManager\PluginBase
 {
-    
     protected $storage = 'DbStorage';
-       
-    static protected $description = 'Core: R-export';
-    static protected $name = 'Export results to R';
-    
+
+    protected static $description = 'Core: R-export';
+    protected static $name = 'Export results to R';
+
+    /** @inheritdoc this plugin didn't have any public method */
+    public $allowedPublicMethods = array();
+
     public function init()
     {
-        
         /**
          * Here you should handle subscribing to the events your plugin will handle
          */
@@ -17,12 +19,12 @@ class ExportR extends \LimeSurvey\PluginManager\PluginBase
         $this->subscribe('listExportOptions');
         $this->subscribe('newExport');
     }
-    
+
     public function listExportOptions()
     {
         $event = $this->getEvent();
         $type = $event->get('type');
-        
+
         switch ($type) {
             case 'rsyntax':
                 $tooltip = CHtml::openTag('ol');
@@ -35,14 +37,14 @@ class ExportR extends \LimeSurvey\PluginManager\PluginBase
                 $event->set('tooltip', $tooltip);
                 $event->set('label', gT("R (syntax file)"));
                 break;
-            
+
             case 'rdata':
-                default:
+            default:
                 $event->set('label', gT("R (data file)"));
                 break;
         }
     }
-    
+
     /**
      * Registers this export type
      */
@@ -50,13 +52,13 @@ class ExportR extends \LimeSurvey\PluginManager\PluginBase
     {
         $event = $this->getEvent();
         $exports = $event->get('exportplugins');
-        
+
         // Yes we overwrite existing classes if available
-        $exports['rsyntax'] = get_class();
-        $exports['rdata'] = get_class();
+        $exports['rsyntax'] = get_class($this);
+        $exports['rdata'] = get_class($this);
         $event->set('exportplugins', $exports);
     }
-    
+
     /**
      * Returns the required IWriter
      */
@@ -64,18 +66,18 @@ class ExportR extends \LimeSurvey\PluginManager\PluginBase
     {
         $event = $this->getEvent();
         $type = $event->get('type');
-                
+
         switch ($type) {
             case 'rsyntax':
                 $writer = new RSyntaxWriter();
                 break;
-            
+
             case 'rdata':
             default:
                 $writer = new RDataWriter();
                 break;
         }
-        
+
         $event->set('writer', $writer);
     }
 }

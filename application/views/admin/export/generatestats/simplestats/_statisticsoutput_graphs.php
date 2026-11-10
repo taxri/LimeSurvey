@@ -10,18 +10,20 @@
  * @var $sChartname
  * @var $grawdata
  * @var $color
+ * @var $chartTitle
  *
  */
 ?>
 <!-- _statisticsoutput_graphs -->
-    <?php if(count($labels) < 70): ?>
+    <?php if (count($labels) < 70) : ?>
         <!-- Charts -->
-        <div class="row">
-            <div class="col-sm-9 vcenter chartjs-container" id="chartjs-container-<?php echo $qqid; ?>"
+        <div class="row custom custom-padding bottom-20">
+            <div class="col-md-12 vcenter chartjs-container" id="chartjs-container-<?php echo $qqid; ?>"
                 data-chartname="<?php echo $sChartname; // The name of the jschart object ?>"
                 data-qid="<?php echo $qqid; // the question id ?>"
                 data-type="<?php echo $charttype; // the chart start type (bar, donut, etc.) ?>"
                 data-color="<?php echo $color; // the background color for bar, etc. ?>"
+                data-title="<?php echo CHtml::encode($chartTitle); // the question title for the exported image ?>"
             >
 
             <?php
@@ -30,35 +32,38 @@
                 <canvas class="canvas-chart " id="chartjs-<?php echo $qqid; ?>" width="400" height="300<?php // echo $iCanvaHeight;?>"
                     data-color="<?php echo $color; // the background color for bar, etc. ?>"></canvas>
             </div>
+        </div>
 
+        <div class="row">
             <!-- legends -->
-            <?php if($charttype=='Pie' || $charttype=='Doughnut'): ?>
-            <div class="legend col-sm-2 vcenter">
-                <?php foreach($labels as $i=>$label): ?>
-                    <?php $colorindex = $color+$i; ?>
+            <div class="legend col-md-12 vcenter">
+                <?php foreach ($fullLabels as $i => $label) : ?>
+                    <?php $colorindex = $color + $i; ?>
                     <div class="row" style="margin-bottom: 10px;">
-                        <div class="col-sm-1">
+                        <div class="col-md-1">
                             <span style="background-color:rgba(<?php echo $COLORS_FOR_SURVEY[$colorindex];?>,0.6); display: block;    width: 20px;    height: 20px;    border-radius: 5px; margin: 0px; padding: 0px;">
                             </span>
                         </div>
-                        <div class="col-sm-10">
+                        <div class="col-md-10">
                             <?php echo $label; ?>
                         </div>
                     </div>
                 <?php endforeach;?>
             </div>
-            <?php endif; ?>
         </div>
 
 <!-- Buttons to change graph type -->
         <div id='stats_<?php echo $rt;?>' class='graphdisplay' style="text-align:center">
         </div>
-    <?php else: ?>
+    <?php else : ?>
         <div class="row">
-            <div class="col-sm-12">
-                <div class="alert alert-warning" role="alert">
-                    <?php eT("Too many labels, can't generate chart");?>
-                </div>
+            <div class="col-md-12">
+                <?php
+                $this->widget('ext.AlertWidget.AlertWidget', [
+                    'text' => gT("Too many labels, can't generate chart"),
+                    'type' => 'warning',
+                ]);
+                ?>
             </div>
         </div>
     <?php endif;?>

@@ -4,94 +4,92 @@ var LS = LS || {
 };
 
 /**
- * jQuery Plugin to manage the date in token modal edit.
- * Some fields, like "Completed", can have string value (eg: 'N') or a date value.
- * They are displayed via a switch hidding or showing a date picker.
+ *
+ * @type {{}}
  */
-$.fn.YesNoDate = function(options)
-{
-    var that            = $(this);                                              // calling element
-    that.onReadyMethod = function(){
-        var $elSwitch        = that.find('.YesNoDateSwitch').first(),           // switch element (generated with YiiWheels widgets)
-            $elDateContainer = that.find('.date-container').first(),            // date time picker container (to show/hide)
-            $elDate          = that.find('.YesNoDatePicker').first(),           // date time picker element (generated with YiiWheels widgets)
-            $elHiddenInput   = that.find('.YesNoDateHidden').first();           // input form, containing the value to submit to the database
+var filterData = {};
 
-        console.ls.log('tokenform', {
-            $elSwitch : $elSwitch,
-            $elDateContainer : $elDateContainer,
-            $elDate : $elDate,
-            $elHiddenInput : $elHiddenInput
-        });
+Tokens = {
+     /**
+      * jQuery Plugin to manage the date in token modal edit.
+      * Some fields, like "Completed", can have string value (eg: 'N') or a date value.
+      * They are displayed via a switch hiding or showing a date picker.
+      */
+     YesNoDate: function (el) {
+         var $elSwitch = el.querySelector('.YesNoDateSwitch'),           // switch element (generated with YiiWheels widgets)
+             $elDateContainer = el.querySelector('.date-container'),            // date time picker container (to show/hide)
+             $elDate = el.querySelector('.YesNoDatePicker'),           // date time picker element (generated with YiiWheels widgets)
+             $elHiddenInput = el.querySelector('.YesNoDateHidden');           // input form, containing the value to submit to the database
+         console.ls.log('tokenform', {
+             $elSwitch: $elSwitch,
+             $elDateContainer: $elDateContainer,
+             $elDate: $elDate,
+             $elHiddenInput: $elHiddenInput
+         });
 
-        // The view is called without processing output (no javascript)
-        // So we must apply js to widget elements
-        $elSwitch.bootstrapSwitch();                                            // Generate the switch
-        $elDate.datetimepicker({locale: that.data('locale')});                  // Generate the date time picker
+         // Generate the date time picker
+         initDatePicker($elDate);
 
-        console.ls.log('$elSwitch', $elSwitch);
-        // When user switch
-        $elSwitch.on('switchChange.bootstrapSwitch', function(event, state)
-        {
-            console.ls.log('$elSwitch', event, state);
-            if (state==true)
-            {
-                // Show date
-                $elDateContainer.show();
-                $elHiddenInput.attr('value', moment().format($elDate.data('date-format')));
-            }
-            else
-            {
-                // Hide date, set hidden input to "N"
-                $elDateContainer.hide();
-                $elHiddenInput.attr('value', 'N');
-            }
-        });
+         console.ls.log('$elSwitch', $elSwitch);
+         // When user switch
+         $elSwitch.addEventListener('change', (event, state) => {
+             console.ls.log('$elSwitch', event, state);
+             if ($elSwitch.querySelector('input').checked) {
+                 // Show date
 
-        // When user change date
-        $elDate.on('dp.change', function(e){
-            $elHiddenInput.attr('value', e.date.format($elDate.data('date-format')));
-        })
-    };
-    return that;
-}
+                 $elDateContainer.classList.remove('d-none');
+                 // Set the date through the picker, so its selected date matches the displayed one
+                 pickers['picker_' + $elDate.id].dates.setFromInput(moment().format($elDate.dataset.format));
+                 $elHiddenInput.value = $elDate.value;
+             } else {
+                 // Hide date, set hidden input to "N"
+                 $elDateContainer.classList.add('d-none');
+                 $elHiddenInput.value = 'N';
+             }
+         });
+         // When user change date
+         $elDate.addEventListener('change', function (e) {
+             // Only take over the date while the switch is on, otherwise the hidden input keeps its value (eg: 'N')
+             if ($elSwitch.querySelector('input').checked) {
+                 $elHiddenInput.value = $elDate.value;
+             }
+         });
+     },
+     YesNo: function (el) {
+         let $elHiddenInput = el.querySelector('.YesNoDateHidden');           // input form, containing the value to submit to the database
+         let $elSwitch = el.querySelector('.YesNoSwitch');               // switch element (generated with YiiWheels widgets)
+         // When user change date
+         $elSwitch.addEventListener('change', () => {
+             if ($elSwitch.querySelector('input').checked) {
+                 $elHiddenInput.value = 'Y';
+             } else {
+                 $elHiddenInput.value = 'N';
+             }
+         });
+     },
+     DatePicker: function (el) {
+         var $elDate = el.querySelector('.DatePicker'), // date time picker element
+             $elHiddenInput = el.querySelector('.selector_submitField'); // input form
 
-$.fn.YesNo = function(options)
-{
-    var that              = $(this);                                            // calling element
-    var $elHiddenInput   = that.find('.YesNoDateHidden').first();           // input form, containing the value to submit to the database
+         // Generate the date time picker
+         initDatePicker($elDate);
 
-    that.onReadyMethod = function(){
-        var $elSwitch        = that.find('.YesNoSwitch').first();               // switch element (generated with YiiWheels widgets)
-        $elSwitch.bootstrapSwitch();                                            // Generate the switch
-
-        // When user change date
-        $elSwitch.on( 'switchChange.bootstrapSwitch', function(event, state)
-        {
-            if (state==true)
-            {
-                $elHiddenInput.attr('value', 'Y');
-            }
-            else
-            {
-                $elHiddenInput.attr('value', 'N');
-            }
-
-
-        })
-
-    };
-    return that;
-}
+         // When user change date
+         $elDate.addEventListener('change', function (e) {
+             $elHiddenInput.value = $elDate.value;
+         });
+     }
+ };
 
 /**
  * Provide to this function a element containing form-groups,
  * it will stick the text labels on its border
+ * @TODO Does this function still make sense???
  */
 $.fn.stickLabelOnLeft  = function(options)
 {
     var that = $(this);
-    var formgroups = that.find('.form-group');
+    var formgroups = that.find('.ex-form-group');
     $maxWidth  = 0;
     $elWidestLeftLabel = '';
     formgroups.each( function() {
@@ -133,6 +131,10 @@ function submitEditToken(){
     var $modal      = $('#editTokenModal');
     var $gridId     = '';
 
+    if (!$form[0].reportValidity()) {
+        return;
+    }
+
     // check which grid id exists on the page, to be able to update grid successfully
     if ($('#token-grid').length > 0) {
         $gridId = 'token-grid';
@@ -148,23 +150,34 @@ function submitEditToken(){
 
         success : function(result, stat) {
             if (result.success) {
-                $modal.modal('hide');
-            }
-            else {
+                $modal.hide();
+                $('body').removeClass('modal-open');
+                $('body').removeAttr('style');
+                $('.modal-backdrop').remove();
+                window.LS.ajaxAlerts(result.success, 'success');
+            } else {
+                var errorMsg = result.error.message ? result.error.message : result.error;
+                if (!errorMsg) errorMsg = "Unexpected error";
+                showError(errorMsg);
+                return;
             }
 
             // Using Try/Catch here to catch errors if there is no grid
             try {
                 $.fn.yiiGridView.update($gridId, {
                     complete: function(s){
-                        $modal.modal('hide');
+                        $modal.hide();
+                        $('body').removeClass('modal-open');
+                        $('.modal-backdrop').remove();
                     } // Update the surveys list
                 });
             }
             catch (e){
                 if (e) {
                     console.ls.error(e);
-                    $modal.modal('hide');
+                    $modal.hide();
+                    $('body').removeClass('modal-open');
+                    $('.modal-backdrop').remove();
                 }
             }
         },
@@ -174,31 +187,128 @@ function submitEditToken(){
     });
 }
 
+function showError(msg) {
+    $('#edittoken-error-container .alert-content').html(msg);
+    $('#edittoken-error-container').show();
+}
+
+/**
+ * Validates that mandatory additional attributes are filled
+ */
+function validateAdditionalAttributes() {
+    const validationErrorMsg = $('#edittoken').attr('data-additional-attributes-validation-error');
+
+    let valid = true;
+    $('.mandatory-attribute').each(function () {
+        let value = $(this).val();
+        if (value === null || value === "") {
+            valid = false;
+            if (!$('#custom').is(':visible')) {
+                $('.nav-tabs a[href="#custom"]').tab('show');
+            }
+            showError(validationErrorMsg);
+            $(this).trigger('invalid');
+            return false;
+        }
+    });
+    return valid;
+}
+
+/**
+ * Shows the tab of the participant form that contains the first invalid field, then reports its validation message again.
+ * The browser can't focus a field in a hidden tab, so its own validation message isn't shown there.
+ * The 'invalid' event doesn't bubble, so this is registered as a capturing listener on the document.
+ * @param {Event} event the 'invalid' event
+ */
+function showTabOfInvalidField(event) {
+    const field = event.target;
+    const tabPane = field.closest ? field.closest('#edittoken .tab-pane') : null;
+    if (!tabPane || tabPane.classList.contains('active')) {
+        return;
+    }
+    // Only handle the first invalid field, which is the one the browser reports
+    const firstInvalidField = Array.from(field.form.elements).find((element) => element.willValidate && !element.validity.valid);
+    if (field !== firstInvalidField) {
+        return;
+    }
+    const tabLink = document.querySelector('#edittoken .nav-tabs a[href="#' + tabPane.id + '"]');
+    if (tabLink) {
+        // The tab pane only gets visible after the fade transition, so the browser can't report the field yet
+        event.preventDefault();
+        tabLink.addEventListener('shown.bs.tab', () => field.reportValidity(), {once: true});
+        bootstrap.Tab.getOrCreateInstance(tabLink).show();
+    }
+}
+document.addEventListener('invalid', showTabOfInvalidField, true);
+
+/**
+ * Validates some form fields checking that at least one is not empty when creating a participant.
+ * @returns {boolean} false if all of the checked fields are empty and the subaction is inserttoken.
+ */
+function validateNotEmptyTokenForm() {
+    if ($('#edittoken').find('[name="subaction"]').val() != 'inserttoken') {
+        return true;
+    }
+    var isFormEmpty = $('#email').val() == '' && $('#firstname').val() == '' && $('#lastname').val() == '';
+    if (isFormEmpty) {
+        const modalElement = document.getElementById('emptyTokenConfirmationModal');
+        const modal = new bootstrap.Modal(modalElement);
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            // Enable the Save and Close button
+            $("#save-and-close-button").removeClass("disabled");
+        });
+        modal.show();
+        $('#ls-loading').hide();
+        return false;
+    }
+    return true;
+}
+
 /**
  * Scroll the pager and the footer when scrolling horizontally
  */
-$(document).on('ready  pjax:scriptcomplete', function(){
+$(document).on('ready pjax:scriptcomplete', function(){
 
     if($('#sent-yes-no-date-container').length > 0)
     {
         $('#general').stickLabelOnLeft();
 
+        document.querySelectorAll('.yes-no-date-container').forEach((el) => {
+            Tokens.YesNoDate(el);
+        });
+
+        document.querySelectorAll('.yes-no-container').forEach((el) => {
+            Tokens.YesNo(el);
+        });
+        initValidFromValidUntilPickers();
+    }
+
+    var modal = $('#massive-actions-modal-token-grid-edit-0');
+    if (modal.length) {
+        modal.on('shown.bs.modal', function () {
+            $('.yes-no-date-container').each(function(i,el){
+                Tokens.YesNoDate(el);
+            });
+
+            $('.yes-no-container').each(function(i,el){
+                Tokens.YesNo(el);
+            });
+
+            $('.date-picker-container').each(function(i,el){
+                Tokens.DatePicker(el);
+            });
+        });
+    }
+
+    $(document).on('actions-updated', function() {
         $('.yes-no-date-container').each(function(i,el){
-            $(this).YesNoDate();
+            Tokens.YesNoDate(el);
         });
 
         $('.yes-no-container').each(function(i,el){
-            $(this).YesNo();
+            Tokens.YesNo(el);
         });
-
-        $('#validfrom').datetimepicker({locale: $('#validfrom').data('locale')});
-        $('#validuntil').datetimepicker({locale: $('#validuntil').data('locale')});
-
-        $('.date .input-group-addon').on('click', function(){
-            $prev = $(this).siblings();
-            $prev.data("DateTimePicker").show();
-        });
-    }
+    });
 
     var initialScrollValue = $('.scrolling-wrapper').scrollLeft();
     var useRtl = $('input[name="rtl"]').val() === '1';
@@ -229,16 +339,17 @@ $(document).on('ready  pjax:scriptcomplete', function(){
 
         $modal.data('ajax-url', actionUrl);
         $modal.data('href', "#");
-        $modal.modal('show');
+        const modal = new bootstrap.Modal(document.getElementById('confirmation-modal'));
+        modal.show();
         $modal.find('.modal-footer-yes-no').find('a.btn-ok').on('click', function(click){
             $.ajax({
                 url: actionUrl,
                 method: "GET",
                 success: function(data){
-                    
+
                     $('#token-grid').yiiGridView('update',{
                         complete: function(s){
-                            $modal.modal('hide');
+                            modal.hide();
                         } // Update the surveys list
                     });
                 }
@@ -246,20 +357,73 @@ $(document).on('ready  pjax:scriptcomplete', function(){
         })
     });
 
-    $('.edit-token').off('click.edittoken').on('click.edittoken', startEditToken);
+    $(document).off('click.edittoken', '.edit-token').on('click.edittoken', '.edit-token', function (event) {
+        startEditToken(event, $(this));
+    });
 
-    $('#edittoken').off('submit.edittoken').on('submit.edittoken',function(event){
+    $(document).off('submit.edittoken', '#edittoken').on('submit.edittoken', '#edittoken', function (event, params) {
+        var eventParams = params || {};
+        // When saving from the Edit Participant modal, handle the event in submitEditToken().
         if($('#editTokenModal').length > 0 ){
             event.preventDefault();
             submitEditToken();
+            return;
         }
+        // Validate additional (custom) participant attributes
+        if (!validateAdditionalAttributes()) {
+            event.preventDefault();
+            return false;
+        }
+        // Validate expiration date isn't lower than the "Valid from" date
+        if (
+            !LS.validateEndDateHigherThanStart(
+                $('#validfrom').data('DateTimePicker'),
+                $('#validuntil').data('DateTimePicker'),
+                () => {
+                    showError($('#edittoken').attr('data-expiration-validation-error'));
+                    $('#validuntil').trigger('invalid');
+                }
+            )
+        ) {
+            event.preventDefault();
+            return false;
+        }
+
+        if (!eventParams.confirm_empty_save && !validateNotEmptyTokenForm()) {
+            return false;
+        }
+    });
+
+    /**
+     * Handle form inputs 'invalid' event.
+     */
+    $('#edittoken').find('button, input, select, textarea').on('invalid', function () {
+        // Enable the Save and Close button and hide the loading spinner
+        $("#save-and-close-button").removeClass("disabled");
+        $('#ls-loading').hide();
     });
 
     /**
      * Save token
      */
-    $("#save-edittoken").click(function(){
-        submitEditToken();
+    $("#save-edittoken").off('click.token-save').on('click.token-save', function() {
+        const valid = validateAdditionalAttributes()
+            && LS.validateEndDateHigherThanStart(
+                $('#validfrom').data('DateTimePicker'),
+                $('#validuntil').data('DateTimePicker'),
+                () => {showError($('#edittoken').attr('data-expiration-validation-error'))}
+            );
+        if (valid) {
+            submitEditToken();
+        }
+    });
+
+    /**
+     * Confirm save empty token
+     */
+    $("#save-empty-token").off('click.token-save').on('click.token-save', function() {
+        $('#ls-loading').show();
+        $('#edittoken').trigger('submit', {confirm_empty_save: true});
     });
 
 
@@ -268,6 +432,7 @@ $(document).on('ready  pjax:scriptcomplete', function(){
         var $that               = $(this);
         var $url                = $that.data('url');
         var $modal              = $('#tokenBounceModal');
+        const modal             = new bootstrap.Modal(document.getElementById('tokenBounceModal'));
         var $ajaxLoader         = $('#ajaxContainerLoading');
         var $modalBodyText      = $modal.find('.modal-body-text');
         var $limebutton         = $modal.find('.modal-footer .limebutton');
@@ -275,7 +440,7 @@ $(document).on('ready  pjax:scriptcomplete', function(){
         $modalBodyText.empty();
         $limebutton.empty().append('close');
         $ajaxLoader.show();
-        $modal.modal();
+        modal.show();
 
         $.ajax({
             url: $url,
@@ -328,8 +493,8 @@ $(document).on('ready  pjax:scriptcomplete', function(){
         <option value='greaterthan'>"+searchtypes[4]+"</option>\n\
         <option value='lessthan'>"+searchtypes[5]+"</option>\n\
         </select></td>\n\<td><input class='form-control' type='text' id='conditiontext_"+conditionid+"' /></td>\n\
-        <td><span data-toggle='tooltip' title='" + sDelete + "' class='ui-pg-button fa fa-trash text-danger' onClick= $(this).parent().parent().remove();$('#joincondition_"+conditionid+"').remove() id='ui-icon removebutton'"+conditionid+"></span>\n\
-        <span data-toggle='tooltip' title='" + sAdd + "' class='ui-pg-button addcondition-button ui-icon text-success icon-add' style='margin-bottom:4px'></span></td></tr><tr></tr>";
+        <td><span data-bs-toggle='tooltip' title='" + sDelete + "' class='ui-pg-button ri-delete-bin-fill text-danger' onClick= $(this).parent().parent().remove();$('#joincondition_"+conditionid+"').remove() id='ui-icon removebutton'"+conditionid+"></span>\n\
+        <span data-bs-toggle='tooltip' title='" + sAdd + "' class='ui-pg-button addcondition-button ui-icon text-success ri-add-circle-fill' style='margin-bottom:4px'></span></td></tr><tr></tr>";
         $('#searchtable tr:last').after(html);
         window.LS.doToolTip();
     });
@@ -345,61 +510,56 @@ $(document).on('ready  pjax:scriptcomplete', function(){
 /**
  * Token edit
  */
-var startEditToken = function(){
-    var $that       = $(this),
-        $sid        = $that.data('sid'),
-        $tid        = $that.data('tid'),
-        $actionUrl  = $that.data('url') || $that.attr("href"),
+var startEditToken = function(event, that){
+        event.preventDefault()
+        $sid        = $(that).data('sid'),
+        $tid        = $(that).data('tid'),
+        $actionUrl  = $(that).data('url') || $(that).attr("href"),
         $modal      = $('#editTokenModal'),
         $modalBody  = $modal.find('.modal-body'),
         $ajaxLoader = $('#ajaxContainerLoading2'),
         $oldModalBody   = $modalBody.html();
+        modalContent = $modal.find('#modal-content');
     $ajaxLoader.show();
-    $modal.modal('show');
+    modalContent.empty();
+    const modal = new bootstrap.Modal(document.getElementById('editTokenModal'));
+    modal.show();
+
     // Ajax request
     $.ajax({
         url : $actionUrl,
         type : 'GET',
 
         // html contains the buttons
-        success : function(html, statut){
-
-            $('#modal-content').empty().append(html);                       // Inject the returned HTML in the modal body
-
-            // Apply the yes/no/date jquery plugin to the elements loaded via ajax
-            /*
-                $('#sent-yes-no-date-container').YesNoDate();
-                $('#remind-yes-no-date-container').YesNoDate();
-                $('#completed-yes-no-date-container').YesNoDate();
-            */
-
-            $('.yes-no-date-container').each(function(el){
-                $(this).YesNoDate().onReadyMethod();
-            });
-
-
-            $('.yes-no-container').each(function(el){
-                $(this).YesNo().onReadyMethod();
-            });
-
-            $('#validfrom').datetimepicker({locale: $('#validfrom').data('locale')});
-            $('#validuntil').datetimepicker({locale: $('#validuntil').data('locale')});
-
-            $('.date .input-group-addon').on('click', function(){
-                $prev = $(this).siblings();
-                $prev.data("DateTimePicker").show();
-            });
-
-            var elGeneral  = $('#general');
+        success : function(html, status){
 
             // Fake hide of modal content, so we can still get width of inner elements like labels
-            var previousCss  = $("#modal-content").attr("style");
-            $("#modal-content")
+            var previousCss  = modalContent.attr("style");
+            modalContent
                 .css({
                     position:   'absolute', // Optional if #myDiv is already absolute
                     visibility: 'hidden',
                     display:    'block'
                 });
+
+            modalContent.append(html);                       // Inject the returned HTML in the modal body
+
+            document.querySelectorAll('.yes-no-date-container').forEach((el) => {
+                Tokens.YesNoDate(el);
+            });
+
+            document.querySelectorAll('.yes-no-container').forEach((el) => {
+                Tokens.YesNo(el);
+            });
+
+            initValidFromValidUntilPickers();
+
+            $('.date .input-group-text').on('click', function(){
+                $prev = $(this).siblings();
+                // $prev.data("DateTimePicker").show();
+            });
+
+            var elGeneral  = $('#general');
 
             // Stick the labels on the left side
             // Sometime, the content is loaded after modal is shown, sometimes not. So, we wait 200ms just in case (For label width)
@@ -407,13 +567,13 @@ var startEditToken = function(){
                 elGeneral.stickLabelOnLeft();
                 $ajaxLoader.hide();
                 // Remove fake hide
-                $("#modal-content").attr("style", previousCss ? previousCss : "");
+                modalContent.attr("style", previousCss ? previousCss : "");
             }, 200);
 
         },
-        error :  function(html, statut){
+        error :  function(html, status){
             $ajaxLoader.hide();
-            $('#modal-content').empty().append(html);
+            modalContent.append(html);
             console.ls.error(html);
         }
     });
@@ -458,9 +618,11 @@ function centerInfoDialog() {
     infoDialog.css({ 'left': Math.round((dialogparent.width() - infoDialog.width()) / 2)+'px' });
 }
 
-function onUpdateTokenGrid(){
+function onUpdateTokenGrid() {
     reinstallParticipantsFilterDatePicker();
-    $('.edit-token').off('click.edittoken').on('click.edittoken', startEditToken);
+    $('.edit-token').off('click.edittoken').on('click.edittoken', function (event) {
+        startEditToken(event, $(this));
+    });
 }
 
 /**
@@ -468,26 +630,50 @@ function onUpdateTokenGrid(){
  * @return
  */
 function reinstallParticipantsFilterDatePicker() {
-
     // Since grid view is updated with Ajax, we need to fetch date format each update
-    var dateFormatDetails = JSON.parse($('input[name="dateFormatDetails"]').val());
-
-    $('#TokenDynamic_validfrom').datetimepicker({
-        format: dateFormatDetails.jsdate + ' HH:mm'
-    });
-    $('#TokenDynamic_validuntil').datetimepicker({
-        format: dateFormatDetails.jsdate + ' HH:mm'
-    });
-
-    $('#TokenDynamic_validfrom').on('focusout', function() {
-        var data = $('#token-grid .filters input, #token-grid .filters select').serialize();
-        $.fn.yiiGridView.update('token-grid', {data: data});
-    });
-
-    $('#TokenDynamic_validuntil').on('focusout', function() {
-        var data = $('#token-grid .filters input, #token-grid .filters select').serialize();
-        $.fn.yiiGridView.update('token-grid', {data: data});
-    });
+    var dateFormatDetails = document.getElementById('dateFormatDetails');
+    var locale = document.getElementById('locale');
+    var validfromElement = document.getElementsByName('TokenDynamic[validfrom]')[0];
+    var validuntilElement = document.getElementsByName('TokenDynamic[validuntil]')[0];
+    if ((dateFormatDetails && dateFormatDetails.value) && (locale && locale.value)) {
+        dateFormatDetails = JSON.parse(dateFormatDetails.value);
+        var dateFormat = dateFormatDetails.jsdate + ' HH:mm';
+        if (validfromElement) {
+            initDatePicker(validfromElement, locale.value, dateFormat);
+            validfromElement.addEventListener("hide.td", function () {
+                reloadTokenGrid();
+            });
+        }
+        if (validuntilElement) {
+            initDatePicker(validuntilElement, locale.value, dateFormat);
+            validuntilElement.addEventListener("hide.td", function () {
+                reloadTokenGrid();
+            });
+        }
+    }
     $(document).trigger('actions-updated');
+}
 
+/**
+ * reload gridview only when data of filter input has changed
+ */
+function reloadTokenGrid() {
+    var newData = $('#token-grid .filters input, #token-grid .filters select').serialize();
+    if (filterData !== newData) {
+        filterData = newData;
+        $.fn.yiiGridView.update('token-grid', {data: filterData});
+    }
+}
+
+function initValidFromValidUntilPickers() {
+    var validfromElement = document.getElementById('validfrom');
+    var validuntilElement = document.getElementById('validuntil');
+    var dateFormat = validfromElement.dataset.dateformat;
+    var locale = validfromElement.dataset.locale;
+    if (validfromElement) {
+        initDatePicker(validfromElement, 'validfrom', locale, dateFormat);
+    }
+    if (validuntilElement) {
+        initDatePicker(validuntilElement, 'validuntil', locale, dateFormat);
+    }
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  *
  * For code completion we add the available scenario's here
@@ -28,7 +29,7 @@
  *
  */
 
-use \LimeSurvey\PluginManager\PluginEvent;
+use LimeSurvey\PluginManager\PluginEvent;
 
 /**
  * Class Token
@@ -41,7 +42,7 @@ use \LimeSurvey\PluginManager\PluginEvent;
  * @property string $emailstatus Participant's e-mail address status: OK/bounced/OptOut
  * @property string $token Participant's token
  * @property string $language Participant's language eg: en
- * @property string $blacklisted Whether participant is blacklisted: (Y/N)
+ * @property string $blacklisted Whether participant is blocklisted: (Y/N)
  * @property string $sent
  * @property string $remindersent
  * @property integer $remindercount
@@ -58,6 +59,14 @@ use \LimeSurvey\PluginManager\PluginEvent;
  */
 abstract class Token extends Dynamic
 {
+    /** @var int Minimum token length */
+    const MIN_LENGTH = 5;
+
+    /** @var int Maximum token length */
+    const MAX_LENGTH = 36;
+
+    /** @var int Default token length */
+    const DEFAULT_LENGTH = 15;
 
     /**
      * Set defaults
@@ -68,30 +77,38 @@ abstract class Token extends Dynamic
         // Set the default values
         $this->usesleft = 1;
         $this->completed = "N";
+        $this->emailstatus = "OK";
     }
+
+    /** @inheritdoc */
+    public function primaryKey()
+    {
+        return 'tid';
+    }
+
     /** @inheritdoc */
     public function attributeLabels()
     {
         $labels = array(
-            'tid' => gT('Token ID'),
+            'tid' => gT('Access code ID'),
             'partcipant_id' => gT('Participant ID'),
             'firstname' => gT('First name'),
             'lastname' => gT('Last name'),
             'email' => gT('Email address'),
             'emailstatus' => gT('Email status'),
-            'token' => gT('Token'),
+            'token' => gT('Access code'),
             'language' => gT('Language code'),
-            'blacklisted' => gT('Blacklisted'),
+            'blacklisted' => gT('Blocklisted'),
             'sent' => gT('Invitation sent date'),
             'remindersent' => gT('Last reminder sent date'),
-            'remindercount' =>gT('Total numbers of sent reminders'),
+            'remindercount' => gT('Total numbers of sent reminders'),
             'completed' => gT('Completed'),
             'usesleft' => gT('Uses left'),
             'validfrom' => gT('Valid from'),
             'validuntil' => gT('Valid until'),
         );
-        foreach (decodeTokenAttributes($this->survey->attributedescriptions) as $key => $info) {
-            $labels[$key] = $info['description'];
+        foreach (decodeTokenAttributes($this->survey->attributedescriptions ?? '') as $key => $info) {
+            $labels[$key] = !empty($info['description']) ? $info['description'] : '';
         }
         return $labels;
     }
@@ -104,7 +121,7 @@ abstract class Token extends Dynamic
         $result = parent::beforeDelete();
         if ($result && isset($this->surveylink)) {
             if (!$this->surveylink->delete()) {
-                throw new CException('Could not delete survey link. Token was not deleted.');
+                throw new CException('Could not delete survey link. Participant was not deleted.');
             }
             return true;
         }
@@ -116,18 +133,18 @@ abstract class Token extends Dynamic
      */
     public function deleteAllByAttributes($attributes, $condition = '', $params = array())
     {
-        $builder=$this->getCommandBuilder();
-        $participantCriteria=$builder->createCriteria($condition,$params);
+        $builder = $this->getCommandBuilder();
+        $participantCriteria = $builder->createCriteria($condition, $params);
         $participantCriteria->select = array('tid','participant_id');
         $participantCriteria->addCondition('participant_id is not null');
         $oParticipantToDelete = self::model($this->dynamicId)->findAll($participantCriteria);
         $result = parent::deleteAllByAttributes($attributes, $condition, $params);
-        if($result && !empty($oParticipantToDelete)) {
+        if ($result && !empty($oParticipantToDelete)) {
             /* Get the participant not deleted : we must not delete survey link */
             $oParticipantNotDeleted = self::model($this->dynamicId)->findAll($participantCriteria);
-            $tidToDelete = array_diff(CHtml::listData($oParticipantToDelete,'tid','tid'),CHtml::listData($oParticipantNotDeleted,'tid','tid'));
-            if(!empty($tidToDelete)) {
-                SurveyLink::model()->deleteAllByAttributes(array('token_id'=>$tidToDelete,'survey_id'=>$this->dynamicId));
+            $tidToDelete = array_diff(CHtml::listData($oParticipantToDelete, 'tid', 'tid'), CHtml::listData($oParticipantNotDeleted, 'tid', 'tid'));
+            if (!empty($tidToDelete)) {
+                SurveyLink::model()->deleteAllByAttributes(array('token_id' => $tidToDelete,'survey_id' => $this->dynamicId));
             }
         }
         return $result;
@@ -146,20 +163,22 @@ abstract class Token extends Dynamic
         if (Yii::app()->db->driverName == 'mysql' || Yii::app()->db->driverName == 'mysqli') {
             $sCollation = "COLLATE 'utf8mb4_bin'";
         }
-        if (Yii::app()->db->driverName == 'sqlsrv'
-            || Yii::app()->db->driverName == 'dblib'
-            || Yii::app()->db->driverName == 'mssql') {
 
+        if (
+            Yii::app()->db->driverName == 'sqlsrv'
+            || Yii::app()->db->driverName == 'dblib'
+            || Yii::app()->db->driverName == 'mssql'
+        ) {
             $sCollation = "COLLATE SQL_Latin1_General_CP1_CS_AS";
         }
         $fields = array(
             'tid' => 'pk',
             'participant_id' => 'string(50)',
-            'firstname' => 'string(150)',
-            'lastname' => 'string(150)',
+            'firstname' => 'text',
+            'lastname' => 'text',
             'email' => 'text',
             'emailstatus' => 'text',
-            'token' => "string(35) {$sCollation}",
+            'token' => "string(" . self::MAX_LENGTH . ") {$sCollation}",
             'language' => 'string(25)',
             'blacklisted' => 'string(17)',
             'sent' => "string(17) DEFAULT 'N'",
@@ -171,29 +190,50 @@ abstract class Token extends Dynamic
             'validuntil' => 'datetime',
             'mpid' => 'integer'
         );
-
         foreach ($extraFields as $extraField) {
             $fields[$extraField] = 'text';
         }
 
         // create fields for the custom token attributes associated with this survey
-        $tokenattributefieldnames = Survey::model()->findByPk($surveyId)->getTokenAttributes();
-        foreach ($tokenattributefieldnames as $attrname=>$attrdetails) {
+        $oSurvey = Survey::model()->findByPk($surveyId);
+        foreach ($oSurvey->tokenAttributes as $attrname => $attrdetails) {
             if (!isset($fields[$attrname])) {
                 $fields[$attrname] = 'text';
             }
         }
 
         $db = \Yii::app()->db;
-        $sTableName = "{{tokens_{$surveyId}}}";
+        $sTableName = $oSurvey->tokensTableName;
 
-        $db->createCommand()->createTable($sTableName, $fields);
-
-        /**
-         * @todo Check if this random component in the index name is needed.
-         * As far as I (sam) know index names need only be unique per table.
-         */
-        $db->createCommand()->createIndex("idx_token_token_{$surveyId}_".rand(1, 50000), $sTableName, 'token');
+        try {
+            $db->createCommand()->createTable($sTableName, $fields);
+            /**
+             * The random component in the index name is needed because Postgres is being the dorky kid and
+             * complaining about duplicates when renaming the table and trying to use the same index again
+             * on a new token table (for example on reactivation)
+             */
+            $tokenindexname = "idx_token_" .
+                trim($sTableName, '{}') . "_" .
+                date('YmdHis') . "_" .
+                randomChars(12, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890');
+            $db->createCommand()->createIndex($tokenindexname, $sTableName, 'token');
+            $mailindexname = "idx_email_" .
+                trim($sTableName, '{}') . "_" .
+                date('YmdHis') . "_" .
+                randomChars(12, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890');
+            // MSSQL does not support indexes on text fields so not needed here
+            switch (Yii::app()->db->driverName) {
+                case 'mysql':
+                case 'mysqli':
+                    $db->createCommand()->createIndex($mailindexname, $sTableName, 'email(30)', false);
+                    break;
+                case 'pgsql':
+                    $db->createCommand()->createIndex($mailindexname, $sTableName, 'email', false);
+                    break;
+            }
+        } catch (CDbException $ex) {
+            //table already exists, skipping
+        }
 
         // Refresh schema cache just in case the table existed in the past, and return if table exist
         return $db->schema->getTable($sTableName, true);
@@ -211,20 +251,40 @@ abstract class Token extends Dynamic
     }
 
     /**
+     * Get survey token length from survey.
+     * Use default if not possible.
+     */
+    public function getSurveyTokenLength()
+    {
+        // Use default token length
+        $iTokenLength = self::DEFAULT_LENGTH;
+
+        // Use survey token length, if defined
+        if (isset($this->survey) && !empty($this->survey->oOptions) && !empty($this->survey->oOptions->tokenlength) && is_numeric($this->survey->oOptions->tokenlength)) {
+            $iTokenLength = $this->survey->oOptions->tokenlength;
+        }
+
+        return $iTokenLength;
+    }
+
+    /**
      * Generates a token for this object.
      * @throws CHttpException
      */
-    public function generateToken()
+    public function generateToken($iTokenLength = null)
     {
-        $iTokenLength = $this->survey->tokenlength;
-        $this->token = $this::generateRandomToken($iTokenLength);
+        if (empty($iTokenLength)) {
+            $iTokenLength = $this->getSurveyTokenLength();
+        }
+
+        $this->token = $this->generateRandomToken($iTokenLength);
         $counter = 0;
         while (!$this->validate(array('token'))) {
-            $this->token = $this::generateRandomToken($iTokenLength);
+            $this->token = $this->generateRandomToken($iTokenLength);
             $counter++;
             // This is extremely unlikely.
-            if ($counter > 10) {
-                throw new CHttpException(500, 'Failed to create unique token in 10 attempts.');
+            if ($counter > 50) {
+                throw new CHttpException(500, 'Failed to create unique access code in 50 attempts.');
             }
         }
     }
@@ -235,22 +295,50 @@ abstract class Token extends Dynamic
      * @param integer $iTokenLength
      * @return string
      */
-    public static function generateRandomToken($iTokenLength)
+    private function generateRandomToken($iTokenLength)
     {
-        return str_replace(array('~', '_'), array('a', 'z'), Yii::app()->securityManager->generateRandomString($iTokenLength));
+        $token = Yii::app()->securityManager->generateRandomString($iTokenLength);
+        if ($token === false) {
+            throw new CHttpException(500, gT('Failed to generate random string for token. Please check your configuration and ensure that the openssl or mcrypt extension is enabled.'));
+        }
+        $token = str_replace(array('~', '_'), array('a', 'z'), (string) $token);
+        $event = new PluginEvent('afterGenerateToken');
+        $event->set('surveyId', $this->getSurveyId());
+        $event->set('iTokenLength', $iTokenLength);
+        $event->set('oToken', $this);
+        $event->set('token', $token);
+        App()->pluginManager->dispatchEvent($event);
+        $token = $event->get('token');
+        return $token;
     }
 
     /**
      * Sanitize token show to the user (replace sanitize_helper sanitize_token)
-     * @param string $token to sanitize
+     * @param string|null $token to sanitize
      * @return string sanitized token
      */
     public static function sanitizeToken($token)
     {
+        if (is_null($token)) {
+            return "";
+        }
         // According to Yii doc : http://www.yiiframework.com/doc/api/1.1/CSecurityManager#generateRandomString-detail
-        return preg_replace('/[^0-9a-zA-Z_~]/', '', $token);
+        $pattern = Yii::app()->getConfig("allowedcharacters_pattern_token");
+        return preg_replace($pattern, '', $token);
     }
 
+    /**
+     * Sanitize string for any attribute
+     * Only strips HTML tags: The value is stored as plain text and encoded on output,
+     * encoding it here would show entities like &amp;amp; in the administration and in text emails
+     * and add one more level of encoding each time the participant is saved.
+     * @param string|null $attribute to sanitize
+     * @return string sanitized attribute
+     */
+    public static function sanitizeAttribute($attribute)
+    {
+        return strip_tags((string) $attribute);
+    }
 
     /**
      * Generates a token for all token objects in this survey.
@@ -264,7 +352,7 @@ abstract class Token extends Dynamic
             throw new \Exception("This function should only be called like: Token::model(12345)->generateTokens");
         }
         $surveyId = $this->dynamicId;
-        $iTokenLength = isset($this->survey) && is_numeric($this->survey->tokenlength) ? $this->survey->tokenlength : 15;
+        $iTokenLength = $this->getSurveyTokenLength();
 
         $tkresult = Yii::app()->db->createCommand("SELECT tid FROM {{tokens_{$surveyId}}} WHERE token IS NULL OR token=''")->queryAll();
         //Exit early if there are not empty tokens
@@ -272,14 +360,11 @@ abstract class Token extends Dynamic
             return array(0, 0);
         }
 
-
-        //Add some criteria to select only the token field
-        $criteria = $this->getDbCriteria();
-        $criteria->select = 'token';
-        $ntresult = $this->findAllAsArray($criteria); //Use AsArray to skip active record creation
+        // Do NOT replace the following select with ActiveRecord as it uses too much memory
+        $ntresult = Yii::app()->db->createCommand()->select('token')->from($this->tableName())-> where("token IS NOT NULL and token<>''")->queryColumn();
         // select all existing tokens
         foreach ($ntresult as $tkrow) {
-            $existingtokens[$tkrow['token']] = true;
+            $existingtokens[$tkrow] = true;
         }
         $newtokencount = 0;
         $invalidtokencount = 0;
@@ -287,7 +372,7 @@ abstract class Token extends Dynamic
         foreach ($tkresult as $tkrow) {
             $bIsValidToken = false;
             while ($bIsValidToken == false && $invalidtokencount < 50) {
-                $newtoken = $this::generateRandomToken($iTokenLength);
+                $newtoken = $this->generateRandomToken($iTokenLength);
                 if (!isset($existingtokens[$newtoken])) {
                     $existingtokens[$newtoken] = true;
                     $bIsValidToken = true;
@@ -305,7 +390,6 @@ abstract class Token extends Dynamic
         }
 
         return array($newtokencount, count($tkresult));
-
     }
     /**
      * @inheritdoc
@@ -319,19 +403,19 @@ abstract class Token extends Dynamic
     }
 
     /**
-     * @param int $surveyId
+     * @param int $id Survey id in this class
      * @param string $scenario
      * @return Token Description
      */
-    public static function create($surveyId, $scenario = 'insert')
+    public static function create($id, $scenario = 'insert')
     {
-        return parent::create($surveyId, $scenario);
+        return parent::create($id, $scenario);
     }
 
     public function relations()
     {
         $result = array(
-            'responses' => array(self::HAS_MANY, 'Response_'.$this->dynamicId, array('token' => 'token')),
+            'responses' => array(self::HAS_MANY, 'Responses_' . $this->dynamicId, array('token' => 'token')),
             'survey' =>  array(self::BELONGS_TO, 'Survey', '', 'on' => "sid = {$this->dynamicId}"),
             'surveylink' => array(self::BELONGS_TO, 'SurveyLink', array('participant_id' => 'participant_id'), 'on' => "survey_id = {$this->dynamicId}")
         );
@@ -343,19 +427,40 @@ abstract class Token extends Dynamic
     {
         $aRules = array(
             array('token', 'unique', 'allowEmpty' => true),
-            array('firstname', 'LSYii_Validators'),
-            array('lastname', 'LSYii_Validators'),
+            array('token', 'length', 'min' => 0, 'max' => 36),
+            array('token', 'filter', 'filter' => array(self::class, 'sanitizeToken')),
+            array('firstname', 'filter', 'filter' => array(self::class, 'sanitizeAttribute')),
+            array('lastname', 'filter', 'filter' => array(self::class, 'sanitizeAttribute')),
+            array('language', 'LSYii_Validators', 'isLanguage' => true),
+            array('language','in','range' => array_merge(array($this->survey->language), explode(' ', $this->survey->additional_languages)),'allowEmpty' => true,'message' => gT('Language code is invalid in this survey')),
             array(implode(',', $this->tableSchema->columnNames), 'safe'),
-            array('remindercount', 'numerical', 'integerOnly'=>true, 'allowEmpty'=>true),
-            array('email', 'filter', 'filter'=>'trim'),
-            array('email', 'LSYii_EmailIDNAValidator', 'allowEmpty'=>true, 'allowMultiple'=>true, 'except'=>'allowinvalidemail'),
-            array('usesleft', 'numerical', 'integerOnly'=>true, 'allowEmpty'=>true),
-            array('mpid', 'numerical', 'integerOnly'=>true, 'allowEmpty'=>true),
-            array('blacklisted', 'in', 'range'=>array('Y', 'N'), 'allowEmpty'=>true),
+            /* pseudo date : force date or specific string ? */
+            array('remindersent', 'length', 'min' => 0, 'max' => 17),
+            array('remindersent', 'filter', 'filter' => array(self::class, 'sanitizeAttribute')),
+            array('completed', 'length', 'min' => 0, 'max' => 17),
+            array('remindersent', 'filter', 'filter' => array(self::class, 'sanitizeAttribute')),
+            array('remindercount', 'numerical', 'integerOnly' => true, 'allowEmpty' => true),
+            array('email', 'LSYii_FilterValidator', 'filter' => 'trim', 'skipOnEmpty' => true),
+            array('email', 'LSYii_EmailIDNAValidator', 'allowEmpty' => true, 'allowMultiple' => true, 'except' => 'allowinvalidemail'),
             array('emailstatus', 'default', 'value' => 'OK'),
+            array('emailstatus', 'filter', 'filter' => array(self::class, 'sanitizeAttribute')),
+            array('usesleft', 'numerical', 'integerOnly' => true, 'allowEmpty' => true, 'min' => -2147483647, 'max' => 2147483647),
+            array('mpid', 'numerical', 'integerOnly' => true, 'allowEmpty' => true),
+            array('blacklisted', 'in', 'range' => array('Y', 'N'), 'allowEmpty' => true),
+            array('validfrom', 'date','format' => ['yyyy-M-d H:m:s.???','yyyy-M-d H:m:s','yyyy-M-d H:m','yyyy-M-d'],'allowEmpty' => true),
+            array('validuntil','date','format' => ['yyyy-M-d H:m:s.???','yyyy-M-d H:m:s','yyyy-M-d H:m','yyyy-M-d'],'allowEmpty' => true),
         );
-        foreach (decodeTokenAttributes($this->survey->attributedescriptions) as $key => $info) {
-                $aRules[] = array($key, 'LSYii_Validators', 'except'=>'FinalSubmit');
+        foreach (decodeTokenAttributes($this->survey->attributedescriptions ?? '') as $key => $info) {
+            $aRules[] = array(
+                $key, 'filter',
+                'filter' => array(self::class, 'sanitizeAttribute'),
+                'on' => 'register'
+            );
+            $aRules[] = array(
+                $key,
+                'LSYii_Validators',
+                'except' => 'finalSubmit,register'
+            );
         }
         return $aRules;
     }
@@ -363,7 +468,7 @@ abstract class Token extends Dynamic
     /** @inheritdoc */
     public function scopes()
     {
-        $now = dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i:s", Yii::app()->getConfig("timeadjust"));
+        $now = gmdate("Y-m-d H:i:s");
         return array(
             'incomplete' => array(
                 'condition' => "completed = 'N'"
@@ -401,14 +506,40 @@ abstract class Token extends Dynamic
     /** @inheritdoc */
     public function tableName()
     {
-        return '{{tokens_'.$this->dynamicId.'}}';
+        return '{{tokens_' . $this->dynamicId . '}}';
     }
 
     /**
      * Get current surveyId for other model/function
      * @return int
      */
-    public function getSurveyId() {
+    public function getSurveyId()
+    {
         return $this->getDynamicId();
+    }
+
+    public static function getDefaultEncryptionOptions()
+    {
+        $sEncrypted = 'N';
+        return array(
+                'enabled' => 'N',
+                'columns' => array(
+                    'firstname' =>  $sEncrypted,
+                    'lastname' =>  $sEncrypted,
+                    'email' =>  $sEncrypted
+                )
+        );
+    }
+
+    public function onBeforeSave($event)
+    {
+        // Mark token as "OptOut" if globally blocklisted and 'blacklistnewsurveys' is enabled
+        if (Yii::app()->getConfig('blacklistnewsurveys') == "Y" && $this->getIsNewRecord()) {
+            $blacklistHandler = new LimeSurvey\Models\Services\ParticipantBlacklistHandler();
+            if ($blacklistHandler->isTokenBlacklisted($this)) {
+                $this->emailstatus = "OptOut";
+            }
+        }
+        return parent::onBeforeSave($event);
     }
 }

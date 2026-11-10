@@ -1,6 +1,7 @@
 <?php
+
 /*
-					COPYRIGHT
+                    COPYRIGHT
 
 Copyright 2007 Sergio Vaccaro <sergio@inservibile.org>
 
@@ -29,7 +30,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 class jsonRPCClient
 {
-
     /**
      * Debug state
      *
@@ -66,8 +66,6 @@ class jsonRPCClient
     {
         // server URL
         $this->url = $url;
-        // proxy
-        empty($proxy) ? $this->proxy = '' : $this->proxy = $proxy;
         // debug state
         empty($debug) ? $this->debug = false : $this->debug = true;
         // message id
@@ -124,7 +122,7 @@ class jsonRPCClient
                         'id' => $currentId
                         );
         $request = json_encode($request);
-        $this->debug && $this->debug .= '***** Request *****'."\n".$request."\n".'***** End Of request *****'."\n\n";
+        $this->debug && $this->debug .= '***** Request *****' . "\n" . $request . "\n" . '***** End Of request *****' . "\n\n";
 
         // performs the HTTP POST
         $opts = array('http' => array(
@@ -137,12 +135,12 @@ class jsonRPCClient
             stream_set_timeout($fp, 120);
             $response = '';
             while ($row = fgets($fp)) {
-                $response .= trim($row)."\n";
+                $response .= trim($row) . "\n";
             }
-            $this->debug && $this->debug .= '***** Server response *****'."\n".$response.'***** End of server response *****'."\n";
+            $this->debug && $this->debug .= '***** Server response *****' . "\n" . $response . '***** End of server response *****' . "\n";
             $response = json_decode($response, true);
         } else {
-            throw new Exception('Unable to connect to '.$this->url);
+            throw new Exception('Unable to connect to ' . $this->url);
         }
 
         // debug output
@@ -155,22 +153,20 @@ class jsonRPCClient
         if (!$this->notification) {
             // check
             if ($response['id'] != $currentId) {
-                throw new Exception('Incorrect response id (request id: '.$currentId.', response id: '.$response['id'].')');
+                throw new Exception('Incorrect response id (request id: ' . $currentId . ', response id: ' . $response['id'] . ')');
             }
             if (!is_null($response['error'])) {
-                throw new Exception('Request error: '.$response['error']);
+                throw new Exception('Request error: ' . $response['error']);
             }
 
             return $response['result'];
-
         } else {
             return true;
         }
     }
-        
-        public function call($method, $params)
-        {
-            return $this->__call($method, $params);
-        }
+
+    public function call($method, $params)
+    {
+        return $this->__call($method, $params);
+    }
 }
-?>

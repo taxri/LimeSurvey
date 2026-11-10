@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'zh-cn', {
 	border: '边框',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'zh-cn', {
 		borderColor: '边框颜色',
 		data: '数据',
 		header: '表头',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: '是',
 		no: '否',
 		invalidWidth: '单元格宽度必须为数字格式',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'zh-cn', {
 	headersColumn: '第一列',
 	headersNone: '无',
 	headersRow: '第一行',
+	heightUnit: '高度单位',
 	invalidBorder: '边框粗细必须为数字格式',
 	invalidCellPadding: '单元格填充必须为数字格式',
 	invalidCellSpacing: '单元格间距必须为数字格式',

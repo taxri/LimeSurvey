@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'link', 'ca', {
 	acccessKey: 'Clau d\'accés',
@@ -13,6 +13,7 @@ CKEDITOR.plugins.setLang( 'link', 'ca', {
 		title: 'Propietats de l\'àncora',
 		name: 'Nom de l\'àncora',
 		errorName: 'Si us plau, escriviu el nom de l\'ancora',
+		errorWhitespace: 'Anchor name cannot contain space characters', // MISSING
 		remove: 'Remove Anchor'
 	},
 	anchorId: 'Per Id d\'element',
@@ -35,7 +36,9 @@ CKEDITOR.plugins.setLang( 'link', 'ca', {
 	noAnchors: '(No hi ha àncores disponibles en aquest document)',
 	noEmail: 'Si us plau, escrigui l\'adreça correu electrònic',
 	noUrl: 'Si us plau, escrigui l\'enllaç URL',
+	noTel: 'Please type the phone number', // MISSING
 	other: '<altre>',
+	phoneNumber: 'Phone number', // MISSING
 	popupDependent: 'Depenent (Netscape)',
 	popupFeatures: 'Característiques finestra popup',
 	popupFullScreen: 'Pantalla completa (IE)',
@@ -60,6 +63,7 @@ CKEDITOR.plugins.setLang( 'link', 'ca', {
 	toAnchor: 'Àncora en aquesta pàgina',
 	toEmail: 'Correu electrònic',
 	toUrl: 'URL',
+	toPhone: 'Phone', // MISSING
 	toolbar: 'Insereix/Edita enllaç',
 	type: 'Tipus d\'enllaç',
 	unlink: 'Elimina l\'enllaç',

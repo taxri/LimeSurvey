@@ -80,9 +80,11 @@ var SurveymenuEntriesFunctions = function() {
     };
 
     var onChangeCheckbox = function(elem) {
+        // Options with a default value (e.g. pjaxed) need an explicit value when unchecked
+        var uncheckedValue = $(elem).data("uncheckedValue");
         var toSetValue = $(elem).prop("checked")
             ? $(elem).data("value")
-            : "null";
+            : (uncheckedValue !== undefined ? uncheckedValue : "null");
         var optionArray = $(elem).data("option");
         var setSuccessfull = setObjectValueWithArray(
             toSetValue,
@@ -119,19 +121,25 @@ var SurveymenuEntriesFunctions = function() {
                 oCurrentDataOptions,
                 aOptionValues
             );
+            // Already unchecked by a higher priority option (e.g. external link disables pjax)
+            if ($(item).prop("disabled")) {
+                return;
+            }
             if (currentObjectValue !== null && currentObjectValue !== false) {
 				$(item).prop("checked", true);
 				if ($(item).hasClass("selector__disable_following")) {
 					triggerHide(item);
 				}
+            } else if (currentObjectValue === false) {
+                $(item).prop("checked", false);
             }
         });
 		
 		$('.selector__hasInfoBox').on('focusin', function(){
-			console.ls.log('FOCUSIN', $(this).closest('div.form-group').find('.selector_infoBox'));
-			$(this).closest('div.form-group').find('.selector_infoBox').removeClass('hidden');
+			console.ls.log('FOCUSIN', $(this).closest('div.ex-form-group').find('.selector_infoBox'));
+			$(this).closest('div.ex-form-group').find('.selector_infoBox').removeClass('d-none');
 			$(this).on('focusout.infoTrigger', function(){
-				$(this).closest('div.form-group').find('.selector_infoBox').addClass('hidden');
+				$(this).closest('div.ex-form-group').find('.selector_infoBox').addClass('d-none');
 				$(this).off('focusout.infoTrigger');
 			})
 		});

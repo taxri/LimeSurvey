@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'link', 'da', {
 	acccessKey: 'Genvejstast',
@@ -13,14 +13,15 @@ CKEDITOR.plugins.setLang( 'link', 'da', {
 		title: 'Egenskaber for bogmærke',
 		name: 'Bogmærkenavn',
 		errorName: 'Indtast bogmærkenavn',
+		errorWhitespace: 'Anchor name cannot contain space characters', // MISSING
 		remove: 'Fjern bogmærke'
 	},
 	anchorId: 'Efter element-Id',
 	anchorName: 'Efter ankernavn',
 	charset: 'Tegnsæt',
 	cssClasses: 'Typografiark',
-	download: 'Force Download', // MISSING
-	displayText: 'Display Text', // MISSING
+	download: 'Tving Download',
+	displayText: 'Vis tekst',
 	emailAddress: 'E-mailadresse',
 	emailBody: 'Besked',
 	emailSubject: 'Emne',
@@ -35,7 +36,9 @@ CKEDITOR.plugins.setLang( 'link', 'da', {
 	noAnchors: '(Ingen bogmærker i dokumentet)',
 	noEmail: 'Indtast e-mailadresse!',
 	noUrl: 'Indtast hyperlink-URL!',
+	noTel: 'Indtast venligst et telefonnummer',
 	other: '<anden>',
+	phoneNumber: 'Telefonnummer',
 	popupDependent: 'Koblet/dependent (Netscape)',
 	popupFeatures: 'Egenskaber for popup',
 	popupFullScreen: 'Fuld skærm (IE)',
@@ -60,6 +63,7 @@ CKEDITOR.plugins.setLang( 'link', 'da', {
 	toAnchor: 'Bogmærke på denne side',
 	toEmail: 'E-mail',
 	toUrl: 'URL',
+	toPhone: 'Telefon',
 	toolbar: 'Indsæt/redigér hyperlink',
 	type: 'Type',
 	unlink: 'Fjern hyperlink',

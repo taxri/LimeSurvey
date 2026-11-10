@@ -1,18 +1,16 @@
 <?php
-if (!defined('BASEPATH')) {
-    exit('No direct script access allowed');
-}
+
 /*
-* LimeSurvey
-* Copyright (C) 2007-2015 The LimeSurvey Project Team / Carsten Schmitz
-* All rights reserved.
-* License: GNU/GPL License v2 or later, see LICENSE.php
-* LimeSurvey is free software. This version may have been modified pursuant
-* to the GNU General Public License, and as distributed it includes or
-* is derivative of works licensed under the GNU General Public License or
-* other free or open source software licenses.
-* See COPYRIGHT.php for copyright notices and details.
-*/
+ * LimeSurvey
+ * Copyright (C) 2007-2026 The LimeSurvey Project Team
+ * All rights reserved.
+ * License: GNU/GPL License v2 or later, see LICENSE.php
+ * LimeSurvey is free software. This version may have been modified pursuant
+ * to the GNU General Public License, and as distributed it includes or
+ * is derivative of works licensed under the GNU General Public License or
+ * other free or open source software licenses.
+ * See COPYRIGHT.php for copyright notices and details.
+ */
 
 /**
 * Update Form Model
@@ -28,7 +26,7 @@ class UpdateForm extends CFormModel
     /** @var string $build The build id */
     public $build;
 
-    /** @var  string $view The view to display : used only for welcome type views to let the server choose wich view will be displayed */
+    /** @var  string $view The view to display : used only for welcome type views to let the server choose which view will be displayed */
     public $view;
 
     // Proxy infos
@@ -59,7 +57,7 @@ class UpdateForm extends CFormModel
         $this->tempdir = Yii::app()->getConfig("tempdir");
         $this->rootdir = Yii::app()->getConfig("rootdir");
         $this->publicdir = Yii::app()->getConfig("publicdir");
-        $this->path_cookie = $this->tempdir.DIRECTORY_SEPARATOR.'comfort_updater_cookie.txt';
+        $this->path_cookie = $this->tempdir . DIRECTORY_SEPARATOR . 'comfort_updater_cookie.txt';
     }
 
     /**
@@ -74,8 +72,8 @@ class UpdateForm extends CFormModel
         if (Yii::app()->getConfig("updatable")) {
             if ($this->build != '') {
                 $crosscheck = (int) $crosscheck;
-                $getters = '/index.php?r=updates/updateinfo&currentbuild='.$this->build.'&id='.md5(getGlobalSetting('SessionName')).'&crosscheck='.$crosscheck;
-                $content = $this->_performRequest($getters);
+                $getters = '/index.php?r=updates/updateinfo&currentbuild=' . $this->build . '&id=' . md5((string) Yii::app()->getConfig('SessionName')) . '&crosscheck=' . $crosscheck;
+                $content = $this->performRequest($getters);
             } else {
                 $content = new stdClass();
                 $content->result = false;
@@ -90,13 +88,13 @@ class UpdateForm extends CFormModel
     }
 
     /**
-     * The server will do some checks and will ask for the correct view to be diplayed.
+     * The server will do some checks and will ask for the correct view to be displayed.
      *
-     * @param string $updateKey the update key
+     * @param string $updateKey the update key -
      * @param string $destinationBuild
      * @return string html
      */
-    public function getWelcomeMessage($updateKey = null, $destinationBuild)
+    public function getWelcomeMessage($updateKey, $destinationBuild)
     {
         // First, we destroy any previous cookie :
         if (file_exists(realpath($this->path_cookie))) {
@@ -105,8 +103,8 @@ class UpdateForm extends CFormModel
 
         $updater_version = Yii::app()->getConfig("updaterversion");
         touch($this->path_cookie);
-        $getters = '/index.php?r=updates/getwelcome&currentbuild='.$this->build.'&keyid='.$updateKey.'&destinationbuild='.$destinationBuild.'&updater_version='.$updater_version;
-        $content = $this->_performRequest($getters, true);
+        $getters = '/index.php?r=updates/getwelcome&currentbuild=' . $this->build . '&keyid=' . $updateKey . '&destinationbuild=' . $destinationBuild . '&updater_version=' . $updater_version;
+        $content = $this->performRequest($getters, true);
         return $content;
     }
 
@@ -117,8 +115,8 @@ class UpdateForm extends CFormModel
      */
     public function checkUpdateKeyonServer($submittedUpdateKey)
     {
-        $getters = '/index.php?r=updates/checkupdatekey&keyid='.$submittedUpdateKey;
-        $content = $this->_performRequest($getters);
+        $getters = '/index.php?r=updates/checkupdatekey&keyid=' . $submittedUpdateKey;
+        $content = $this->performRequest($getters);
         return $content;
     }
 
@@ -144,7 +142,7 @@ class UpdateForm extends CFormModel
             $result = $updateKey->save();
         } else {
             //Update
-            $result = SettingGlobal::model()->updateByPk('update_key', array('stg_value'=>$submittedUpdateKey));
+            $result = SettingGlobal::model()->updateByPk('update_key', array('stg_value' => $submittedUpdateKey));
         }
 
         if ($result) {
@@ -154,7 +152,7 @@ class UpdateForm extends CFormModel
             return $updateKey;
         } else {
             // Else we return the errors
-            return array('result'=>false, 'error'=>'db_error');
+            return array('result' => false, 'error' => 'db_error');
         }
     }
 
@@ -170,10 +168,10 @@ class UpdateForm extends CFormModel
     {
         $checks = new stdClass();
 
-        $checks->files = $this->_getFileSystemCheckList();
-        $checks->php = $this->_phpVerCheck($destinationBuild);
-        $checks->php_modules = $this->_getModuleChecks($destinationBuild);
-        $checks->mysql = $this->_getMysqlChecks($destinationBuild);
+        $checks->files = $this->getFileSystemCheckList();
+        $checks->php = $this->phpVerCheck($destinationBuild);
+        $checks->php_modules = $this->getModuleChecks($destinationBuild);
+        $checks->mysql = $this->getMysqlChecks($destinationBuild);
 
         return $checks;
     }
@@ -189,38 +187,43 @@ class UpdateForm extends CFormModel
     {
 
         $getters = '/index.php?r=updates/filesystemchecklistforupdater';
-        $content = $this->_performRequest($getters);
+        $content = $this->performRequest($getters);
         $toCheck = $content->list;
         $readOnly = array();
 
-        // We check the write permission of files
-        $lsRootPath = dirname(Yii::app()->request->scriptFile).'/';
+        // We check the write permission of files and ability to modify timestamps
+        $lsRootPath = dirname((string) Yii::app()->request->scriptFile) . '/';
         foreach ($toCheck as $check) {
-            if (file_exists($lsRootPath.$check)) {
-                if (!is_writable($lsRootPath.$check)) {
-                    $readOnly[] = $lsRootPath.$check;
+            if (file_exists($lsRootPath . $check)) {
+                if (!is_writable($lsRootPath . $check)) {
+                    $readOnly[] = $lsRootPath . $check;
+                } elseif (!$this->isFileModifiable($lsRootPath . $check)) {
+                    // File is writable but not owned by current process
+                    // This prevents updates from failing mid-process due to ownership issues
+                    // Fixes: Bug #20138
+                    $readOnly[] = $lsRootPath . $check;
                 }
             }
         }
 
         if (count($readOnly) <= 0) {
-            return (object) array('result'=>true);
+            return (object) array('result' => true);
         }
 
-        return  (object) array('result'=>false, 'readOnly'=>$readOnly);
+        return  (object) array('result' => false, 'readOnly' => $readOnly);
     }
 
 
     /**
-     * This function requests the change log between the curent build and the destination build
+     * This function requests the change log between the current build and the destination build
      *
      * @param int $destinationBuild
      * @return mixed|stdClass
      */
-    public function getChangelog($destinationBuild)
+    public function getChangeLog($destinationBuild)
     {
-        $getters = '/index.php?r=updates/changelog&frombuild='.$this->build.'&tobuild='.$destinationBuild;
-        $content = $this->_performRequest($getters);
+        $getters = '/index.php?r=updates/changelog&frombuild=' . $this->build . '&tobuild=' . $destinationBuild;
+        $content = $this->performRequest($getters);
         return $content;
     }
 
@@ -231,8 +234,8 @@ class UpdateForm extends CFormModel
      */
     public function getChangedFiles($destinationBuild)
     {
-        $getters = '/index.php?r=updates/changed-files&frombuild='.$this->build.'&tobuild='.$destinationBuild;
-        $content = $this->_performRequest($getters);
+        $getters = '/index.php?r=updates/changed-files&frombuild=' . $this->build . '&tobuild=' . $destinationBuild;
+        $content = $this->performRequest($getters);
         return $content;
     }
 
@@ -245,9 +248,9 @@ class UpdateForm extends CFormModel
      */
     public function downloadUpdateFile($downloadid, $tobuild)
     {
-        $getters = '/index.php?r=updates/download&frombuild='.$this->build.'&tobuild='.$tobuild;
-        $getters .= "&access_token=".$_REQUEST['access_token'];
-        $file = $this->_performDownload($getters);
+        $getters = '/index.php?r=updates/download&frombuild=' . $this->build . '&tobuild=' . $tobuild;
+        $getters .= "&access_token=" . $_REQUEST['access_token'];
+        $file = $this->performDownload($getters);
         return $file;
     }
 
@@ -259,8 +262,8 @@ class UpdateForm extends CFormModel
      */
     public function downloadUpdateUpdaterFile($tobuild)
     {
-        $getters = '/index.php?r=updates/download-updater&tobuild='.$tobuild.'&frombuild='.$this->build;
-        $file = $this->_performDownload($getters, 'update_updater');
+        $getters = '/index.php?r=updates/download-updater&tobuild=' . $tobuild . '&frombuild=' . $this->build;
+        $file = $this->performDownload($getters, 'update_updater');
         return $file;
     }
 
@@ -272,26 +275,20 @@ class UpdateForm extends CFormModel
      */
     public function unzipUpdateFile($file_to_unzip = 'update.zip')
     {
-        if (file_exists($this->tempdir.DIRECTORY_SEPARATOR.$file_to_unzip)) {
-            // To debug pcl_zip, uncomment the following line :    require_once('/var/www/limesurvey/LimeSurvey/application/libraries/admin/pclzip/pcltrace.lib.php'); require_once('/var/www/limesurvey/LimeSurvey/application/libraries/admin/pclzip/pclzip-trace.lib.php'); PclTraceOn(2);
-            // To debug pcl_zip, comment the following line:
-            Yii::app()->loadLibrary("admin/pclzip");
+        if (file_exists($this->tempdir . DIRECTORY_SEPARATOR . $file_to_unzip)) {
+            $archive = new LimeSurvey\Zip();
+            $archive->open($this->tempdir . DIRECTORY_SEPARATOR . $file_to_unzip);
 
-            $archive = new PclZip($this->tempdir.DIRECTORY_SEPARATOR.$file_to_unzip, false);
-
-            // TODO : RESTORE REPLACE NEWER !!
-            // To debug pcl_zip, uncomment the following line :
-            //if ($archive->extract(PCLZIP_OPT_PATH, $this->rootdir.'/', PCLZIP_OPT_REPLACE_NEWER)== 0)
-            if ($archive->extract(PCLZIP_OPT_PATH, $this->rootdir.DIRECTORY_SEPARATOR, PCLZIP_OPT_REPLACE_NEWER) == 0) {
-                // To debug pcl_zip, uncomment the following line :
-                //PclTraceDisplay(); die();
-                $return = array('result'=>false, 'error'=>'unzip_error', 'message'=>$archive->errorInfo(true));
+            if (@$archive->extractTo($this->rootdir . DIRECTORY_SEPARATOR) == 0) {
+                $return = array('result' => false, 'error' => 'unzip_error', 'message' => $archive->getStatusString());
+                $archive->close();
                 return (object) $return;
             }
-            $return = array('result'=>true);
+            $archive->close();
+            $return = array('result' => true);
             return (object) $return;
         } else {
-            $return = array('result'=>false, 'error'=>'zip_update_not_found');
+            $return = array('result' => false, 'error' => 'zip_update_not_found');
             return (object) $return;
         }
     }
@@ -308,22 +305,24 @@ class UpdateForm extends CFormModel
 
     /**
      * Delete the files tagged as deleted in the update
-     * @param string[] $updateinfos
+     *
+     * @param array $updateinfos
      * @return object
      */
     public function removeDeletedFiles($updateinfos)
     {
         foreach ($updateinfos as $file) {
-            $sFileToDelete = str_replace("..", "", $file['file']);
-            if ($file['type'] == 'D' && file_exists($this->rootdir.$sFileToDelete)) {
-                if (is_file($this->rootdir.$sFileToDelete)) {
-                    if (!@unlink($this->rootdir.$sFileToDelete)) {
-                        $return = array('result'=>false, 'error'=>'cant_remove_deleted_files', 'message'=>'file : '.$sFileToDelete);
+            $sFileToDelete = str_replace("..", "", (string) $file['file']);
+            if ($file['type'] == 'D' && file_exists($this->rootdir . $sFileToDelete)) {
+                if (is_file($this->rootdir . $sFileToDelete)) {
+                    // TODO: Deal with error here
+                    if (!@unlink($this->rootdir . $sFileToDelete)) {
+                        $return = array('result' => false, 'error' => 'cant_remove_deleted_files', 'message' => 'file : ' . $sFileToDelete);
                         return (object) $return;
                     }
                 } else {
-                    if (!rmdir($this->rootdir.$sFileToDelete)) {
-                        $return = array('result'=>false, 'error'=>'cant_remove_deleted_directory', 'message'=>'dir : '.$sFileToDelete);
+                    if (!rmdir($this->rootdir . $sFileToDelete)) {
+                        $return = array('result' => false, 'error' => 'cant_remove_deleted_directory', 'message' => 'dir : ' . $sFileToDelete);
                         return (object) $return;
                     }
                 }
@@ -340,10 +339,10 @@ class UpdateForm extends CFormModel
      */
     public function removeTmpFile($sTmpFile = 'update.zip')
     {
-        $sTmpFilePath = $this->tempdir.DIRECTORY_SEPARATOR.$sTmpFile;
+        $sTmpFilePath = $this->tempdir . DIRECTORY_SEPARATOR . $sTmpFile;
         if (file_exists($sTmpFilePath)) {
             if (!@unlink($sTmpFilePath)) {
-                $return = array('result'=>false, 'error'=>'cant_remove_update_file', 'message'=>'file : '.$sTmpFilePath);
+                $return = array('result' => false, 'error' => 'cant_remove_update_file', 'message' => 'file : ' . $sTmpFilePath);
                 return (object) $return;
             }
         }
@@ -365,13 +364,13 @@ class UpdateForm extends CFormModel
         }
 
         // Delete all the content in the asset directory, but not the directory itself nor the index.html file at its root ^^
-        $sAssetsDir = Yii::app()->getConfig('tempdir').'/assets/';
+        $sAssetsDir = Yii::app()->getConfig('tempdir') . '/assets/';
         $dir = dir($sAssetsDir);
         while (false !== $entry = $dir->read()) {
             if ($entry == '.' || $entry == '..' || $entry == 'index.html') {
                 continue;
             }
-            rmdirr($sAssetsDir.DIRECTORY_SEPARATOR.$entry);
+            rmdirr($sAssetsDir . DIRECTORY_SEPARATOR . $entry);
         }
     }
 
@@ -385,13 +384,13 @@ class UpdateForm extends CFormModel
     {
         $destinationBuild = (int) $destinationBuild;
         @ini_set('auto_detect_line_endings', '1');
-        $versionlines = file($this->rootdir.DIRECTORY_SEPARATOR.'application'.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'version.php');
-        $handle = fopen($this->rootdir.DIRECTORY_SEPARATOR.'application'.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'version.php', "w");
+        $versionlines = file($this->rootdir . DIRECTORY_SEPARATOR . 'application' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'version.php');
+        $handle = fopen($this->rootdir . DIRECTORY_SEPARATOR . 'application' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'version.php', "w");
         foreach ($versionlines as $line) {
-            if (strpos($line, 'buildnumber') !== false) {
-                $line = '$config[\'buildnumber\'] = '.$destinationBuild.';'."\r\n";
+            if (strpos((string) $line, 'buildnumber') !== false) {
+                $line = '$config[\'buildnumber\'] = ' . $destinationBuild . ';' . "\r\n";
             }
-            fwrite($handle, $line);
+            fwrite($handle, (string) $line);
         }
         fclose($handle);
         Yii::app()->setConfig("buildnumber", $destinationBuild);
@@ -399,36 +398,26 @@ class UpdateForm extends CFormModel
     }
 
     /**
-     * Destroy the global settings stored in the settings (they should not be used anymore...)
-     */
-    public function destroyGlobalSettings()
-    {
-        SettingGlobal::setSetting('updateavailable', '0');
-        SettingGlobal::setSetting('updatebuild', '');
-        SettingGlobal::setSetting('updateversions', '');
-        Yii::app()->session['security_update'] = null;
-        Yii::app()->session['update_result'] = null;
-        Yii::app()->session['next_update_check'] = null;
-    }
-
-    /**
-     * This function provide status information about files presents on the system that will be afected by the update : do they exist ? are they writable ? modified ?
-     * @param int $updateinfo  array of updated files
+     * This function provides status information about files present on the system that will be affected by the update: do they exist? are they writable? modified?
+     *
+     * @param array $updateinfo Array of updated files
      * @return array
      */
     public function getFileStatus($updateinfo)
     {
-        $existingfiles = array(); $modifiedfiles = array(); $readonlyfiles = array();
+        $existingfiles = array();
+        $modifiedfiles = array();
+        $readonlyfiles = array();
 
         foreach ($updateinfo as $file) {
             $file = (array) $file;
-            $readonly_checked_file = $this->_getReadOnlyCheckedFile($file);
+            $readonly_checked_file = $this->getReadOnlyCheckedFile($file);
 
             if ($readonly_checked_file->type == 'readonlyfile') {
                 $readonlyfiles[] = $readonly_checked_file->file;
             }
 
-            $checkedfile = $this->_getCheckedFile($file);
+            $checkedfile = $this->getCheckedFile($file);
             switch ($checkedfile->type) {
                 case 'modifiedfile':
                     $modifiedfiles[] = $checkedfile->file;
@@ -443,7 +432,7 @@ class UpdateForm extends CFormModel
         if (count($readonlyfiles)) {
             foreach (array_unique($readonlyfiles) as $sFile) {
                 // If substr return wrong, the root directory is not writable
-                $sCleanFile = substr($sFile, strlen(Yii::app()->getConfig("rootdir")));
+                $sCleanFile = substr((string) $sFile, strlen((string) Yii::app()->getConfig("rootdir")));
                 $aReadOnlyFiles[] = ($sCleanFile) ? $sCleanFile : $sFile;
             }
             sort($aReadOnlyFiles);
@@ -451,9 +440,9 @@ class UpdateForm extends CFormModel
         }
 
         return array(
-                'readonlyfiles'=>$readonlyfiles,
-                'modifiedfiles'=>$modifiedfiles,
-                'existingfiles'=>$existingfiles
+                'readonlyfiles' => $readonlyfiles,
+                'modifiedfiles' => $modifiedfiles,
+                'existingfiles' => $existingfiles
             );
     }
 
@@ -467,29 +456,41 @@ class UpdateForm extends CFormModel
         $filestozip = array();
 
         foreach ($updateinfos as $file) {
-
             // To block the access to subdirectories
-            $sFileToZip = str_replace("..", "", $file['file']);
+            $sFileToZip = str_replace("..", "", (string) $file['file']);
 
-            if (is_file($this->publicdir.$sFileToZip) === true && basename($sFileToZip) != 'config.php') {
-                $filestozip[] = $this->publicdir.$sFileToZip;
+            if (is_file($this->publicdir . $sFileToZip) === true && basename($sFileToZip) != 'config.php' && filesize($this->publicdir . $sFileToZip) > 0) {
+                $filestozip[$sFileToZip] = $this->publicdir . $sFileToZip;
             }
         }
 
-        Yii::app()->loadLibrary("admin/pclzip");
-        $basefilename = dateShift(date("Y-m-d H:i:s"), "Y-m-d", Yii::app()->getConfig('timeadjust')).'_'.md5(uniqid(rand(), true));
-        $archive = new PclZip($this->tempdir.DIRECTORY_SEPARATOR.'LimeSurvey_files_backup_'.$basefilename.'.zip');
-        $v_list = $archive->add($filestozip, PCLZIP_OPT_REMOVE_PATH, $this->publicdir);
+        $basefilename = dateShift(gmdate("Y-m-d H:i:s"), "Y-m-d") . '_' . md5(uniqid(rand(), true));
+        $archive = new LimeSurvey\Zip();
+        $archive->open($this->tempdir . DIRECTORY_SEPARATOR . 'LimeSurvey_files_backup_' . $basefilename . '.zip', ZipArchive::CREATE);
+        $success = false;
+        foreach ($filestozip as $fileInZip => $sourceFile) {
+            $success = $archive->addFile($sourceFile, $fileInZip);
+            if (!$success) {
+                break;
+            }
+        }
+
+        // The zip is not actually saved until we close it, se we do it if
+        // all files were added to the archive.
+        if ($success) {
+            $success = $archive->close();
+        }
+
         $backup = new stdClass();
 
-        if (!$v_list == 0) {
+        if ($success) {
             $backup->result = true;
             $backup->basefilename = $basefilename;
             $backup->tempdir = $this->tempdir;
         } else {
             $backup->result = false;
             $backup->error = 'cant_zip_backup';
-            $backup->message = $archive->errorInfo(true);
+            $backup->message = $archive->getStatusString();
         }
         return $backup;
     }
@@ -508,21 +509,21 @@ class UpdateForm extends CFormModel
         // TODO : add postgresql
         if (in_array($dbType, array('mysql', 'mysqli')) && Yii::app()->getConfig('demoMode') != true) {
             // This function will call the server to get the requirement about DB, such as max size
-            $dbChecks = $this->_getDbChecks($destinationBuild);
+            $dbChecks = $this->getDbChecks($destinationBuild);
 
             // Test if user defined by himself a max size for dbBackup
-            if (Yii::app()->getConfig("maxdbsizeforbackup")) {
-                $dbChecks->dbSize = Yii::app()->getConfig("maxdbsizeforbackup");
+            if (Yii::app()->getConfig("maxdbsizeforbackup") && Yii::app()->getConfig("maxdbsizeforbackup") > 0) {
+                 $dbChecks->dbSize = Yii::app()->getConfig("maxdbsizeforbackup");
             }
 
             if ($dbChecks->result) {
                 $currentDbVersion = Yii::app()->getConfig("dbversionnumber");
                 if ($currentDbVersion < $dbChecks->dbVersion) {
-                    $dbSize = $this->_getDbTotalSize();
+                    $dbSize = $this->getDbTotalSize();
                     $backupDb->message = 'db_change';
 
                     if ($dbSize <= $dbChecks->dbSize) {
-                        return $this->_createDbBackup();
+                        return $this->createDbBackup();
                     } else {
                         $backupDb->result = false;
                         $backupDb->message = 'db_too_big';
@@ -538,7 +539,6 @@ class UpdateForm extends CFormModel
         }
 
         return $backupDb;
-
     }
 
     /**
@@ -548,7 +548,7 @@ class UpdateForm extends CFormModel
     private function checkAssets()
     {
         $iAssetVersionNumber  = Yii::app()->getConfig('assetsversionnumber'); // From version.php
-        $iCurrentAssetVersion = GetGlobalSetting('AssetsVersion'); // From setting_global table
+        $iCurrentAssetVersion = Yii::app()->getConfig('AssetsVersion'); // From setting_global table
 
         if ($iAssetVersionNumber != $iCurrentAssetVersion) {
             self::republishAssets();
@@ -557,13 +557,53 @@ class UpdateForm extends CFormModel
         return false;
     }
 
-
+    /**
+     * Determine the stability level of a version from its version string.
+     * Checks for 'alpha', 'beta', or 'rc' substrings (case-insensitive).
+     *
+     * @param string $versionNumber The version string, e.g. '6.17.0-beta.1'
+     * @return string One of 'alpha', 'beta', 'rc', or 'stable'
+     */
+    public static function getVersionStabilityLevel($versionNumber)
+    {
+        $version = strtolower((string) $versionNumber);
+        if (strpos($version, 'alpha') !== false) {
+            return 'alpha';
+        }
+        if (strpos($version, 'beta') !== false) {
+            return 'beta';
+        }
+        if (strpos($version, 'rc') !== false) {
+            return 'rc';
+        }
+        return 'stable';
+    }
 
     /**
-     * Check if an update is available, and prints the update notification
-     * It also check if the assets need to be republished
+     * Check if a version's stability level meets the minimum required stability.
+     * Stability order from lowest to highest: alpha < beta < rc < stable.
      *
-     * @return object
+     * @param string $versionStability The stability level of the version ('alpha', 'beta', 'rc', 'stable')
+     * @param string $minimumStability The minimum required stability level from the global setting
+     * @return bool True if the version's stability is equal to or higher than the minimum
+     */
+    public static function meetsMinimumStability($versionStability, $minimumStability)
+    {
+        $levels = ['alpha' => 0, 'beta' => 1, 'rc' => 2, 'stable' => 3];
+        $versionLevel = $levels[$versionStability] ?? 3;
+        $minimumLevel = $levels[$minimumStability] ?? 3;
+        return $versionLevel >= $minimumLevel;
+    }
+
+    /**
+     * Check if an update is available and return notification data.
+     * Also checks if assets need to be republished.
+     *
+     * Fetches update info from the server (cached in session for 1 day, or until the installed build changes),
+     * filters available updates by the 'minimum_update_stability' global setting,
+     * and stores results including stability labels in the session.
+     *
+     * @return object Object with properties: result (bool), security_update (bool), unstable_update (bool)
      */
     public function getUpdateNotification()
     {
@@ -571,10 +611,18 @@ class UpdateForm extends CFormModel
         if (Yii::app()->getConfig('updatable') && Permission::model()->hasGlobalPermission('superadmin')) {
             $today = new DateTime("now");
             $next_update_check = Yii::app()->session['next_update_check'];
+            $buildnumber = Yii::app()->getConfig('buildnumber');
 
-            if (is_null($next_update_check) || ($next_update_check < $today) || is_null(Yii::app()->session['update_result'])) {
+            if (
+                is_null($next_update_check)
+                || ($next_update_check < $today)
+                || is_null(Yii::app()->session['update_result'])
+                || Yii::app()->session['update_check_build'] !== $buildnumber
+            ) {
                 // Turn on the alert notification
                 Yii::app()->session['notificationstate'] = 1;
+                // The cached result is only valid for the build it was checked for (e.g. after a manual update)
+                Yii::app()->session['update_check_build'] = $buildnumber;
 
                 $updates = $this->getUpdateInfo('1');
                 $update_available = false;
@@ -585,75 +633,94 @@ class UpdateForm extends CFormModel
                     $security_update_available = false;
                     $unstable_update_available = false;
 
-                    if (is_array($updates) || $updates instanceof Countable) {
-                        if (count($updates) > 0) {
-                            $update_available = true;
-                            foreach ($updates as $update) {
-                                if ($update->security_update) {
-                                    $security_update_available = true;
-                                }
+                    if (!is_array($updates) && !($updates instanceof Countable)) {
+                        $updates = (array) $updates;
+                    }
 
-                                if ($update->branch != 'master') {
-                                    $unstable_update_available = true;
-                                }
+                    // Filter updates by minimum stability setting
+                    $minimumStability = Yii::app()->getConfig('minimum_update_stability');
+                    $filteredUpdates = [];
+                    $stabilityLabels = [];
+                    foreach ($updates as $update) {
+                        $stabilityLevel = self::getVersionStabilityLevel($update->versionnumber ?? '');
+                        if (self::meetsMinimumStability($stabilityLevel, $minimumStability)) {
+                            $filteredUpdates[] = $update;
+                            if ($stabilityLevel !== 'stable') {
+                                $stabilityLabels[$stabilityLevel] = true;
                             }
                         }
                     }
+
+                    if (count($filteredUpdates) > 0) {
+                        $update_available = true;
+                        foreach ($filteredUpdates as $update) {
+                            if ($update->security_update) {
+                                $security_update_available = true;
+                            }
+
+                            if (!in_array($update->branch, ['master','5.x','3.x-LTS'])) {
+                                $unstable_update_available = true;
+                            }
+                        }
+                    }
+
                     Yii::app()->session['update_result'] = $update_available;
                     Yii::app()->session['security_update'] = $security_update_available;
+                    Yii::app()->session['update_stability_labels'] = array_keys($stabilityLabels);
 
-                    // If only one update is available and it's an unstable one, then it will be displayed in a different color, and will be removed, not minified when clicked
-                    if (count((array) $updates) == 1 && $unstable_update_available) {
-                        Yii::app()->session['unstable_update'] = $unstable_update_available;
+                    // If only one update is available and it's an unstable one,
+                    // then it will be displayed in a different color
+                    if (count($filteredUpdates) == 1 && $unstable_update_available) {
+                        Yii::app()->session['unstable_update'] = true;
                     } else {
                         Yii::app()->session['unstable_update'] = false;
                     }
 
                     $next_update_check = $today->add(new DateInterval('P1D'));
                     Yii::app()->session['next_update_check'] = $next_update_check;
-                    $updates = array('result'=>$update_available, 'security_update'=>$security_update_available, 'unstable_update'=>$unstable_update_available);
+                    $updates = array('result' => $update_available, 'security_update' => $security_update_available, 'unstable_update' => $unstable_update_available);
                 } else {
                     $next_update_check = $today->add(new DateInterval('P1D'));
                     Yii::app()->session['next_update_check'] = $next_update_check;
                     Yii::app()->session['update_result'] = false;
                     Yii::app()->session['unstable_update'] = false;
+                    Yii::app()->session['security_update'] = false;
+                    Yii::app()->session['update_stability_labels'] = [];
                 }
             } else {
                 $update_available = Yii::app()->session['update_result'];
                 $unstable_update_available = Yii::app()->session['unstable_update'];
                 $security_update_available = Yii::app()->session['security_update'];
-                $updates = array('result'=>$update_available, 'security_update'=>$security_update_available, 'unstable_update'=>$unstable_update_available);
+                $updates = array('result' => $update_available, 'security_update' => $security_update_available, 'unstable_update' => $unstable_update_available);
             }
         } else {
             Yii::app()->session['notificationstate'] = 0;
             Yii::app()->session['update_result'] = false;
-            $updates = array('result'=>false);
+            $updates = array('result' => false);
         }
         return (object) $updates;
     }
 
-
     //// END OF INTERFACE ////
-
 
     /**
      * Call the server to get the necessary datas to check the database
      * @param string $destinationBuild
      * @return mixed|stdClass
      */
-    private function _getDbChecks($destinationBuild)
+    private function getDbChecks($destinationBuild)
     {
-        $getters = '/index.php?r=updates/get-db-checks&build='.$destinationBuild;
-        $content = $this->_performRequest($getters);
+        $getters = '/index.php?r=updates/get-db-checks&build=' . $destinationBuild;
+        $content = $this->performRequest($getters);
         return $content;
     }
 
 
     /**
      * Return the total size of the current database in MB
-     * @return string
+     * @return double
      */
-    private function _getDbTotalSize()
+    private function getDbTotalSize()
     {
         $command = Yii::app()->db->createCommand("SHOW TABLE STATUS");
         $results = $command->query();
@@ -663,7 +730,7 @@ class UpdateForm extends CFormModel
             $size += $row["Data_length"] + $row["Index_length"];
         }
 
-        $dbSize = number_format($size / (1024 * 1024), 2);
+        $dbSize = $size / (1024 * 1024);
 
         return $dbSize;
     }
@@ -672,33 +739,39 @@ class UpdateForm extends CFormModel
      * Create a backup of the DataBase
      * @return stdClass result of backup
      */
-    private function _createDbBackup()
+    private function createDbBackup()
     {
-        Yii::app()->loadHelper("admin/backupdb");
+        Yii::app()->loadHelper("admin.backupdb");
         $backupDb = new stdClass();
-        $basefilename = dateShift(date("Y-m-d H:i:s"), "Y-m-d", Yii::app()->getConfig('timeadjust')).'_'.md5(uniqid(rand(), true));
-        $sfilename = $this->tempdir.DIRECTORY_SEPARATOR."backup_db_".randomChars(20)."_".dateShift(date("Y-m-d H:i:s"), "Y-m-d", Yii::app()->getConfig('timeadjust')).".sql";
-        $dfilename = $this->tempdir.DIRECTORY_SEPARATOR."LimeSurvey_database_backup_".$basefilename.".zip";
+        $basefilename = dateShift(gmdate("Y-m-d H:i:s"), "Y-m-d") . '_' . md5(uniqid(rand(), true));
+        $baseSqlFileName = "backup_db_" . randomChars(20) . "_" . dateShift(gmdate("Y-m-d H:i:s"), "Y-m-d") . ".sql";
+        $sfilename = $this->tempdir . DIRECTORY_SEPARATOR . $baseSqlFileName;
+        $dfilename = $this->tempdir . DIRECTORY_SEPARATOR . "LimeSurvey_database_backup_" . $basefilename . ".zip";
         outputDatabase('', false, $sfilename);
 
         if (is_file($sfilename) && filesize($sfilename)) {
-            $archive = new PclZip($dfilename);
-            $v_list = $archive->add(array($sfilename), PCLZIP_OPT_REMOVE_PATH, $this->tempdir, PCLZIP_OPT_ADD_TEMP_FILE_ON);
+            $archive = new LimeSurvey\Zip();
+            $archive->open($dfilename, ZipArchive::CREATE);
+
+            $success = false;
+            if ($archive->addFile($sfilename, $baseSqlFileName)) {
+                $success = $archive->close();
+            }
             unlink($sfilename);
-            if ($v_list == 0) {
+
+            if (!$success) {
                 $backupDb->result = false;
                 $backupDb->message = 'db_backup_zip_failed';
             } else {
                 $backupDb->result = true;
                 $backupDb->message = htmlspecialchars($dfilename);
-                $backupDb->fileurl = Yii::app()->getBaseUrl(true).'/tmp/LimeSurvey_database_backup_'.$basefilename.'.zip';
+                $backupDb->fileurl = Yii::app()->getBaseUrl(true) . '/tmp/LimeSurvey_database_backup_' . $basefilename . '.zip';
             }
         } else {
             $backupDb->result = false;
             $backupDb->message = htmlspecialchars('db_backup_failed');
         }
         return $backupDb;
-
     }
 
 
@@ -707,16 +780,15 @@ class UpdateForm extends CFormModel
      * @param array $file a file to update (must contain file and type indexes)
      * @return stdClass containing a list of read only files
      */
-    private function _getReadOnlyCheckedFile($file)
+    private function getReadOnlyCheckedFile($file)
     {
         $checkedfile = new stdClass();
         $checkedfile->type = '';
         $checkedfile->file = '';
 
         // We check if the file read only
-        if ($file['type'] == 'A' && !file_exists($this->rootdir.$file['file']) || ($file['type'] == 'D' && file_exists($this->rootdir.$file['file']))) {
-
-            $searchpath = $this->rootdir.$file['file'];
+        if ($file['type'] == 'A' && !file_exists($this->rootdir . $file['file']) || ($file['type'] == 'D' && file_exists($this->rootdir . $file['file']))) {
+            $searchpath = $this->rootdir . $file['file'];
             $is_writable = is_writable(dirname($searchpath));
 
             // LOUIS : snippet from the original code.
@@ -728,18 +800,80 @@ class UpdateForm extends CFormModel
                 }
             }
 
+            // Check not only if directory is writable, but also if it can be modified
+            // This ensures the current process can modify files (by ownership, root, or permissions)
+            // Fixes: Bug #20138 - ComfortUpdate fails when files owned by different user
+            if ($is_writable && file_exists($searchpath)) {
+                $is_modifiable = $this->isFileModifiable($searchpath);
+                if (!$is_modifiable) {
+                    $is_writable = false;
+                }
+            }
+
             if (!$is_writable) {
                 $checkedfile->type = 'readonlyfile';
                 $checkedfile->file = $searchpath;
             }
-        } elseif (file_exists($this->rootdir.$file['file'])
-            && !is_writable($this->rootdir.$file['file'])) {
-
+        } elseif (
+            file_exists($this->rootdir . $file['file'])
+            && !is_writable($this->rootdir . $file['file'])
+        ) {
             $checkedfile->type = 'readonlyfile';
-            $checkedfile->file = $this->rootdir.$file['file'];
+            $checkedfile->file = $this->rootdir . $file['file'];
+        } elseif (
+            file_exists($this->rootdir . $file['file'])
+            && is_writable($this->rootdir . $file['file'])
+        ) {
+            // Check if file can be modified (ownership, root, or permissions)
+            // This is necessary even if file is writable, as file ownership may prevent updates
+            // Fixes: Bug #20138 - ComfortUpdate fails when files owned by different user
+            $is_modifiable = $this->isFileModifiable($this->rootdir . $file['file']);
+            if (!$is_modifiable) {
+                $checkedfile->type = 'readonlyfile';
+                $checkedfile->file = $this->rootdir . $file['file'];
+            }
         }
 
         return $checkedfile;
+    }
+
+    /**
+     * Check if the current process can modify a file or directory
+     * This is essential before updating files, as file operations require proper permissions
+     *
+     * On Linux/Unix systems, uses POSIX functions to check:
+     * 1. If current process is root (UID 0) - can always modify, OR
+     * 2. If current process owns the file (UID match) - can modify, OR
+     * 3. If the file/directory has write permissions set - can modify via permissions
+     *
+     * This prevents failures when permission bits alone don't allow expected modifications (Bug #20138).
+     *
+     * @param string $path Path to file or directory to test
+     * @return bool True if current process can modify the file, false otherwise
+     */
+    private function isFileModifiable($path)
+    {
+        if (!file_exists($path)) {
+            return false;
+        }
+
+        // Check if POSIX functions are available (available on Linux/Unix, not on Windows)
+        if (function_exists('posix_geteuid') && function_exists('fileowner')) {
+            $currentUid = @posix_geteuid();
+            $fileUid = @fileowner($path);
+
+            // If we successfully got both UIDs, check if we can modify:
+            // 1. We own the file (UID match), OR
+            // 2. We're root (UID 0) - root can modify any file, OR
+            // 3. File is writable (permissions allow modification)
+            if ($currentUid !== false && $fileUid !== false) {
+                return ($currentUid === $fileUid) || ($currentUid === 0) || is_writable($path);
+            }
+        }
+
+        // POSIX not available or unable to determine ownership
+        // but is_writable() should handle basic permission checks
+        return is_writable($path);
     }
 
 
@@ -747,29 +881,26 @@ class UpdateForm extends CFormModel
     /**
      * Check if a file (added/deleted/) on the update yet exists on the server, or has been modified
      *
-     * @param array $file  array of files to update (must contain file, type and chekcsum indexes)
+     * @param array $file  array of files to update (must contain file, type and checksum indexes)
      * @return stdClass containing a list of read only files
      */
-    private function _getCheckedFile($file)
+    private function getCheckedFile($file)
     {
-
         $checkedfile = new stdClass();
         $checkedfile->type = '';
         $checkedfile->file = '';
 
         if ($file['file'] != '/application/config/version.php') {
-
             // We check if the file exist
-            if ($file['type'] == 'A' && file_exists($this->rootdir.$file['file'])) {
+            if ($file['type'] == 'A' && file_exists($this->rootdir . $file['file'])) {
                 //A new file, check if this already exists
                 $checkedfile->type = 'existingfile';
                 $checkedfile->file = $file;
-            }
-
-            // We check if the file has been modified
-            elseif (($file['type'] == 'D' || $file['type'] == 'M') && is_file($this->rootdir.$file['file'])
-                && sha1_file($this->rootdir.$file['file']) != $file['checksum']) {
-
+            } elseif (
+                // We check if the file has been modified
+                ($file['type'] == 'D' || $file['type'] == 'M') && is_file($this->rootdir . $file['file'])
+                && sha1_file($this->rootdir . $file['file']) != $file['checksum']
+            ) {
                 $checkedfile->type = 'modifiedfile';
                 $checkedfile->file = $file;
             }
@@ -783,18 +914,18 @@ class UpdateForm extends CFormModel
      * Call the server to get the list of files and directory to check (and check type : writable / free space)
      * @return array containing the list
      */
-    private function _getFileSystemCheckList()
+    private function getFileSystemCheckList()
     {
         $getters = '/index.php?r=updates/filesystemchecklist';
-        $content = $this->_performRequest($getters);
+        $content = $this->performRequest($getters);
         $fileSystemCheck = $content->list;
 
-        // Strategy Pattern : different way to buil the path of the file
-        // Right now, calling _fileSystemCheckAppath() or _fileSystemCheckConfig()
+        // Strategy Pattern : different way to build the path of the file
+        // Right now, calling fileSystemCheckAppath() or fileSystemCheckConfig()
         // Could also use params in the futur : YAGNI !!!!!
         $files = array();
         foreach ($fileSystemCheck as $key => $obj) {
-            $method = '_fileSystemCheck'.$obj->type;
+            $method = 'fileSystemCheck' . $obj->type;
             $files[$key] = $this->$method($obj);
         }
 
@@ -806,7 +937,7 @@ class UpdateForm extends CFormModel
      * @param object $obj an object containing the name of the file/directory to check, and what must be checked
      * @return stdClass the result of the test
      */
-    private function _fileSystemCheck($obj)
+    private function fileSystemCheck($obj)
     {
         $check = new stdClass();
         $check->name = $obj->name;
@@ -816,38 +947,42 @@ class UpdateForm extends CFormModel
         } else {
             $check->writable = 'pass';
         }
-        if ($obj->freespaceCheck) {
+        if ($obj->freespaceCheck && function_exists('disk_free_space')) {
             $check->freespace = (@disk_free_space($obj->name) > $obj->minfreespace);
         } else {
             $check->freespace = 'pass';
         }
 
-        $check->name = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $check->name);
+        $check->name = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, (string) $check->name);
 
         return $check;
     }
 
     /**
      * build the file / Directory path using APPATH, and then call the check method
+     * NB: This method is called by building the method name string in getFileSystemCheckList.
      * @param object $obj an object containing the name of the file/directory to check, and what must be checked
      * @return stdClass the result of the test
+     * @SuppressWarnings(PHPMD.UnusedPrivateMethod)
      */
-    private function _fileSystemCheckAppath($obj)
+    private function fileSystemCheckAppath($obj)
     {
-        $obj->name = APPPATH.$obj->name;
-        return  $this->_fileSystemCheck($obj);
+        $obj->name = APPPATH . $obj->name;
+        return  $this->fileSystemCheck($obj);
     }
 
 
     /**
      * build the file / Directory path using getConfig(), and then call the check method
+     * NB: This method is called by building the method name string in getFileSystemCheckList.
      * @param object $obj an object containing the name of the file/directory to check, and what must be checked
      * @return stdClass the result of the test
+     * @SuppressWarnings(PHPMD.UnusedPrivateMethod)
      */
-    private function _fileSystemCheckConfig($obj)
+    private function fileSystemCheckConfig($obj)
     {
         $obj->name = Yii::app()->getConfig($obj->name);
-        return  $this->_fileSystemCheck($obj);
+        return  $this->fileSystemCheck($obj);
     }
 
     /**
@@ -856,10 +991,10 @@ class UpdateForm extends CFormModel
      * @param int $build the buildId to test
      * @return stdClass the success/error result
      */
-    private function _phpVerCheck($build)
+    private function phpVerCheck($build)
     {
-        $getters = '/index.php?r=updates/get-php-ver&build='.$build;
-        $php_ver = $this->_performRequest($getters);
+        $getters = '/index.php?r=updates/get-php-ver&build=' . $build;
+        $php_ver = $this->performRequest($getters);
 
         $return = new stdClass();
         $return->php_ver = $php_ver->php_version;
@@ -879,10 +1014,10 @@ class UpdateForm extends CFormModel
      * @param int $build the buildId to test
      * @return stdClass the success/error message
      */
-    private function _getModuleChecks($build)
+    private function getModuleChecks($build)
     {
-        $getters = '/index.php?r=updates/get-php-modules&build='.$build;
-        $php_module_list = $this->_performRequest($getters);
+        $getters = '/index.php?r=updates/get-php-modules&build=' . $build;
+        $php_module_list = $this->performRequest($getters);
 
         $return = new stdClass();
         if ($php_module_list->result) {
@@ -904,17 +1039,17 @@ class UpdateForm extends CFormModel
      * @param integer $build
      * @return stdClass
      */
-    private function _getMysqlChecks($build)
+    private function getMysqlChecks($build)
     {
         $checks = new stdClass();
         $dbType = Yii::app()->db->getDriverName();
         if (in_array($dbType, array('mysql', 'mysqli'))) {
             $checks->docheck = 'do';
-            $getters = '/index.php?r=updates/get-mysql-ver&build='.$build;
-            $mysql_requirements = $this->_performRequest($getters);
+            $getters = '/index.php?r=updates/get-mysql-ver&build=' . $build;
+            $mysql_requirements = $this->performRequest($getters);
             $checks->mysql_ver = $mysql_requirements->version;
             $checks->local_mysql_ver = Yii::app()->db->getServerVersion();
-            $checks->result = (version_compare($checks->local_mysql_ver, $checks->mysql_ver, '<')) ?false:true;
+            $checks->result = (version_compare($checks->local_mysql_ver, $checks->mysql_ver, '<')) ? false : true;
         } else {
             $checks->docheck = 'pass';
         }
@@ -926,18 +1061,14 @@ class UpdateForm extends CFormModel
      *
      * @return string
      */
-    private function _getProtocol()
+    private function getProtocol()
     {
         $server_ssl = Yii::app()->getConfig("comfort_update_server_ssl");
-        if ($server_ssl === 1) {
-            if (extension_loaded("openssl")) {
+        if ($server_ssl === 1 && extension_loaded("openssl")) {
                 return 'https://';
-            }
         }
         return 'http://';
     }
-
-
 
     /**
      * This function download a file from the ComfortUpdate and accept redirection
@@ -945,102 +1076,29 @@ class UpdateForm extends CFormModel
      * @param string $fileName
      * @return object containing success = TRUE or error message
      */
-     private function _performDownload($getters, $fileName = 'update')
-     {
-         $newUrl = '';
-         $maxRedirection = 10;
-         do
-         {
-             if ($maxRedirection<1) {
-                 $result= array('result'=>false, 'error'=>'error_while_processing_download');
-                 break;
-             }
-             $ch = curl_init();
-             $pFile = fopen($this->tempdir.DIRECTORY_SEPARATOR.$fileName.'.zip', 'w');
-             $aCurlOptions=[CURLOPT_URL=>(empty($newUrl)?$this->_getProtocol().Yii::app()->getConfig("comfort_update_server_url").$getters:$newUrl)];
-             if ($this->proxy_host_name != '') {
-                 $proxy = $this->proxy_host_name.':'.$this->proxy_host_port;
-                 $aCurlOptions[CURLOPT_PROXY] =$proxy;
-             }
-             $aCurlOptions[CURLOPT_COOKIEFILE] = $this->path_cookie;
-             $aCurlOptions[CURLOPT_RETURNTRANSFER] = true;
-             $aCurlOptions[CURLOPT_HEADER] = false; // We don't want the header to be written in the zip file !
-             $aCurlOptions[CURLOPT_BINARYTRANSFER] = true;
-             $aCurlOptions[CURLOPT_FILE] = $pFile;
-             curl_setopt_array($ch, $aCurlOptions);
-
-             $content = curl_exec($ch);
-             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-             if ($code == 301 || $code == 302 || $code == 303 || $code == 307)
-             {
-                 curl_close($ch);
-                  $ch = curl_init();                 
-                  unset($aCurlOptions[CURLOPT_FILE]);
-                  unset($aCurlOptions[CURLOPT_BINARYTRANSFER]);
-                  $aCurlOptions[CURLOPT_HEADER] = true; 
-                  curl_setopt_array($ch, $aCurlOptions);
-                 $content = curl_exec($ch);
-                 preg_match('/Location:(.*?)\n/', $content, $matches);
-                 $newUrl = trim(array_pop($matches));
-                 curl_close($ch);
-                 $maxRedirection--;
-                 continue;
-             }
-             else // no more redirection
-             {
-                 $code = 0;
-                 $content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE); // But we want the header to be returned to the controller so we can check if a file has been returned
-                 curl_close($ch);
-                 $result = ($content_type == "application/zip") ? array("result"=>true) : array('result'=>false, 'error'=>'error_while_processing_download');
-                 break;
-             }
-         }
-         while($code);            
-         return (object) $result;
-     }
-
-private function curlExec(/* Array */$curlOptions='', /* Array */$curlHeaders='', /* Array */$postFields='')
-{
-  $newUrl = '';
-  $maxRedirection = 10;
-  do
-  {
-    if ($maxRedirection<1) die('Error: reached the limit of redirections');
-
-    $ch = curl_init();
-    if (!empty($curlOptions)) curl_setopt_array($ch, $curlOptions);
-    if (!empty($curlHeaders)) curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
-    if (!empty($postFields))
+    private function performDownload($getters, $fileName = 'update')
     {
-      curl_setopt($ch, CURLOPT_POST, 1);
-      curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-    }
-   
-    if (!empty($newUrl)) curl_setopt($ch, CURLOPT_URL, $newUrl); // redirect needed
-   
-    $curlResult = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        // TODO : Could test if curl is loaded, and if not, use httprequest2
+        $ch = curl_init();
+        $pFile = fopen($this->tempdir . DIRECTORY_SEPARATOR . $fileName . '.zip', 'w');
+        curl_setopt($ch, CURLOPT_URL, $this->getProtocol() . Yii::app()->getConfig("comfort_update_server_url") . $getters);
+        if ($this->proxy_host_name != '') {
+            $proxy = $this->proxy_host_name . ':' . $this->proxy_host_port;
+            curl_setopt($ch, CURLOPT_PROXY, $proxy);
+        }
+        curl_setopt($ch, CURLOPT_COOKIEFILE, $this->path_cookie);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HEADER, false); // We don't want the header to be written in the zip file !
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_FILE, $pFile);
+        curl_exec($ch);
+        $content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE); // But we want the header to be returned to the controller so we can check if a file has been returned
 
-    if ($code == 301 || $code == 302 || $code == 303 || $code == 307)
-    {
-      preg_match('/Location:(.*?)\n/', $curlResult, $matches);
-      $newUrl = trim(array_pop($matches));
-      curl_close($ch);
+        $result = ($content_type == "application/zip") ? array("result" => true) : array('result' => false, 'error' => 'error_while_processing_download');
 
-      $maxRedirection--;
-      continue;
+        return (object) $result;
     }
-    else // no more redirection
-    {
-      $code = 0;
-      curl_close($ch);
-    }
-  }
-  while($code);
-  return $curlResult;
-}    
-    
+
 
     /**
      * This function perform the request
@@ -1048,17 +1106,19 @@ private function curlExec(/* Array */$curlOptions='', /* Array */$curlHeaders=''
      * @param boolean $create_new_cookie_file
      * @return mixed|stdClass the server page answer (json most of the time)
      */
-    private function _performRequest($getters, $create_new_cookie_file = false)
+    private function performRequest($getters, $create_new_cookie_file = false)
     {
         if ((extension_loaded("curl"))) {
             if (isset($_REQUEST['access_token'])) {
-                $getters .= "&access_token=".$_REQUEST['access_token'];
+                $getters .= "&access_token=" . urlencode((string) $_REQUEST['access_token']);
             }
-
-            $ch = curl_init($this->_getProtocol().Yii::app()->getConfig("comfort_update_server_url").$getters);
+            if (Yii::app()->getConfig("allow_non_public_release")) {
+                $getters .= "&debug=1";
+            }
+            $ch = curl_init($this->getProtocol() . Yii::app()->getConfig("comfort_update_server_url") . $getters);
 
             if ($this->proxy_host_name != '') {
-                $proxy = $this->proxy_host_name.':'.$this->proxy_host_port;
+                $proxy = $this->proxy_host_name . ':' . $this->proxy_host_port;
                 curl_setopt($ch, CURLOPT_PROXY, $proxy);
             }
 
@@ -1071,7 +1131,6 @@ private function curlExec(/* Array */$curlOptions='', /* Array */$curlHeaders=''
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
             $content = curl_exec($ch);
-            curl_close($ch);
 
             $content_decoded = json_decode(base64_decode($content));
             if (!is_object($content_decoded)) {
@@ -1082,9 +1141,9 @@ private function curlExec(/* Array */$curlOptions='', /* Array */$curlHeaders=''
             }
             return $content_decoded;
         } else {
-            // Should happen only on first step (get buttons), diplayed in check_updates/update_buttons/_updatesavailable_error.php
+            // Should happen only on first step (get buttons), displayed in check_updates/update_buttons/_updatesavailable_error.php
             // Could rather define a call to httprequest2 functions.
-            return (object) array('result' => false, 'error'=>"php_curl_not_loaded");
+            return (object) array('result' => false, 'error' => "php_curl_not_loaded");
         }
     }
 }

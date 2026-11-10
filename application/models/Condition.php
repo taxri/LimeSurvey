@@ -1,11 +1,8 @@
 <?php
 
-if (!defined('BASEPATH')) {
-    exit('No direct script access allowed');
-}
 /*
 * LimeSurvey
-* Copyright (C) 2013 The LimeSurvey Project Team / Carsten Schmitz
+* Copyright (C) 2013-2026 The LimeSurvey Project Team
 * All rights reserved.
 * License: GNU/GPL License v2 or later, see LICENSE.php
 * LimeSurvey is free software. This version may have been modified pursuant
@@ -22,8 +19,8 @@ if (!defined('BASEPATH')) {
  * @property integer $cid ID (primary key)
  * @property integer $qid Question id (subquestion)
  * @property integer $cqid Question id (grouping question)
- * @property string $cfieldname Condition field-name as <a href = "https://manual.limesurvey.org/SGQA_identifier">SGQA identifier</a>
- * @property string $method Logical operator see <a href="https://manual.limesurvey.org/Setting_conditions#Select_the_comparison_operator">here</a>
+ * @property string $cfieldname Condition field-name as <a href = "https://www.limesurvey.org/manual/SGQA_identifier">SGQA identifier</a>
+ * @property string $method Logical operator see <a href="https://www.limesurvey.org/manual/Setting_conditions#Select_the_comparison_operator">here</a>
  * @property string $value Value to be compared against
  * @property integer $scenario Scenario number
  *
@@ -35,10 +32,10 @@ class Condition extends LSActiveRecord
      * @inheritdoc
      * @return Condition
      */
-    public static function model($class = __CLASS__)
+    public static function model($className = __CLASS__)
     {
         /** @var self $model */
-        $model = parent::model($class);
+        $model = parent::model($className);
         return $model;
     }
 
@@ -51,6 +48,37 @@ class Condition extends LSActiveRecord
     public function tableName()
     {
         return '{{conditions}}';
+    }
+
+    /**
+     * Refuses to save a condition whose source question (cqid) doesn't belong to the survey of the question (qid).
+     *
+     * @return boolean
+     */
+    protected function beforeSave()
+    {
+        if (!empty($this->cqid) && !self::isQuestionOfSameSurvey((int) $this->qid, (int) $this->cqid)) {
+            $this->addError('cqid', gT("The condition must be based on a question of the same survey."));
+            return false;
+        }
+        return parent::beforeSave();
+    }
+
+    /**
+     * Checks whether two questions belong to the same survey.
+     *
+     * @param integer $qid the question ID
+     * @param integer $otherQid the other question ID
+     * @return boolean
+     */
+    public static function isQuestionOfSameSurvey(int $qid, int $otherQid): bool
+    {
+        return (bool) Yii::app()->db->createCommand()
+            ->select('COUNT(*)')
+            ->from('{{questions}} q')
+            ->join('{{questions}} oq', 'oq.sid = q.sid')
+            ->where('q.qid = :qid AND oq.qid = :oqid', [':qid' => $qid, ':oqid' => $otherQid])
+            ->queryScalar();
     }
 
     /**
@@ -88,11 +116,11 @@ class Condition extends LSActiveRecord
      */
     public function deleteRecords($condition = false)
     {
-        $criteria = new CDbCriteria;
+        $criteria = new CDbCriteria();
 
         if ($condition != false) {
             if (is_array($condition)) {
-                foreach ($condition as $column=>$value) {
+                foreach ($condition as $column => $value) {
                     $criteria->addCondition("$column='$value'");
                 }
             } else {
@@ -114,14 +142,18 @@ class Condition extends LSActiveRecord
      */
     public function updateCFieldName($iSurveyID, $iQuestionID, $iOldGroupID, $iNewGroupID)
     {
-        $oResults = $this->findAllByAttributes(array('cqid'=>$iQuestionID));
+        $oResults = $this->findAllByAttributes(array('cqid' => $iQuestionID));
         foreach ($oResults as $oRow) {
             $cfnregs = [];
-            if (preg_match('/(\S*?)'.$iSurveyID."X".$iOldGroupID."X".$iQuestionID."(.*)/", $oRow->cfieldname, $cfnregs) > 0) {
-                $sNewCfn = $cfnregs[1].$iSurveyID."X".$iNewGroupID."X".$iQuestionID.$cfnregs[2];
+            if (preg_match('/(\S*?)' . "Q" . $iQuestionID . "(.*)/", $oRow->cfieldname, $cfnregs) > 0) {
+                $sNewCfn = $cfnregs[1] . "Q" . $iQuestionID . $cfnregs[2];
                 Yii::app()->db->createCommand()
-                    ->update($this->tableName(), array('cfieldname' => $sNewCfn),
-                    'cid=:cid', array(':cid'=>$oRow->cid));
+                    ->update(
+                        $this->tableName(),
+                        array('cfieldname' => $sNewCfn),
+                        'cid=:cid',
+                        array(':cid' => $oRow->cid)
+                    );
                 LimeExpressionManager::UpgradeConditionsToRelevance($iSurveyID, $oRow->qid);
             }
         }
@@ -129,20 +161,34 @@ class Condition extends LSActiveRecord
 
 
 
+    /**
+     * Inserts a condition, or updates the conditions matching $condition.
+     *
+     * Note: Fails if the source question (cqid) doesn't belong to the survey of the question (qid).
+     *
+     * @param array $data the condition attributes
+     * @param boolean $update whether to update existing conditions instead of inserting one
+     * @param array|string|false $condition the conditions to update
+     * @return boolean|integer save result, or the number of updated rows
+     */
     public function insertRecords($data, $update = false, $condition = false)
     {
-        $record = new self;
+        if (!empty($data['cqid'])) {
+            $qid = $data['qid'] ?? (is_array($condition) ? ($condition['qid'] ?? null) : null);
+            if (empty($qid) || !self::isQuestionOfSameSurvey((int) $qid, (int) $data['cqid'])) {
+                return false;
+            }
+        }
+        $record = new self();
         foreach ($data as $k => $v) {
-            $v = str_replace(array("'", '"'), '', $v);
+            $v = str_replace(array("'", '"'), '', (string) $v);
             $record->$k = $v;
         }
 
         if ($update) {
-            $criteria = new CdbCriteria;
+            $criteria = new CdbCriteria();
             if (is_array($condition)) {
-                foreach ($condition as $column=>$value) {
-                    $criteria->addCondition("$column='$value'");
-                }
+                $criteria->addColumnCondition($condition);
             } else {
                 $criteria->where = $condition;
             }
@@ -159,9 +205,9 @@ class Condition extends LSActiveRecord
      */
     public function getScenarios($qid)
     {
-        $query = "SELECT DISTINCT scenario FROM ".$this->tableName()." WHERE qid=:qid ORDER BY scenario";
+        $query = "SELECT DISTINCT scenario FROM " . $this->tableName() . " WHERE qid=:qid ORDER BY scenario";
         $command = Yii::app()->db->createCommand($query);
-        $command->params = [':qid'=>$qid];
+        $command->params = [':qid' => $qid];
         return $command->query();
     }
 
@@ -191,13 +237,14 @@ class Condition extends LSActiveRecord
 
     public function getConditionsQuestions($distinctrow, $deqrow, $scenariorow, $surveyprintlang)
     {
-        $conquery = "SELECT cid, cqid, q.title, q.question, value, q.type, cfieldname "
-        ."FROM {{conditions}} c, {{questions}} q "
-        ."WHERE c.cqid=q.qid "
-        ."AND c.cqid=:distinctrow "
-        ."AND c.qid=:deqrow "
-        ."AND c.scenario=:scenariorow "
-        ."AND language=:surveyprintlang ";
+        $conquery = "SELECT cid, cqid, q.title, question, value, q.type, cfieldname "
+        . "FROM {{conditions}} c "
+        . "JOIN {{questions}} q on c.cqid=q.qid "
+        . "JOIN {{question_l10ns}} l on l.qid=q.qid "
+        . "WHERE c.cqid=:distinctrow "
+        . "AND c.qid=:deqrow "
+        . "AND c.scenario=:scenariorow "
+        . "AND language=:surveyprintlang ";
         return Yii::app()->db->createCommand($conquery)
             ->bindParam(":distinctrow", $distinctrow, PDO::PARAM_INT)
             ->bindParam(":deqrow", $deqrow, PDO::PARAM_INT)
@@ -216,7 +263,7 @@ class Condition extends LSActiveRecord
                 ->select('cfieldname')
                 ->from('{{questions}} questions')
                 ->join('{{conditions}} conditions', 'questions.qid=conditions.cqid')
-                ->where('sid=:sid', array(':sid'=>$sid))
+                ->where('sid=:sid', array(':sid' => $sid))
                 ->queryRow();
 
         return $Qids;
@@ -230,51 +277,83 @@ class Condition extends LSActiveRecord
      */
     public function getConditionCount($qid, $language, Condition $scenarionr)
     {
-        $query = "SELECT count(*) as recordcount
-            FROM {{conditions}} c, {{questions}} q, {{groups}} g
-            WHERE c.cqid=q.qid "
-                    ."AND q.gid=g.gid "
-                    ."AND q.parent_qid=0 "
-                    ."AND q.language=:lang1 "
-                    ."AND g.language=:lang2 "
-                    ."AND c.qid=:qid "
-                    ."AND c.scenario=:scenario "
-                    ."AND c.cfieldname NOT LIKE '{%' "; // avoid catching SRCtokenAttr conditions
-        $result = Yii::app()->db->createCommand($query)
-            ->bindValue(":scenario", $scenarionr['scenario'])
-            ->bindValue(":qid", $qid, PDO::PARAM_INT)
-            ->bindValue(":lang1", $language, PDO::PARAM_STR)
-            ->bindValue(":lang2", $language, PDO::PARAM_STR)
-            ->queryRow();
-        return (int) $result['recordcount'];
+        // Need to quote columns for Postgres.
+        $db = Yii::app()->db;
+        $quotedQL10ns = $db->quoteTableName('questionl10ns');
+        $quotedLanguage = $db->quoteColumnName('language');
+        $quotedQGL10ns = $db->quoteTableName('questiongroupl10ns');
+
+        $result = Condition::model()->with(array(
+            'questions' => array(
+                'condition' => 'questions.parent_qid = :parent_qid',
+                'params' => array(':parent_qid' => 0)
+            ),
+            'questions.questionl10ns' => array(
+                'condition' => $quotedQL10ns . '.' . $quotedLanguage . ' = :lang1',
+                'params' => array(':lang1' => $language)
+            ),
+            'questions.group',
+            'questions.group.questiongroupl10ns' => array(
+                'condition' => $quotedQGL10ns . '.' . $quotedLanguage . ' = :lang2',
+                'params' => array(':lang2' => $language)
+            )
+            ))->findAll(
+                't.qid = ' . $qid . ' and scenario = ' . $scenarionr['scenario'] . ' and cfieldname NOT LIKE \'{%\''
+            );
+
+        return (int) count($result);
     }
 
     /**
+     * Returns the question-based conditions of one scenario of a question,
+     * ordered by question so conditions on the same field are adjacent
+     * (the condition editor joins adjacent conditions on the same field with "or")
+     *
      * @param int $qid
-     * @param $language
+     * @param string $language
      * @param Condition $scenarionr
      * @return array
      */
     public function getConditions($qid, $language, Condition $scenarionr)
     {
-        $query = "SELECT c.cid, c.scenario, c.cqid, c.cfieldname, c.method, c.value, q.type
-            FROM {{conditions}} c, {{questions}} q, {{groups}} g
-            WHERE c.cqid=q.qid "
-                    ."AND q.gid=g.gid "
-                    ."AND q.parent_qid=0 "
-                    ."AND q.language=:lang1 "
-                    ."AND g.language=:lang2 "
-                    ."AND c.qid=:qid "
-                    ."AND c.scenario=:scenario "
-                    ."AND c.cfieldname NOT LIKE '{%' " // avoid catching SRCtokenAttr conditions
-                    ."ORDER BY g.group_order, q.question_order, c.cfieldname";
-        $result = Yii::app()->db->createCommand($query)
-            ->bindValue(":scenario", $scenarionr['scenario'])
-            ->bindValue(":qid", $qid, PDO::PARAM_INT)
-            ->bindValue(":lang1", $language, PDO::PARAM_STR)
-            ->bindValue(":lang2", $language, PDO::PARAM_STR)
-            ->query();
-        return $result->readAll();
+        // Need to quote columns for Postgres.
+        $db = Yii::app()->db;
+        $quotedQL10ns = $db->quoteTableName('questionl10ns');
+        $quotedLanguage = $db->quoteColumnName('language');
+        $quotedQGL10ns = $db->quoteTableName('questiongroupl10ns');
+        $quotedGroup = $db->quoteTableName('group');
+
+        $results = Condition::model()->with(array(
+            'questions' => array(
+                'condition' => 'questions.parent_qid = :parent_qid',
+                'params' => array(':parent_qid' => 0)
+            ),
+            'questions.questionl10ns' => array(
+                'condition' => $quotedQL10ns . '.' . $quotedLanguage . ' = :lang1',
+                'params' => array(':lang1' => $language)
+            ),
+            'questions.group',
+            'questions.group.questiongroupl10ns' => array(
+                'condition' => $quotedQGL10ns . '.' . $quotedLanguage . ' = :lang2',
+                'params' => array(':lang2' => $language)
+            )
+            ))->findAll(
+                array(
+                    'select' => 't.cid, t.scenario, t.cqid, t.cfieldname, t.method, t.value',
+                    'condition' => 't.qid = ' . $qid . ' and scenario = ' . $scenarionr['scenario'] . ' and cfieldname NOT LIKE \'{%\'',
+                    'order' => $quotedGroup . '.group_order, questions.question_order, t.cfieldname, t.value, t.cid'
+                )
+            );
+
+        $aResults = array();
+        $i = 0;
+        foreach ($results as $result) {
+            $aResults[$i] = $result->attributes;
+            $aResults[$i]['type'] = $result->questions->type;
+            $i += 1;
+        }
+
+        return $aResults;
     }
 
     /**
@@ -286,11 +365,11 @@ class Condition extends LSActiveRecord
     public function getConditionCountToken($qid, Condition $scenarionr)
     {
         $querytoken = "SELECT count(*) as recordcount "
-            ."FROM {{conditions}} "
-            ."WHERE "
-            ." {{conditions}}.qid=:qid "
-            ."AND {{conditions}}.scenario=:scenario "
-            ."AND {{conditions}}.cfieldname LIKE '{%' "; // only catching SRCtokenAttr conditions
+            . "FROM {{conditions}} "
+            . "WHERE "
+            . " {{conditions}}.qid=:qid "
+            . "AND {{conditions}}.scenario=:scenario "
+            . "AND {{conditions}}.cfieldname LIKE '{%' "; // only catching SRCtokenAttr conditions
         $resulttoken = Yii::app()->db->createCommand($querytoken)
             ->bindValue(":scenario", $scenarionr['scenario'], PDO::PARAM_INT)
             ->bindValue(":qid", $qid, PDO::PARAM_INT)
@@ -311,22 +390,55 @@ class Condition extends LSActiveRecord
     public function getConditionsToken($qid, Condition $scenarionr)
     {
         $querytoken = "SELECT {{conditions}}.cid, "
-            ."{{conditions}}.scenario, "
-            ."{{conditions}}.cqid, "
-            ."{{conditions}}.cfieldname, "
-            ."{{conditions}}.method, "
-            ."{{conditions}}.value, "
-            ."'' AS type "
-            ."FROM {{conditions}} "
-            ."WHERE "
-            ." {{conditions}}.qid=:qid "
-            ."AND {{conditions}}.scenario=:scenario "
-            ."AND {{conditions}}.cfieldname LIKE '{%' " // only catching SRCtokenAttr conditions
-            ."ORDER BY {{conditions}}.cfieldname";
+            . "{{conditions}}.scenario, "
+            . "{{conditions}}.cqid, "
+            . "{{conditions}}.cfieldname, "
+            . "{{conditions}}.method, "
+            . "{{conditions}}.value, "
+            . "'' AS type "
+            . "FROM {{conditions}} "
+            . "WHERE "
+            . " {{conditions}}.qid=:qid "
+            . "AND {{conditions}}.scenario=:scenario "
+            . "AND {{conditions}}.cfieldname LIKE '{%' " // only catching SRCtokenAttr conditions
+            . "ORDER BY {{conditions}}.cfieldname";
         $result = Yii::app()->db->createCommand($querytoken)
             ->bindValue(":scenario", $scenarionr['scenario'], PDO::PARAM_INT)
             ->bindValue(":qid", $qid, PDO::PARAM_INT)
             ->query();
         return $result;
+    }
+
+    /**
+     * A collection of cids
+     * @param array $cids an array of condition ids to copy
+     * @param int $qid the qid of the question whose conditions are to be created
+     * @return bool Whether there were conditions to copy
+     */
+    public function copyConditions(array $cids, int $qid)
+    {
+        $isArray = is_array($cids);
+        if (is_array($cids) && count($cids)) {
+            foreach ($cids as &$cid) {
+                $cid = (int) $cid;
+            }
+            $conditions = Condition::model()->findAll('cid in (' . implode(",", $cids) . ")");
+            foreach ($conditions as $condition) {
+                $newCondition = new Condition();
+                $newCondition->qid = $qid;
+                $newCondition->cqid = $condition->cqid;
+                $newCondition->cfieldname = $condition->cfieldname;
+                $newCondition->method = $condition->method;
+                $newCondition->value = $condition->value;
+                $newCondition->scenario = $condition->scenario;
+                $newCondition->save();
+            }
+            return true;
+        } else {
+            if ($isArray) {
+                throw new \Exception("cids must be an array");
+            }
+        }
+        return false;
     }
 }

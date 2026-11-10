@@ -7,16 +7,32 @@
     <!-- Those metadata will be displayed in the template configuration page. They are not used for now. -->
     <metadata>
         <name>ranking_advanced</name>
+        <type>question_theme</type>
+        <title>Ranking advanced</title>
         <creationDate>15/11/2017</creationDate>
-        <author>Markus Flür</author>
-        <authorEmail>mfluer@limesurvey.org</authorEmail>
+        <author>LimeSurvey GmbH</author>
+        <authorEmail>info@limesurvey.org</authorEmail>
         <authorUrl>http://www.limesurvey.org</authorUrl>
         <copyright>Copyright (C) 2005 - 2017 LimeSurvey Gmbh, Inc. All rights reserved.</copyright>
         <license>GNU General Public License version 2 or later</license>
         <version>1.0</version>
         <apiVersion>1</apiVersion>
         <description>New implementation of the ranking question</description>
+        <questionType>R</questionType>
+        <group>Mask questions</group>
+        <subquestions>1</subquestions>
+        <answerscales>0</answerscales>
+        <hasdefaultvalues>0</hasdefaultvalues>
+        <assessable>1</assessable>
+        <class>ranking</class>
     </metadata>
+
+    <compatibility>
+        <version>4.0</version>
+        <version>5.0</version>
+        <version>6.0</version>
+        <version>7.0</version>
+    </compatibility>
 
     <!--
         Here the list of the css/js files to load.
@@ -31,7 +47,7 @@
         </js>
     </files>
 
-    <custom_attributes>
+    <attributes>
         <attribute>
             <name>show_handle</name>
             <category>Display</category>
@@ -43,7 +59,7 @@
             </options>
             <default>no</default>
             <help>Show a handle for drag and drop</help>
-            <caption>Show handle: </caption>
+            <caption>Show handle:</caption>
         </attribute>
         <attribute>
             <name>show_number</name>
@@ -56,7 +72,7 @@
             </options>
             <default>no</default>
             <help>Show the actual list numbers</help>
-            <caption>Show number: </caption>
+            <caption>Show number:</caption>
         </attribute>
         <attribute>
             <name>only_pull</name>
@@ -69,7 +85,7 @@
             </options>
             <default>no</default>
             <help>Allow only moving the answers</help>
-            <caption>Without reorder: </caption>
+            <caption>Without reorder:</caption>
         </attribute>
         <attribute>
             <name>visualize</name>
@@ -78,15 +94,14 @@
             <inputtype>singleselect</inputtype>
             <options>
                 <list>List</list>
-                <bubbles>Bubbles</bubbles>
                 <blocks>Blocks</blocks>
                 <buttons>Buttons</buttons>
             </options>
             <default>list</default>
             <help>Change visualization of the ranking question</help>
-            <caption>Viuzialisation: </caption>
+            <caption>Visualization:</caption>
         </attribute>
-    </custom_attributes>
+    </attributes>
 
     <!-- Here datas about how LimeSurvey should load the core js/css of the question -->
     <engine>

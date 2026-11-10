@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'eo', {
 	border: 'Bordero',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'eo', {
 		borderColor: 'Borderkoloro',
 		data: 'Datenoj',
 		header: 'Supra paĝotitolo',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Jes',
 		no: 'No',
 		invalidWidth: 'Ĉellarĝo devas esti nombro.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'eo', {
 	headersColumn: 'Unua kolumno',
 	headersNone: 'Neniu',
 	headersRow: 'Unua linio',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'La bordergrando devas esti nombro.',
 	invalidCellPadding: 'La interna marĝeno en la ĉeloj devas esti pozitiva nombro.',
 	invalidCellSpacing: 'La spaco inter la ĉeloj devas esti pozitiva nombro.',

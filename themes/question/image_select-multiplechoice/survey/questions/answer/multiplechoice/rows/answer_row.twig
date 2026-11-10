@@ -1,0 +1,49 @@
+{#
+
+!!!! BECAREFUL: ONLY FOR TESTING !!!!!
+!!!! DON'T START TO TRANSLATE ALL VIEWS BASED ON THIS MODEL !!!!!
+
+!!!! IT WILL PROBABLY FIRST NEED TO CHANGE  THE TWIG TEMPLATE SYNTAX TO AVOID CONFLICT WITH EXPRESSION MANAGER !!!!
+
+/**
+ * Multiple Choice Html : item row
+ *
+ * @var hiddenfield
+ * @var name
+ * @var title
+ * @var question
+ * @var checkedState
+ * @var sCheckconditionFunction
+ * @var myfname
+ * @var sValue
+ *
+ * The image size and fit come from the image settings, see answer.twig.
+ */
+#}
+
+<!-- answer_row -->
+<li id='javatbd{{ myfname }}' class='question-item answer-item checkbox-item imageselect-listitem {{ extra_class }}' {{ sDisplayStyle }} >
+    <div class="imageselect-container">
+        <input
+            class="imageselect-checkbox"
+            type="checkbox"
+            name="{{ myfname }}"
+            id="answer{{ myfname }}"
+            value="Y"
+            {{ checkedState }}
+            onclick='cancelBubbleThis(event); {{ sCheckconditionFunction }}'
+        />
+        <label for="answer{{ myfname }}" class="imageselect-label" onclick='cancelBubbleThis(event); {{ sCheckconditionFunction }}'>
+
+         <img class="imageselect-img fixed-width unforce-height" src="{{ question|escape('html_attr') }}"/>
+        </label>
+        <label for="answer{{ myfname }}" class="imageselect-select d-none"></label>
+    </div>
+    <input
+        type="hidden"
+        name="java{{ myfname }}"
+        id="java{{ myfname }}"
+        value="{{ sValue }}"
+    />
+</li>
+<!-- end of answer_row -->

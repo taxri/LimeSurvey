@@ -1,0 +1,30 @@
+.topbar {
+    padding-top      : 10px;
+    padding-bottom   : 10px;
+    z-index          : 1000;
+    background-color : $g-200;
+    .ls-topbar-buttons {
+        margin-bottom : -4px;
+    }
+    .btn {
+        margin-bottom : 4px;
+    }
+    &.scroll-shadow {
+        box-shadow : 0 12px 8px -12px rgb(196, 196, 196);
+    }
+    .ls-breadcrumb {
+        align-self : center;
+    }
+    .topbar-back-link {
+        font-weight : $font-weight-600;
+    }
+}
+
+// On small viewports the wrapped topbar can be taller than the screen: Keep it in the page flow,
+// otherwise it covers the content below (WCAG 1.4.10 Reflow). It only wraps on narrow viewports,
+// so short but wide windows (e.g. desktop with docked devtools) keep the sticky topbar.
+@media (max-width: 575.98px), (max-height: 500px) and (max-width: 991.98px) {
+    .topbar.sticky-top {
+        position : static;
+    }
+}

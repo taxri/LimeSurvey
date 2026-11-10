@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'sq', {
 	border: 'Madhësia e kornizave',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'sq', {
 		borderColor: 'Ngjyra e Kornizave',
 		data: 'Të dhënat',
 		header: 'Koka',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'Po',
 		no: 'Jo',
 		invalidWidth: 'Gjerësia e qelisë duhet të jetë numër.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'sq', {
 	headersColumn: 'Kolona e parë',
 	headersNone: 'Asnjë',
 	headersRow: 'Rreshti i Parë',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'Madhësia e kufinjve duhet të jetë numër.',
 	invalidCellPadding: 'Mbushja e qelisë duhet të jetë numër pozitiv.',
 	invalidCellSpacing: 'Hapësira e qelisë duhet të jetë numër pozitiv.',

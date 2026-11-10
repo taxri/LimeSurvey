@@ -1,0 +1,133 @@
+// input field
+.form-control {
+    border        : $input-border-width solid $input-border-color;
+    line-height   : $line-height-16;
+    border-radius : $border-radius;
+    &:focus {
+        box-shadow : 4px 4px 0px $elevation-shadow;
+    }
+    &:disabled, &[readonly] {
+        border           : $input-border-width solid $input-border-color-disabled !important;
+        background-color : $g-400;
+        color            : $g-600;
+    }
+}
+
+.col-form-label {
+    line-height : $line-height-16;
+}
+
+.form-control.ls-important-field {
+    padding     : $input-padding-y $input-padding-x;
+    font-weight : 400;
+    font-size   : 14px;
+    line-height : $line-height-16;
+    border      : $input-border-width solid $input-border-color !important;
+    box-shadow  : 8px 8px 0px $g-200;
+    &:focus {
+        box-shadow : 8px 8px 0px $elevation-shadow;
+    }
+    &:disabled, &[readonly] {
+        border           : 2px solid $input-border-color-disabled !important;
+        background-color : $g-400;
+    }
+}
+
+input[type="file"] {
+    position   : relative;
+    padding    : $input-padding-y 14px;
+    box-shadow : 8px 8px 0px #eeeff7;
+}
+
+input[type="file"]::file-selector-button {
+    position      : absolute;
+    top           : 50%;
+    right         : 4px;
+    transform     : translateY(-50%);
+    margin        : 0;
+    padding       : 6px 12px;
+    background    : $white;
+    color         : $g-900;
+    border        : 1px solid $g-900 !important;
+    border-radius : $btn-border-radius;
+    font-weight   : 500;
+}
+
+// Single-line inputs and selects get a fixed height: Firefox doesn't allow a line height below "normal" in text inputs,
+// number, email and native date/time inputs don't get their height from padding and line height alone (e.g. email with
+// multiple), and the height of selects depends on how the browser lays out their text line
+input:where(.form-control:not(.form-control-sm, .form-control-lg, .input-group-sm > *, .input-group-lg > *)),
+select:where(.form-select, .form-control):where(:not([multiple], [size]:not([size="1"]), .form-select-sm, .form-select-lg, .input-group-sm > *, .input-group-lg > *)),
+input[type="number"],
+input[type="email"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  height : $input-fixed-height;
+}
+
+// select
+.form-select {
+    border      : $input-border-width solid $input-border-color;
+    font-weight : $font-weight-normal;
+    font-size   : $dropdown-font-size;
+    line-height : $line-height-16;
+    &:focus {
+        box-shadow : 4px 4px 0px $elevation-shadow;
+    }
+    &:hover {
+        //default hover
+        box-shadow : $btn-hover-boxshadow;
+        text-decoration: none;
+    }
+    &:disabled {
+        border           : $input-border-width solid $input-border-color-disabled;
+        background-color : $g-400;
+        color            : $g-600;
+    }
+    &.ls-important-field {
+        border     : $input-border-width solid $input-border-color !important;
+        box-shadow : 8px 8px 0px $g-200;
+        &:focus {
+            box-shadow : 8px 8px 0px $elevation-shadow;
+        }
+        &:disabled, &[readonly] {
+            border           : 2px solid $input-border-color-disabled !important;
+            background-color : $g-400;
+        }
+    }
+}
+
+.input-group-text {
+    line-height      : $line-height-16;
+    background-color : $g-800;
+    color            : $white;
+}
+
+// Buttons next to the fixed-height inputs get the same height and border as the inputs
+.input-group:not(.input-group-sm, .input-group-lg) > .btn:not(.btn-xs, .btn-sm, .btn-lg, .btn-xl) {
+    border-width   : $input-border-width;
+    padding-top    : calc((#{$input-fixed-height} - #{$line-height-20}) / 2 - #{$input-border-width});
+    padding-bottom : calc((#{$input-fixed-height} - #{$line-height-20}) / 2 - #{$input-border-width});
+    // Inline 20px icons make the line box higher than the 20px line height
+    & [class^="ri-"], & [class*=" ri-"] {
+        display        : inline-block;
+        vertical-align : top;
+    }
+}
+
+.input-group > .btn-outline-secondary:not(:hover, :focus, :active, .active, .show, .disabled, [disabled], :disabled) {
+    border-color : $input-border-color;
+}
+
+.ls-input-button {
+    top       : 50%;
+    right     : 5px;
+    transform : translateY(-50%);
+}
+
+.hint {
+    font-size : 0.8em;
+}
+
+@import "select2.scss";

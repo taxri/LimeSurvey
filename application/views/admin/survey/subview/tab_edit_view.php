@@ -1,46 +1,62 @@
 <?php
+
 /**
+ * @var SurveyAdministrationController $this
  * @var $aTabTitles
  * @var $aTabContents
  * @var $has_permissions
  * @var $surveyid
  * @var $surveyls_language
  */
-if(isset($data)){
+
+if (isset($data)) {
     extract($data);
 }
- $count=0;
- if(isset($scripts))
+
+if (isset($scripts)) {
     echo $scripts;
 
-
-    $iSurveyID = Yii::app()->request->getParam('surveyid');
-    Yii::app()->session['FileManagerContext'] = "edit:survey:{$iSurveyID}";
+    $iSurveyID = App()->request->getParam('surveyid');
+    App()->session['FileManagerContext'] = "edit:survey:{$iSurveyID}";
     initKcfinder();
+}
+
+$cs = Yii::app()->getClientScript();
+$cs->registerPackage('select2-bootstrap');
+
+$adminlang = Yii::app()->session['adminlang'];
+$aTabContents = $this->aData['aTabContents'];
+$aTabTitles = $this->aData['aTabTitles'];
+$count = 0;
 
 PrepareEditorScript(false, $this);
 ?>
-<ul class="nav nav-tabs" id="edit-survey-text-element-language-selection">
-    <?php foreach ($aTabTitles as $i=>$eachtitle):?>
-        <li role="presentation" class="<?php if($count==0) {echo "active"; }?>">
-            <a data-toggle="tab" href="#edittxtele-<?php echo $count; $count++; ?>">
-                <?php echo $eachtitle;?>
+<!-- Text Elements Tabs -->
+<ul class="nav nav-tabs" id="edit-survey-text-element-language-selection" role="tablist">
+    <?php foreach ($aTabTitles as $i => $title) : ?>
+        <li role="presentation" class="nav-item">
+            <a class="nav-link <?= ($count === 0 || (strpos((string) $title, ' (' . gT("Base language") . ')'))) ? "active" : "" ?>"
+               data-bs-toggle="tab"
+               role="tab"
+               href="#edittxtele-<?php echo $count;
+                $count++; ?>">
+                <?php echo $title; ?>
             </a>
         </li>
-    <?php endforeach;?>
+    <?php endforeach; ?>
 </ul>
 
-<br/>
-
 <div class="tab-content">
-<?php foreach ($aTabContents as $i=>$sTabContent):?>
-    <?php
-        echo $sTabContent;
-    ?>
-<?php endforeach; ?>
+    <?php foreach ($aTabContents as $i => $content) : ?>
+        <?php echo $content; ?>
+    <?php endforeach; ?>
 </div>
 
-<?php App()->getClientScript()->registerScript("EditSurveyTextTabs", "
+<?php App()->getClientScript()->registerScript(
+    "EditSurveyTextTabs",
+    "
 $('#edit-survey-text-element-language-selection').find('a').on('shown.bs.tab', function(e){
     try{ $(e.relatedTarget).find('textarea').ckeditor(); } catch(e){ }
-})", LSYii_ClientScript::POS_POSTSCRIPT); ?>
+})",
+    LSYii_ClientScript::POS_POSTSCRIPT
+); ?>

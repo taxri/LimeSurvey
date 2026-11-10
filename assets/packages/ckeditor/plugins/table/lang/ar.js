@@ -1,6 +1,6 @@
 ﻿/*
-Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'table', 'ar', {
 	border: 'الحدود',
@@ -27,6 +27,8 @@ CKEDITOR.plugins.setLang( 'table', 'ar', {
 		borderColor: 'لون الحدود',
 		data: 'بيانات',
 		header: 'عنوان',
+		columnHeader: 'Column Header', // MISSING
+		rowHeader: 'Row Header', // MISSING
 		yes: 'نعم',
 		no: 'لا',
 		invalidWidth: 'عرض الخلية يجب أن يكون عدداً.',
@@ -50,6 +52,7 @@ CKEDITOR.plugins.setLang( 'table', 'ar', {
 	headersColumn: 'العمود الأول',
 	headersNone: 'بدون',
 	headersRow: 'الصف الأول',
+	heightUnit: 'height unit', // MISSING
 	invalidBorder: 'حجم الحد يجب أن يكون عدداً.',
 	invalidCellPadding: 'المسافة البادئة يجب أن تكون عدداً',
 	invalidCellSpacing: 'المسافة بين الخلايا يجب أن تكون عدداً.',

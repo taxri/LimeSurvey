@@ -1,23 +1,23 @@
 <div id="quick-menu-container">
     <!-- TODO: Placement right won't work with right-to-left -->
     <a
-        href="<?php echo $this->createUrl("admin/survey/sa/view/surveyid/$surveyid"); ?>"
-        data-toggle="tooltip"
+        href="<?php echo $this->createUrl("surveyAdministration/view/surveyid/$surveyid"); ?>"
+        data-bs-toggle="tooltip"
         data-title="<?php eT("Survey"); ?>"
-        data-placement="right"
+        data-bs-placement="right"
     >
         <div class='quick-icon-wrapper'>
-            <span class="fa fa-home navbar-brand"></span>
+            <span class="ri-home-4-fill navbar-brand"></span>
         </div>
     </a>
 
-    <?php foreach ($quickMenuItems as $quickMenuItem): ?>
+    <?php foreach ($quickMenuItems as $quickMenuItem) : ?>
         <div
             class='quick-menu-item'
-            data-toggle="tooltip"
+            data-bs-toggle="tooltip"
             data-title="<?php echo $quickMenuItem['tooltip']; ?>"
             data-button-name="<?php echo $quickMenuItem['name']; ?>"
-            data-placement="right"
+            data-bs-placement="right"
             draggable="true"
             ondragstart="dragstart_handler(event);"
             ondragover="dragover_handler(event);"
@@ -26,7 +26,7 @@
         >
             <a
                 href='<?php echo $quickMenuItem['href']; ?>'
-                <?php if ($quickMenuItem['openInNewTab']): ?>
+                <?php if ($quickMenuItem['openInNewTab']) : ?>
                     target='_blank'
                 <?php endif; ?>
             >

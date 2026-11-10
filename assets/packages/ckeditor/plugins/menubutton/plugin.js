@@ -1,6 +1,6 @@
 ﻿/**
- * @license Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+ * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 CKEDITOR.plugins.add( 'menubutton', {
@@ -8,6 +8,7 @@ CKEDITOR.plugins.add( 'menubutton', {
 	onLoad: function() {
 		var clickFn = function( editor ) {
 				var _ = this._,
+					buttonElement = CKEDITOR.document.getById( _.id ),
 					menu = _.menu;
 
 				// Do nothing if this button is disabled.
@@ -34,6 +35,9 @@ CKEDITOR.plugins.add( 'menubutton', {
 						var modes = this.command ? editor.getCommand( this.command ).modes : this.modes;
 						this.setState( !modes || modes[ editor.mode ] ? _.previousState : CKEDITOR.TRISTATE_DISABLED );
 						_.on = 0;
+
+						// Indicates that menu button is closed (#421, #5144).
+						buttonElement.setAttribute( 'aria-expanded', 'false' );
 					}, this );
 
 					// Initialize the menu items at this point.
@@ -44,8 +48,11 @@ CKEDITOR.plugins.add( 'menubutton', {
 				this.setState( CKEDITOR.TRISTATE_ON );
 				_.on = 1;
 
+				// Indicates that menu button is open (#421, #5144).
+				buttonElement.setAttribute( 'aria-expanded', 'true' );
+
 				// This timeout is needed to give time for the panel get focus
-				// when JAWS is running. (http://dev.ckeditor.com/ticket/9842)
+				// when JAWS is running. (https://dev.ckeditor.com/ticket/9842)
 				setTimeout( function() {
 					menu.show( CKEDITOR.document.getById( _.id ), 4 );
 				}, 0 );
@@ -72,7 +79,7 @@ CKEDITOR.plugins.add( 'menubutton', {
 
 				this.base( definition );
 
-				this.hasArrow = true;
+				this.hasArrow = 'menu';
 
 				this.click = clickFn;
 			},

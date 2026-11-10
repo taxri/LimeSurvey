@@ -1,13 +1,15 @@
 <?php
+
 namespace LimeSurvey\PluginManager;
-use \User;
+
+use User;
 use LSAuthResult;
+use LimeSurvey\PluginManager\PluginEvent;
 
 abstract class AuthPluginBase extends PluginBase
 {
-    
     /**
-     * These constants reflect the error codes to be used by the identity, they 
+     * These constants reflect the error codes to be used by the identity, they
      * are copied from LSUserIdentity and CBaseUserIdentity for easier access.
      */
     const ERROR_NONE = 0;
@@ -31,20 +33,20 @@ abstract class AuthPluginBase extends PluginBase
 
     protected $_username = null;
     protected $_password = null;
-    
+
     /**
      * Get the password (if set)
-     * 
+     *
      * @return string|null
      */
     protected function getPassword()
     {
         return $this->_password;
     }
-        
+
     /**
      * Get the username (if set)
-     * 
+     *
      * @return string|null
      */
     protected function getUserName()
@@ -81,57 +83,63 @@ abstract class AuthPluginBase extends PluginBase
 
     /**
      * Set authentication result to success for the given user object.
-     * 
+     *
      * @param User $user
+     * @param ?PluginEvent, current event if not set
      * @return AuthPluginBase
      */
-    public function setAuthSuccess(User $user)
+    public function setAuthSuccess(User $user, ?PluginEvent $event = null)
     {
-        $event = $this->getEvent();
-        $identity = $this->getEvent()->get('identity');
+        if (empty($event)) {
+            $event = $this->getEvent();
+        }
+        $identity = $event->get('identity');
         $identity->id = $user->uid;
         $identity->user = $user;
-        $this->getEvent()->set('identity', $identity);
+        $event->set('identity', $identity);
         $event->set('result', new LSAuthResult(self::ERROR_NONE));
-        
         return $this;
     }
-    
+
     /**
      * Set authentication result to failure.
-     * 
-     * @param int $code Any of the constants defined in this class
-     * @param string $message An optional message to return about the failure
+     *
+     * @param ?int $code Any of the constants defined in this class
+     * @param ?string $message An optional message to return about the failure
+     * @param ?PluginEvent, current event if not set
      * @return AuthPluginBase
      */
-    public function setAuthFailure($code = self::ERROR_UNKNOWN_IDENTITY, $message = '')
+    public function setAuthFailure($code = self::ERROR_UNKNOWN_IDENTITY, $message = '', ?PluginEvent $event = null)
     {
-        $event = $this->getEvent();
+        if (empty($event)) {
+            $event = $this->getEvent();
+        }
         $identity = $this->getEvent()->get('identity');
         $identity->id = null;
         $event->set('result', new LSAuthResult($code, $message));
-        
         return $this;
     }
-    
+
     /**
      * Set this plugin to handle the authentication
-     * 
+     *
+     * @param \LimeSurvey\PluginManager\PluginEvent, current event if not set
      * @return AuthPluginBase
      */
-    public function setAuthPlugin()
+    public function setAuthPlugin(?PluginEvent $event = null)
     {
-        $this->getEvent();
-        $identity = $this->getEvent()->get('identity');
+        if (empty($event)) {
+            $event = $this->getEvent();
+        }
+        $identity = $event->get('identity');
         $identity->plugin = get_class($this);
-        $this->getEvent()->stop();
-        
+        $event->stop();
         return $this;
     }
-    
+
     /**
      * Set the password to use for authentication
-     * 
+     *
      * @param string $password
      * @return AuthPluginBase
      */
@@ -141,15 +149,15 @@ abstract class AuthPluginBase extends PluginBase
         $event = $this->getEvent();
         $identity = $this->getEvent()->get('identity');
         $identity->password = $password;
-        
+
         $event->set('identity', $identity);
-        
+
         return $this;
     }
-    
+
     /**
      * Set the username to use for authentication
-     * 
+     *
      * @param string $username The username
      * @return AuthPluginBase
      */
@@ -159,9 +167,19 @@ abstract class AuthPluginBase extends PluginBase
         $event = $this->getEvent();
         $identity = $this->getEvent()->get('identity');
         $identity->username = $username;
-        
+
         $event->set('identity', $identity);
-        
+
         return $this;
+    }
+
+    /**
+     * Returns the authentication method's name
+     *
+     * @return string
+     */
+    public static function getAuthMethodName()
+    {
+        return static::getName();
     }
 }

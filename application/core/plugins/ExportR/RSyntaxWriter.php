@@ -1,4 +1,5 @@
 <?php
+
 class RSyntaxWriter extends Writer
 {
     private $output;
@@ -13,6 +14,11 @@ class RSyntaxWriter extends Writer
     protected $customFieldmap = array();
     protected $headers = array();
 
+    /**
+     * The chosen response format: 'short' (answer codes) or 'long' (full answers)
+     */
+    protected $answerFormat = 'long';
+
     function __construct()
     {
         $this->output = '';
@@ -24,24 +30,25 @@ class RSyntaxWriter extends Writer
     {
         parent::init($survey, $sLanguageCode, $oOptions);
         if ($oOptions->output == 'display') {
-            header("Content-Disposition: attachment; filename=survey_".$survey->id."_R_syntax_file.R");
+            header("Content-Disposition: attachment; filename=survey_" . $survey->id . "_R_syntax_file.R");
             header("Content-type: application/download; charset=UTF-8");
-            header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-            header("Pragma: public");
+            header("Cache-Control: must-revalidate, no-store, no-cache");
             $this->handle = fopen('php://output', 'w');
         } elseif ($oOptions->output == 'file') {
             $this->handle = fopen($this->filename, 'w');
         }
 
-        $this->out('data <- read.csv("survey_'.$survey->id.'_R_data_file.csv", quote = "\'\"", na.strings=c("", "\"\""), stringsAsFactors=FALSE, fileEncoding="UTF-8-BOM")');
+        $this->out('data <- read.csv("survey_' . $survey->id . '_R_data_file.csv", quote = "\'\"", na.strings=c("", "\"\""), stringsAsFactors=FALSE, fileEncoding="UTF-8-BOM")');
         $this->out("");
         $this->out("");
 
         $oOptions->headingFormat = 'code'; // Always use fieldcodes
+        $this->answerFormat = $oOptions->answerFormat;
 
         // R specific stuff
         Yii::app()->loadHelper("export");
-        $tmpFieldmap = SPSSFieldMap($survey->id);
+
+        $tmpFieldmap = SPSSFieldMap($survey->id, 'V', $sLanguageCode);
         $fieldmap = [];
         foreach ($tmpFieldmap as $field => $values) {
             $fieldmap[$values['title']] = $values;
@@ -54,17 +61,19 @@ class RSyntaxWriter extends Writer
 
     protected function out($content)
     {
-        fwrite($this->handle, $content."\n");
+        fwrite($this->handle, $content . "\n");
     }
 
-    protected function outputRecord($headers, $values, FormattingOptions $oOptions)
+    protected function outputRecord($headers, $values, FormattingOptions $oOptions, $fieldNames = [])
     {
         $this->headers = $oOptions->selectedColumns;
         foreach ($oOptions->selectedColumns as $id => $title) {
+            if (!isset($this->customFieldmap[$title])) {
+                continue;
+            }
             $field = $this->customFieldmap[$title];
-
             if (!isset($field['answers'])) {
-                $strTmp = mb_substr(stripTagsFull($values[$id]), 0, $this->maxLength);
+                $strTmp = mb_substr((string) stripTagsFull($values[$id]), 0, $this->maxLength);
 
                 $len = mb_strlen($strTmp);
 
@@ -73,7 +82,7 @@ class RSyntaxWriter extends Writer
                 }
 
                 if (trim($strTmp) != '') {
-                    if ($field['SPSStype'] == 'F' && (isNumericExtended($strTmp) === false || $field['size'] > 16)) {
+                    if ($field['SPSStype'] == 'F' && (isNumericExtended($strTmp ?? '') === false || $field['size'] > 16)) {
                         $field['SPSStype'] = 'A';
                     }
                 }
@@ -86,6 +95,9 @@ class RSyntaxWriter extends Writer
     {
         $errors = '';
         foreach ($this->headers as $id => $title) {
+            if (!isset($this->customFieldmap[$title])) {
+                continue;
+            }
             $field = $this->customFieldmap[$title];
             $i = $id + 1;
             if ($field['SPSStype'] == 'DATETIME23.2') {
@@ -93,7 +105,7 @@ class RSyntaxWriter extends Writer
             }
 
             if ($field['LStype'] == 'N' || $field['LStype'] == 'K') {
-                $field['size'] .= '.'.($field['size'] - 1);
+                $field['size'] .= '.' . ($field['size'] - 1);
             }
 
             $type = '';
@@ -115,15 +127,17 @@ class RSyntaxWriter extends Writer
             }
 
             $this->out("# LimeSurvey Field type: {$field['SPSStype']}");
-            $this->out("data[, ".$i."] <- "
-                . "as.$type(data[, ".$i."])");
-            $this->out('attributes(data)$variable.labels['.$i.'] <- "'
+            $this->out("data[, " . $i . "] <- "
+                . "as.$type(data[, " . $i . "])");
+            $this->out('attributes(data)$variable.labels[' . $i . '] <- "'
                 . addslashes(
                     htmlspecialchars_decode(
                         mb_substr(
                             stripTagsFull(
                                 $field['VariableLabel']
-                            ), 0, $this->maxLength
+                            ),
+                            0,
+                            $this->maxLength
                         )
                     )
                 )
@@ -134,9 +148,9 @@ class RSyntaxWriter extends Writer
                 $answers = $field['answers'];
 
                 //print out the value labels!
-                $str = 'data[, '.$i.'] <- factor(data[, '.$i.'], levels=c(';
+                $str = 'data[, ' . $i . '] <- factor(data[, ' . $i . '], levels=c(';
                 foreach ($answers as $answer) {
-                    if ($field['SPSStype'] == "F" && isNumericExtended($answer['code'])) {
+                    if ($field['SPSStype'] == "F" && isNumericExtended($answer['code'] ?? '')) {
                         $str .= "{$answer['code']},";
                     } else {
                         $str .= "\"{$answer['code']}\",";
@@ -144,13 +158,20 @@ class RSyntaxWriter extends Writer
                 }
 
                 $str = mb_substr($str, 0, -1);
-                $str .= '),labels=c(';
 
-                foreach ($answers as $answer) {
-                    $str .= '"'.addslashes(!empty($answer['value'])?$answer['value']:$answer['code']).'", ';
+                // Without labels R uses the levels (answer codes) as labels
+                if ($this->answerFormat == 'short') {
+                    $str .= ')';
+                } else {
+                    $str .= '),labels=c(';
+
+                    foreach ($answers as $answer) {
+                        $str .= '"' . addslashes((string) $answer['value'] !== '' ? $answer['value'] : $answer['code']) . '", ';
+                    }
+
+                    $str = mb_substr($str, 0, -2);
+                    $str .= ')';
                 }
-
-                $str = mb_substr($str, 0, -2);
 
                 if ($field['scale'] !== '' && $field['scale'] == 2) {
                     $scale = ", ordered=TRUE";
@@ -158,24 +179,24 @@ class RSyntaxWriter extends Writer
                     $scale = "";
                 }
 
-                $this->out("{$str}){$scale})");
+                $this->out("{$str}{$scale})");
             }
 
             //Rename the Variables (in case somethings goes wrong, we still have the OLD values
             if (isset($field['sql_name'])) {
                 $ftitle = $field['title'];
-                if (!preg_match("/^([a-z]|[A-Z])+.*$/", $ftitle)) {
-                    $ftitle = "q_".$ftitle;
+                if (!preg_match("/^([a-z]|[A-Z])+.*$/", (string) $ftitle)) {
+                    $ftitle = "q_" . $ftitle;
                 }
 
-                $ftitle = str_replace(array("-", ":", ";", "!"), array("_hyph_", "_dd_", "_dc_", "_excl_"), $ftitle);
+                $ftitle = str_replace(array("-", ":", ";", "!"), array("_hyph_", "_dd_", "_dc_", "_excl_"), (string) $ftitle);
 
                 if ($ftitle != $field['title']) {
                     $errors .= "# Variable name was incorrect and was changed from {$field['title']} to $ftitle .\n";
                 }
 
-                $this->out("names(data)[".$i."] <- "
-                    . "\"".$ftitle."\""); // <AdV> added \n
+                $this->out("names(data)[" . $i . "] <- "
+                    . "\"" . $ftitle . "\""); // <AdV> added \n
             } else {
                 $this->out("#sql_name not set");
             }
